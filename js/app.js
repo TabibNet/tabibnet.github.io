@@ -1786,9 +1786,24 @@ window.renderAdminDashboard = async () => {
     updateAdminFormFields('doctor');
 }
 window.saveAnnouncement = async (e) => {
-    e.preventDefault(); const text = document.getElementById('annText').value.trim(); const link = document.getElementById('annLink').value.trim(); 
+    e.preventDefault(); 
+    const text = document.getElementById('annText').value.trim(); 
+    const link = document.getElementById('annLink').value.trim(); 
+    
     if (!text) { showToast('الرجاء إدخال نص'); return; }
-    try { await supabase.from('announcements').insert([{ text, link, is_active: true }]); showToast('تم النشر!'); e.target.reset(); fetchAnnouncements(); } catch (err) { showToast('خطأ'); }
+    
+    try { 
+        await supabase.from('announcements').insert([{ text, link, is_active: true }]); 
+        
+        // === إشعار لجميع المستخدمين بوجود إعلان جديد ===
+        await sendPushNotification(null, "إعلان جديد 📢", text, 'all');
+        
+        showToast('تم النشر!'); 
+        e.target.reset(); 
+        fetchAnnouncements(); 
+    } catch (err) { 
+        showToast('خطأ'); 
+    }
 };
 async function fetchAnnouncements() {
     const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
