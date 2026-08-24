@@ -36,15 +36,15 @@ let currentCity = 'all';
 let allCities = ['كل المدن', 'الرحيبة', 'قريبا', 'قريبا', 'المعضمية']; // أضف أو عدل المدن كما تريد
 
 // === محرك الإشعارات المركزي ===
+// === محرك الإشعارات المركزي ===
 async function sendPushNotification(userId, title, message, target = 'user', playerId = null) {
     try {
-        const bodyData = { title: title, message: message, target: target };
+        const bodyData = { title, message, target };
         if (target === 'player' && playerId) {
             bodyData.player_id = playerId;
-        } else {
+        } else if (userId) {
             bodyData.user_id = userId;
         }
-
         const { data, error } = await supabase.functions.invoke('send-push-notification', {
             body: bodyData
         });
@@ -53,7 +53,6 @@ async function sendPushNotification(userId, title, message, target = 'user', pla
         console.error("Notification Engine Error:", err);
     }
 }
-
 // 1. التهيئة (يجب أن توضع في أعلى الملف ليتم تنفيذها فور تحميل الصفحة)
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 OneSignalDeferred.push(function(OneSignal) {
@@ -1421,7 +1420,6 @@ window.submitMedicineDonation = async (e) => {
             return; 
         }
         phoneInput.classList.remove('input-invalid');
-
         const { error } = await supabase.from('medicine_donations').insert([{ 
             donor_name: name, 
             medicine_name: medName, 
@@ -1436,7 +1434,7 @@ window.submitMedicineDonation = async (e) => {
         if (error) throw error;
         
         // === إشعار لجميع المستخدمين بوجود جهاز طبي ===
-        sendPushNotification(null, "جهاز طبي متاح 🩺", `تم إضافة جهاز: ${medName}`, 'all');
+        await sendPushNotification(null, "جهاز طبي متاح 🩺", `تم إضافة جهاز: ${medName}`, 'all');
         showToast('تم نشر إعلانك بنجاح !');
         document.querySelector('#ctrlContent form').reset();
         await fetchMedicineDonations();
@@ -1531,12 +1529,11 @@ window.submitBloodRequest = async (e) => {
 
     if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('رقم هاتف غير صحيح'); submitBtn.disabled = false; submitBtn.innerText = 'نشر الاستغاثة'; return; }
     phoneInput.classList.remove('input-invalid');
-
     try {
         await supabase.from('blood_requests').insert([{ patient_name: name, blood_type: bloodType, hospital: hospital, phone: phone, notes: notes, status: 'active' }]);
         
         // === إشعار لجميع المستخدمين بوجود استغاثة دم ===
-        sendPushNotification(null, "استغاثة دم طارئة 🩸", `المريض ${name} يحتاج فصيلة ${bloodType} في ${hospital}`, 'all');
+        await sendPushNotification(null, "استغاثة دم طارئة 🩸", `المريض ${name} يحتاج فصيلة ${bloodType} في ${hospital}`, 'all');
         showToast('تم نشر استغاثتك بنجاح! سيتم التواصل معك قريباً.');
         e.target.reset();
     } catch (err) { 
@@ -3191,12 +3188,12 @@ window.submitQuestion = async (e) => {
     const text = document.getElementById('qaText').value.trim();
     if (!text) return;
     try {
-        const { error } = await supabase.from('medical_questions').insert([{ name, category, text, status: 'open', answers: [] }]);
-        if (error) throw error;
+    const { error } = await supabase.from('medical_questions').insert([{ name, category, text, status: 'open', answers: [] }]);
+    if (error) throw error;
         
         // === إشعار للجميع بوجود سؤال طبي جديد ===
-        sendPushNotification(null, "سؤال طبي جديد ❓", `تم طرح سؤال جديد: ${text.substring(0, 40)}...`, 'all');
-        showToast('تم نشر سؤالك بنجاح!');
+      await sendPushNotification(null, "سؤال طبي جديد ❓", `تم طرح سؤال جديد: ${text.substring(0, 40)}...`, 'all');
+        showToast('تم نشر سؤالك بنجاح!');     
         e.target.reset();
         fetchQuestions();
     } catch (err) { 
