@@ -1670,7 +1670,6 @@ window.submitMedicineRequest = async (e) => {
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال للصيدليات'; 
     } 
 }
-
 window.quickLookup = async () => {
     let val = document.getElementById('quickLookupInput').value.trim().toUpperCase().replace(/#/g, '').replace(/\s/g, '');
     if (!val) { showToast('الرجاء إدخال رقم الاستعلام'); return; }
@@ -1686,7 +1685,10 @@ window.quickLookup = async () => {
             else if (m.status === 'available') { statusText = 'تم التوفير - جاهز للاستلام'; statusColor = '#10B981'; statusIcon = 'fa-check-circle'; }
             else if (m.status === 'unavailable') { statusText = 'غير متوفر حالياً'; statusColor = '#6B7280'; statusIcon = 'fa-times-circle'; }
             else { statusText = 'تم إنهاء الطلب'; statusColor = '#6B7280'; statusIcon = 'fa-archive'; }
-            document.getElementById('modalContent').innerHTML = `<div class="p-6 text-center"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-pills ml-2" style="color: var(--gold)"></i> حالة طلب الدواء</h3><button onclick="closeModal()" class="text-2xl">&times;</button></div><div class="text-sm text-gray-500 mb-1">رقم الطلب</div><div class="text-xl font-black text-yellow-600 mb-6">#${escapeHtml(m.med_ref)}</div><div class="p-4 rounded-xl mb-4" style="background: ${statusColor}20; color: ${statusColor};"><i class="fas ${statusIcon} text-3xl mb-2"></i><div class="font-bold text-lg">${statusText}</div></div> ${m.notes ? `<div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 text-right" style="white-space: pre-line;"><b>ملاحظة الصيدلية:</b><br>${escapeHtml(m.notes)}</div>` : '<div class="text-xs text-gray-400">لا توجد ملاحظات.</div>'}
+            
+            // تم إصلاح الخطأ هنا بإضافة علامة ` والفاصلة المنقوطة ; في النهاية
+            document.getElementById('modalContent').innerHTML = `<div class="p-6 text-center"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-pills ml-2" style="color: var(--gold)"></i> حالة طلب الدواء</h3><button onclick="closeModal()" class="text-2xl">&times;</button></div><div class="text-sm text-gray-500 mb-1">رقم الطلب</div><div class="text-xl font-black text-yellow-600 mb-6">#${escapeHtml(m.med_ref)}</div><div class="p-4 rounded-xl mb-4" style="background: ${statusColor}20; color: ${statusColor};"><i class="fas ${statusIcon} text-3xl mb-2"></i><div class="font-bold text-lg">${statusText}</div></div> ${m.notes ? `<div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 text-right" style="white-space: pre-line;"><b>ملاحظة الصيدلية:</b><br>${escapeHtml(m.notes)}</div>` : '<div class="text-xs text-gray-400">لا توجد ملاحظات.</div>'}</div>`;
+            
             document.getElementById('modalOverlay').classList.add('active'); lockScroll();
         } else { showToast('لم يتم العثور على طلب دواء'); }
     } else { showToast('صيغة غير صحيحة. استخدم R-XXX أو MED-XXX'); }
@@ -1999,7 +2001,7 @@ window.handleHealthRegister = async (e) => {
     
     const userId = data.user.id;
     
-    const { error: dbError } = await supabase.from('health_files').insert([{ id: userId, full_name: fullName }]);
+        const { error: dbError } = await supabase.from('health_files').insert([{ id: userId, full_name: fullName, qr_token: generateSecureQrToken() }]);
     if (dbError) { 
         showToast('تم إنشاء الحساب ولكن حدث خطأ في قاعدة البيانات'); 
         return; 
@@ -2033,7 +2035,7 @@ window.handleHealthLogin = async (e) => {
     
     if (!fileData) {
         const defaultName = data.user.email ? data.user.email.split('@')[0] : 'مريض';
-        const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName }]).select().single();
+                const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: generateSecureQrToken() }]).select().single();
         if (insertError) {
             console.error("DB Insert Error:", insertError);
             showToast('تعذر إنشاء ملف صحي: ' + insertError.message);
