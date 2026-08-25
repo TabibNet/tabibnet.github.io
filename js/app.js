@@ -1231,7 +1231,6 @@ window.openPrescriptionModal = (patientId, patientName, doctorInfo) => {
     document.getElementById('modalOverlay').classList.add('active');
     lockScroll();
 }
-
 window.generatePrescription = async (e, patientId, patientName) => {
     e.preventDefault();
     const form = e.target;
@@ -1257,15 +1256,31 @@ window.generatePrescription = async (e, patientId, patientName) => {
     const verCode = btoa(`${docInfo.id}-${date.getTime()}`).substring(0, 12).toUpperCase();
 
     try {
-        const { data: docSnap, error } = await supabase.from('health_files').select('prescriptions').eq('id', patientId).single();
-        if (error) return;
+        // patientId هنا هو رمز الـ QR (qr_token)
+        // 1. جلب الروشتات السابقة للمرض
+        const { data: docSnap, error } = await supabase.from('health_files').select('prescriptions').eq('qr_token', patientId).single();
+        if (error) throw error;
+        
         const currentRx = docSnap.prescriptions || [];
-        currentRx.push({ doctor: docInfo.name, specialty: docInfo.specialty, verCode: verCode, text: rxText, date: date.toISOString() });
-        await supabase.from('health_files').update({ prescriptions: currentRx }).eq('id', patientId);
-        showToast('تم حفظ الروشتة في ملف المريض بنجاح!');
+        // 2. تشفير نص الروشتة باستخدام رمز الـ QR قبل حفظها
+        currentRx.push({ 
+            doctor: docInfo.name, 
+            specialty: docInfo.specialty, 
+            verCode: verCode, 
+            text: encryptField(rxText, patientId), 
+            date: date.toISOString() 
+        });
+        
+        // 3. حفظ الروشتة المشفرة في قاعدة البيانات
+        await supabase.from('health_files').update({ prescriptions: currentRx }).eq('qr_token', patientId);
+        
+        showToast('تم حفظ الروشتة وتشفيرها في ملف المريض بنجاح!');
         closeModal();
         fetchPatientHealthFile(patientId, { specialty: 'general' }); 
-    } catch (err) { showToast('خطأ في حفظ الروشتة'); }
+    } catch (err) { 
+        showToast('خطأ في حفظ الروشتة'); 
+        console.error(err);
+    }
 }
 window.addPrescriptionRow = () => {
     const container = document.getElementById('medListContainer');
@@ -3443,6 +3458,16 @@ function decryptField(ciphertext, key) {
 // دالة لفك تشفير ملف المريض بالكامل
 function decryptHealthFile(data, key) {
     if (!data) return data;
+    
+    // فك تشفير مصفوفة الروشتات الطبية
+    let decryptedPrescriptions = [];
+    if (data.prescriptions && Array.isArray(data.prescriptions)) {
+        decryptedPrescriptions = data.prescriptions.map(rx => ({
+            ...rx,
+            text: decryptField(rx.text, key) // فك تشفير نص الروشتة فقط
+        }));
+    }
+
     return {
         ...data,
         full_name: decryptField(data.full_name, key),
@@ -3456,7 +3481,8 @@ function decryptHealthFile(data, key) {
         dental: decryptField(data.dental, key),
         eye: decryptField(data.eye, key),
         emergency_name: decryptField(data.emergency_name, key),
-        emergency_phone: decryptField(data.emergency_phone, key)
+        emergency_phone: decryptField(data.emergency_phone, key),
+        prescriptions: decryptedPrescriptions // إضافة الروشتات المفكوك تشفيرها
     };
 }
 // نهاية ملف app.js
