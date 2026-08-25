@@ -1161,17 +1161,20 @@ window.openDoctorScanner = (docId) => {
 
 window.fetchPatientHealthFile = async (userId, doctorData) => {
     try {
-        // البحث باستخدام رمز QR (qr_token) بدلاً من الـ ID الأساسي
-const { data: p, error } = await supabase.from('health_files').select('*').eq('qr_token', userId).maybeSingle();
-        if (error || !p) { showToast("لم يتم العثور على ملف بهذا الرمز."); return; }
+        const { data: p, error } = await supabase.from('health_files').select('*').eq('qr_token', userId).maybeSingle();
+        
+        // فك تشفير البيانات للطبيب باستخدام رمز QR
+        const decryptedP = decryptHealthFile(p, userId);
+        
+        if (error || !decryptedP) { showToast("لم يتم العثور على ملف بهذا الرمز."); return; }
         closeCtrlPanel();
         
         let specializedRecordHtml = '';
         if (doctorData && doctorData.specialty) {
             if (doctorData.specialty.includes('أسنان')) {
-                specializedRecordHtml = `<div class="p-3 rounded-xl border" style="border-color: #FED7AA; background: #FFF7ED;"><div class="text-xs text-orange-700 mb-1 font-bold"><i class="fas fa-tooth"></i> سجل الأسنان</div><div class="font-semibold text-sm text-gray-700 whitespace-pre-line">${escapeHtml(p.dental || 'لا يوجد.')}</div></div>`;
+                specializedRecordHtml = `<div class="p-3 rounded-xl border" style="border-color: #FED7AA; background: #FFF7ED;"><div class="text-xs text-orange-700 mb-1 font-bold"><i class="fas fa-tooth"></i> سجل الأسنان</div><div class="font-semibold text-sm text-gray-700 whitespace-pre-line">${escapeHtml(decryptedP.dental || 'لا يوجد.')}</div></div>`;
             } else if (doctorData.specialty.includes('عين') || doctorData.specialty.includes('عيون')) {
-                specializedRecordHtml = `<div class="p-3 rounded-xl border" style="border-color: #BFDBFE; background: #EFF6FF;"><div class="text-xs text-blue-700 mb-1 font-bold"><i class="fas fa-eye"></i> سجل العيون</div><div class="font-semibold text-sm text-gray-700 whitespace-pre-line">${escapeHtml(p.eye || 'لا يوجد.')}</div></div>`;
+                specializedRecordHtml = `<div class="p-3 rounded-xl border" style="border-color: #BFDBFE; background: #EFF6FF;"><div class="text-xs text-blue-700 mb-1 font-bold"><i class="fas fa-eye"></i> سجل العيون</div><div class="font-semibold text-sm text-gray-700 whitespace-pre-line">${escapeHtml(decryptedP.eye || 'لا يوجد.')}</div></div>`;
             }
         }
 
@@ -1182,10 +1185,10 @@ const { data: p, error } = await supabase.from('health_files').select('*').eq('q
         };
 
         const prescriptionBtn = doctorData?.is_subscribed 
-            ? `<button onclick='openPrescriptionModal("${userId}", "${p.full_name}", ${JSON.stringify(docInfo)})' class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg"><i class="fas fa-file-prescription"></i> إنشاء روشتة</button>` 
+            ? `<button onclick='openPrescriptionModal("${userId}", "${decryptedP.full_name}", ${JSON.stringify(docInfo)})' class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg"><i class="fas fa-file-prescription"></i> إنشاء روشتة</button>` 
             : `<button onclick="openPaymentModal('طبيب', '${doctorData?.name || 'طبيب'}')" class="text-xs bg-gray-300 text-gray-600 px-3 py-1.5 rounded-lg line-through cursor-not-allowed"><i class="fas fa-lock"></i> إنشاء روشتة</button>`;
 
-        document.getElementById('modalContent').innerHTML = `<div class="p-6"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-file-medical ml-2" style="color: var(--doctor)"></i> الملف الصحي للمريض</h3><button onclick="closeModal()" class="text-2xl">&times;</button>${prescriptionBtn}</div><div class="flex flex-col gap-3"><div class="flex items-center gap-4 p-3 rounded-xl" style="background: #DBEAFE"><i class="fas fa-user-circle text-3xl" style="color: var(--doctor)"></i><div><h4 class="font-bold text-lg">${escapeHtml(p.full_name)}</h4><p class="text-sm text-gray-600">${escapeHtml(p.age || '-')} سنة | ${escapeHtml(p.gender || '-')}</p></div></div><div class="grid grid-cols-2 gap-3 text-sm"><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">فصيلة الدم</div><div class="font-bold text-red-600">${escapeHtml(p.blood_type || 'غير محدد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">الوزن</div><div class="font-bold">${escapeHtml(p.weight || '-')} كغ</div></div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأمراض المزمنة</div><div class="font-semibold">${escapeHtml(p.diseases || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الحساسية</div><div class="font-semibold text-red-600">${escapeHtml(p.allergies || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأدوية الحالية</div><div class="font-semibold">${escapeHtml(p.medications || 'لا يوجد')}</div></div>${specializedRecordHtml}<div class="p-3 rounded-xl bg-green-50 border border-green-200"><div class="text-xs text-green-700 mb-1">جهة طوارئ</div><div class="font-semibold">${escapeHtml(p.emergency_name || '')} - <span dir="ltr">${escapeHtml(p.emergency_phone || '')}</span></div></div></div></div>`;
+        document.getElementById('modalContent').innerHTML = `<div class="p-6"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-file-medical ml-2" style="color: var(--doctor)"></i> الملف الصحي للمريض</h3><button onclick="closeModal()" class="text-2xl">&times;</button>${prescriptionBtn}</div><div class="flex flex-col gap-3"><div class="flex items-center gap-4 p-3 rounded-xl" style="background: #DBEAFE"><i class="fas fa-user-circle text-3xl" style="color: var(--doctor)"></i><div><h4 class="font-bold text-lg">${escapeHtml(decryptedP.full_name)}</h4><p class="text-sm text-gray-600">${escapeHtml(decryptedP.age || '-')} سنة | ${escapeHtml(decryptedP.gender || '-')}</p></div></div><div class="grid grid-cols-2 gap-3 text-sm"><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">فصيلة الدم</div><div class="font-bold text-red-600">${escapeHtml(decryptedP.blood_type || 'غير محدد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">الوزن</div><div class="font-bold">${escapeHtml(decryptedP.weight || '-')} كغ</div></div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأمراض المزمنة</div><div class="font-semibold">${escapeHtml(decryptedP.diseases || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الحساسية</div><div class="font-semibold text-red-600">${escapeHtml(decryptedP.allergies || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأدوية الحالية</div><div class="font-semibold">${escapeHtml(decryptedP.medications || 'لا يوجد')}</div></div>${specializedRecordHtml}<div class="p-3 rounded-xl bg-green-50 border border-green-200"><div class="text-xs text-green-700 mb-1">جهة طوارئ</div><div class="font-semibold">${escapeHtml(decryptedP.emergency_name || '')} - <span dir="ltr">${escapeHtml(decryptedP.emergency_phone || '')}</span></div></div></div></div>`;
         document.getElementById('modalOverlay').classList.add('active');
         lockScroll();
     } catch (e) { showToast("خطأ في قراءة الملف."); }
@@ -2047,6 +2050,10 @@ window.handleHealthLogin = async (e) => {
     renderHealthDashboard(fileData);
 };
  window.renderHealthDashboard = (data) => {
+    // فك تشفير البيانات قبل عرضها للمريض
+    const encryptionKey = data.qr_token || currentHealthFileId;
+    data = decryptHealthFile(data, encryptionKey);
+
     openCtrlPanel(`الملف الصحي: ${data.full_name || 'مريض'}`,  `
         <div class="bg-white p-6 rounded-2xl border-2 flex flex-col items-center" style="border-color: #EC4899;">
     <div class="flex items-center justify-between w-full mb-3">
@@ -2139,26 +2146,76 @@ window.handleHealthLogin = async (e) => {
 
 window.saveHealthProfile = async (e) => {
     e.preventDefault();
-    const data = {
-        full_name: document.getElementById('hfFullName').value, age: document.getElementById('hfAge').value,
-        gender: document.getElementById('hfGender').value, blood_type: document.getElementById('hfBloodType').value,
-        weight: document.getElementById('hfWeight').value, diseases: document.getElementById('hfDiseases').value,
-        allergies: document.getElementById('hfAllergies').value, medications: document.getElementById('hfMedications').value,
-        dental: document.getElementById('hfDental').value, eye: document.getElementById('hfEye').value,
-        emergency_name: document.getElementById('hfEmergencyName').value, emergency_phone: document.getElementById('hfEmergencyPhone').value
+    
+    // 1. جلب الرمز السري لاستخدامه في التشفير
+    const { data: userData } = await supabase.from('health_files').select('qr_token').eq('id', currentHealthFileId).single();
+    const key = userData?.qr_token || currentHealthFileId;
+
+    // 2. قراءة البيانات من الحقول وتشفيرها
+    const encryptedData = {
+        full_name: encryptField(document.getElementById('hfFullName').value, key),
+        age: encryptField(document.getElementById('hfAge').value, key),
+        gender: encryptField(document.getElementById('hfGender').value, key),
+        blood_type: encryptField(document.getElementById('hfBloodType').value, key),
+        weight: encryptField(document.getElementById('hfWeight').value, key),
+        diseases: encryptField(document.getElementById('hfDiseases').value, key),
+        allergies: encryptField(document.getElementById('hfAllergies').value, key),
+        medications: encryptField(document.getElementById('hfMedications').value, key),
+        dental: encryptField(document.getElementById('hfDental').value, key),
+        eye: encryptField(document.getElementById('hfEye').value, key),
+        emergency_name: encryptField(document.getElementById('hfEmergencyName').value, key),
+        emergency_phone: encryptField(document.getElementById('hfEmergencyPhone').value, key)
     };
-    try { await supabase.from('health_files').update(data).eq('id', currentHealthFileId); showToast('تم الحفظ!'); renderHealthDashboard(data); } catch (err) { showToast('خطأ'); }
+
+    try { 
+        await supabase.from('health_files').update(encryptedData).eq('id', currentHealthFileId); 
+        showToast('تم الحفظ والتشفير بنجاح!'); 
+        
+        // إعادة جلب البيانات وفك تشفيرها لعرضها للمريض
+        const { data: updatedFile } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
+        if (updatedFile) renderHealthDashboard(updatedFile);
+    } catch (err) { showToast('خطأ'); }
 }
 window.regenerateQrToken = async () => {
-    if (!confirm("هل أنت متأكد من تغيير رمز QR الخاص بك؟ أي رمز قديم سيصبح غير صالح للاستخدام.")) return;
+    if (!confirm("هل أنت متأكد من تغيير رمز QR؟ سيتم إعادة تشفير بياناتك بمفتاح جديد.")) return;
     try {
-        const newToken = generateSecureQrToken();
-        await supabase.from('health_files').update({ qr_token: newToken }).eq('id', currentHealthFileId);
-        showToast('تم تغيير رمز QR بنجاح!');
-        // إعادة تحميل اللوحة لإظهار الرمز الجديد
+        // 1. جلب المفتاح القديم والبيانات الحالية
+        const { data: currentFile } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
+        if (!currentFile) return;
+        
+        const oldKey = currentFile.qr_token;
+        // 2. فك تشفير البيانات القديمة
+        const decryptedData = decryptHealthFile(currentFile, oldKey);
+
+        // 3. توليد مفتاح جديد
+        const newKey = generateSecureQrToken();
+
+        // 4. إعادة تشفير البيانات بالمفتاح الجديد
+        const newEncryptedData = {
+            qr_token: newKey,
+            full_name: encryptField(decryptedData.full_name, newKey),
+            age: encryptField(decryptedData.age, newKey),
+            gender: encryptField(decryptedData.gender, newKey),
+            blood_type: encryptField(decryptedData.blood_type, newKey),
+            weight: encryptField(decryptedData.weight, newKey),
+            diseases: encryptField(decryptedData.diseases, newKey),
+            allergies: encryptField(decryptedData.allergies, newKey),
+            medications: encryptField(decryptedData.medications, newKey),
+            dental: encryptField(decryptedData.dental, newKey),
+            eye: encryptField(decryptedData.eye, newKey),
+            emergency_name: encryptField(decryptedData.emergency_name, newKey),
+            emergency_phone: encryptField(decryptedData.emergency_phone, newKey)
+        };
+
+        // 5. حفظ الرمز الجديد والبيانات المعاد تشفيرها
+        await supabase.from('health_files').update(newEncryptedData).eq('id', currentHealthFileId);
+        showToast('تم تغيير الرمز وإعادة تشفير البيانات بنجاح!');
+
+        // إعادة تحميل اللوحة
         const { data: updatedFile } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
         if (updatedFile) renderHealthDashboard(updatedFile);
     } catch (err) {
+        console.error(err);
         showToast('حدث خطأ أثناء تغيير الرمز');
     }
 }
@@ -3364,5 +3421,42 @@ window.toggleSubscription = async (id, currentStatus) => {
         await fetchListings();
         renderAdminDashboard();
     } catch (e) { showToast('حدث خطأ'); }
+}
+// دالة لتشفير النص
+function encryptField(text, key) {
+    if (!text) return text; // إذا كان الحقل فارغاً اتركه كما هو
+    try {
+        return CryptoJS.AES.encrypt(String(text), key).toString();
+    } catch (e) { return text; }
+}
+
+// دالة لفك تشفير النص
+function decryptField(ciphertext, key) {
+    if (!ciphertext || !ciphertext.startsWith('U2FsdGVk')) return ciphertext; // إذا لم يكن النص مشفراً اعرضه كما هو
+    try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+        return originalText || ciphertext;
+    } catch (e) { return ciphertext; }
+}
+
+// دالة لفك تشفير ملف المريض بالكامل
+function decryptHealthFile(data, key) {
+    if (!data) return data;
+    return {
+        ...data,
+        full_name: decryptField(data.full_name, key),
+        age: decryptField(data.age, key),
+        gender: decryptField(data.gender, key),
+        blood_type: decryptField(data.blood_type, key),
+        weight: decryptField(data.weight, key),
+        diseases: decryptField(data.diseases, key),
+        allergies: decryptField(data.allergies, key),
+        medications: decryptField(data.medications, key),
+        dental: decryptField(data.dental, key),
+        eye: decryptField(data.eye, key),
+        emergency_name: decryptField(data.emergency_name, key),
+        emergency_phone: decryptField(data.emergency_phone, key)
+    };
 }
 // نهاية ملف app.js
