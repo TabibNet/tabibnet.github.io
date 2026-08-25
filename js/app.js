@@ -14,6 +14,7 @@ let currentFollowupBookingId = null;
 let tempBooking = {}; 
 let scrollLockCount = 0;
 let unsubscribeMedRequests = null; 
+let unsubscribeMedRequestsInterval = null;
 let bloodRequests = []; 
 let medicineDonations = [];
 let burnState = { cause: null, degree: null, area: null };
@@ -345,37 +346,11 @@ function renderHomeBloodAlerts() {
     const section = document.getElementById('homeBloodAlertsSection');
     const container = document.getElementById('homeBloodAlerts');
     if (!section || !container) return;
-    if (bloodRequests.length === 0) {
-        section.classList.add('hidden');
-        container.innerHTML = '';
-    } else {
-        section.classList.remove('hidden');
-        container.innerHTML = bloodRequests.map(req => {
-            let statusBox = '';
-            let cardBorder = 'border-red-50';
-            if (req.responses_count > 0) {
-                cardBorder = 'border-green-200 bg-green-50/30';
-                statusBox = `<div class="bg-green-100 text-green-800 text-[10px] font-bold p-1.5 rounded-lg flex items-center justify-center gap-1 mb-1.5"><i class="fas fa-heart"></i> المبادرون (${escapeHtml(req.responses_count)})</div>`;
-            }
-            return `<div class="bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm flex flex-col gap-1.5 border ${cardBorder} dark:border-red-900/50">
-                ${statusBox}
-                <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 border border-red-100 dark:border-red-800">
-                        <span class="text-sm font-black text-red-600 dark:text-red-400">${escapeHtml(req.blood_type)}</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="font-bold text-gray-800 dark:text-white text-[11px] break-words">${escapeHtml(req.patient_name)}</div>
-                        <div class="text-[9px] text-gray-500 dark:text-gray-400 break-words"><i class="fas fa-hospital text-red-400"></i> ${escapeHtml(req.hospital)}</div>
-                    </div>
-                </div>
-                ${req.notes ? `<div class="text-[9px] text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 p-1 rounded break-words text-center"><i class="fas fa-notes-medical"></i> ${escapeHtml(req.notes)}</div>` : ''}
-                <div class="flex gap-1.5 mt-1">
-                    <a href="tel:${escapeHtml(req.phone)}" class="flex-1 h-7 rounded-lg bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold hover:bg-blue-600 transition-colors">اتصال</a>
-                    <button onclick="respondToBloodRequest(this, '${escapeHtml(req.id)}', '${escapeHtml(req.patient_name)}', '${escapeHtml(req.phone)}')" class="flex-1 h-7 rounded-lg bg-green-500 text-white flex items-center justify-center text-[10px] font-bold hover:bg-green-600 transition-colors">قادم للتبرع</button>
-                </div>
-            </div>`;
-        }).join('');
-    }
+    
+    // إخفاء قسم استغاثات الدم تماماً من الصفحة الرئيسية
+    section.classList.add('hidden');
+    container.innerHTML = '';
+    
     checkAlertsWrapperVisibility();
 }
 
@@ -383,46 +358,11 @@ function renderHomeMedicines() {
     const section = document.getElementById('homeMedicinesSection');
     const container = document.getElementById('homeMedicinesList');
     if (!section || !container) return;
-    if (medicineDonations.length === 0) {
-        section.classList.add('hidden');
-        container.innerHTML = '';
-    } else {
-        section.classList.remove('hidden');
-        container.innerHTML = medicineDonations.map(m => {
-            let iconClass = 'fa-laptop-medical';
-            let iconColor = 'text-teal-600';
-            let bgColor = 'bg-teal-50';
-            let borderColor = 'border-teal-100';
-            let badgeText = 'عرض';
-            let badgeColor = 'bg-green-100 text-green-700';
-            
-            if (m.medicine_type.includes('أطلب')) {
-                iconClass = 'fa-bullhorn';
-                iconColor = 'text-orange-600';
-                bgColor = 'bg-orange-50';
-                borderColor = 'border-orange-100';
-                badgeText = 'طلب';
-                badgeColor = 'bg-orange-100 text-orange-700';
-            }
-
-            return `
-            <div class="bg-white p-2 rounded-xl shadow-sm flex flex-col gap-1.5 border ${borderColor}">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg ${bgColor} flex items-center justify-center flex-shrink-0 border ${borderColor}">
-                        <i class="fas ${iconClass} ${iconColor} text-xs"></i>
-                    </div>
-                    <div class="font-bold text-[11px] text-gray-800 break-words flex-1 truncate">${escapeHtml(m.medicine_name)}</div>
-                    <span class="text-[8px] ${badgeColor} px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">${escapeHtml(badgeText)}</span>
-                </div>
-                <div class="text-[9px] text-gray-500 flex flex-col gap-0.5">
-                    <span><i class="fas fa-box"></i> ${escapeHtml(m.quantity)}</span>
-                    <span class="text-purple-500 font-bold"><i class="fas fa-info-circle"></i> ${escapeHtml(m.expiry_date)}</span>
-                </div>
-                <a href="tel:${escapeHtml(m.phone)}" class="mt-0.5 block text-center bg-teal-500 text-white py-1 rounded-lg text-[9px] font-bold w-full hover:bg-teal-600 transition-colors">تواصل</a>
-            </div>
-            `;
-        }).join('');
-    }
+    
+    // إخفاء قسم المستلزمات الطبية تماماً من الصفحة الرئيسية
+    section.classList.add('hidden');
+    container.innerHTML = '';
+    
     checkAlertsWrapperVisibility();
 }
 
@@ -715,7 +655,8 @@ window.closeCtrlPanel = (event) => {
     unlockScroll(); 
     
     if (doctorDashboardInterval) { clearInterval(doctorDashboardInterval); doctorDashboardInterval = null; } 
-    if (unsubscribeMedRequests) { clearInterval(unsubscribeMedRequests); unsubscribeMedRequests = null; } 
+    if (unsubscribeMedRequests) { supabase.removeChannel(unsubscribeMedRequests); unsubscribeMedRequests = null; } 
+    if (unsubscribeMedRequestsInterval) { clearInterval(unsubscribeMedRequestsInterval); unsubscribeMedRequestsInterval = null; } 
     if (activeFollowupUnsub) { clearInterval(activeFollowupUnsub); activeFollowupUnsub = null; } 
     currentFollowupBookingId = null;
 }
@@ -928,27 +869,54 @@ window.renderPharmacyDashboard = async (pharm) => {
         showToast('يجب تسجيل الدخول أولاً');
         return;
     }
-    const { count: providedCount } = await supabase
+    // === التعديل: العداد يبحث عن كل الأدوية التي وفرتها الصيدلية مسبقاً بغض النظر عن حالتها الحالية ===
+const { count: providedCount } = await supabase
         .from('medicine_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('available_pharmacy', pharm.name)
-        .eq('status', 'available');
+        .eq('available_pharmacy', pharm.name);
     
     const providedMeds = providedCount || 0;
     
     openCtrlPanel(`لوحة تحكم: ${pharm.name}`, `<div class="flex flex-col gap-5"><div class="bg-white p-5 rounded-xl border flex items-center justify-between flex-col sm:flex-row gap-4" style="border-color: var(--border)"><div class="flex items-center gap-4"><img src="${escapeHtml(pharm.image)}" class="w-20 h-20 rounded-2xl object-cover"><div><h3 class="font-bold text-lg">${escapeHtml(pharm.name)}</h3><p class="text-sm" style="color: var(--pharmacy)">صيدلية</p></div></div><div class="bg-white p-3 rounded-xl border flex items-center justify-between gap-2 mb-3" style="border-color: var(--border);"><span class="text-sm font-bold text-gray-700">حالة العمل:</span><div class="flex gap-1 bg-gray-50 p-1 rounded-lg"><button onclick="setStatus('${pharm.id}', true)" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all ${pharm.isopen === true ? 'bg-green-500 text-white shadow' : 'text-gray-500 hover:bg-gray-100'}">مفتوح</button><button onclick="setStatus('${pharm.id}', false)" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all ${pharm.isopen === false ? 'bg-red-500 text-white shadow' : 'text-gray-500 hover:bg-gray-100'}">مغلق</button><button onclick="setStatus('${pharm.id}', null)" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all ${pharm.isopen == null ? 'bg-gray-700 text-white shadow' : 'text-gray-500 hover:bg-gray-100'}">لا شيء</button></div></div><button onclick="toggleNightShift('${pharm.id}', ${!pharm.night})" class="w-full px-4 py-2 rounded-xl font-bold text-sm ${pharm.night ? 'bg-yellow-500 text-white' : 'bg-gray-200'}">${pharm.night ? 'إيقاف المناوبة الليلية' : 'تفعيل المناوبة الليلية'}</button></div> <div class="grid grid-cols-3 gap-3"><div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);"><i class="fas fa-eye text-blue-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${pharm.view_count || 0}</div><div class="text-xs text-gray-500">زيارة الملف</div></div><div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);"><i class="fas fa-hand-holding-medical text-green-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${providedMeds}</div><div class="text-xs text-gray-500">أدوية موفرة</div></div><div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);"><i class="fas fa-phone-alt text-purple-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${pharm.phone_clicks || 0}</div><div class="text-xs text-gray-500">نقرات الهاتف</div></div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm">طلبات الأدوية الواردة</h4><div id="requestsContainer" class="flex flex-col gap-3"><p class="text-center py-10" style="color: var(--muted)">جاري تحميل الطلبات...</p></div></div> <button onclick="logoutPharmacy()" class="w-full py-3 rounded-xl border font-bold text-sm mt-3" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button></div>`, '#0E7C5F', true); 
     
-    if (unsubscribeMedRequests) clearInterval(unsubscribeMedRequests); 
+        // إيقاف أي تحديث سابق
+    if (unsubscribeMedRequests) { supabase.removeChannel(unsubscribeMedRequests); }
+    if (unsubscribeMedRequestsInterval) { clearInterval(unsubscribeMedRequestsInterval); }
+    
+    // جلب البيانات لأول مرة
     fetchMedRequests(pharm.name);
-    unsubscribeMedRequests = setInterval(() => fetchMedRequests(pharm.name), 7000);
+    
+    // الاشتراك في التحديثات اللحظية (Realtime) - تتحدث فور إضافة أو تعديل طلب
+    unsubscribeMedRequests = supabase
+      .channel('medicine_requests_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'medicine_requests' }, payload => {
+          fetchMedRequests(pharm.name);
+      })
+      .subscribe();
+
+    // مؤقت هادئ كل دقيقة فقط، للتحقق من الطلبات التي انتهت مدتها (30 دقيقة) لإخفائها
+    unsubscribeMedRequestsInterval = setInterval(() => fetchMedRequests(pharm.name), 60000);
 }
 
 async function fetchMedRequests(pharmName) {
     const container = document.getElementById('requestsContainer'); 
     if (!container) return; 
+    
+    // حماية: إذا كان الصيدلي يكتب حالياً في حقل الملاحظات، نؤجل التحديث لكي لا يمسح ما يكتبه
+    const activeElement = document.activeElement;
+    if (activeElement && activeElement.id && activeElement.id.startsWith('medNotes_')) {
+        return; 
+    }
+    
     container.innerHTML = '<p class="text-center py-10" style="color: var(--muted)">جاري تحديث الطلبات...</p>';
     
-    const { data: snapshot, error } = await supabase.from('medicine_requests').select('*').in('status', ['active', 'searching', 'available', 'unavailable']); 
+    // === التعديل: جلب الطلبات التي مضى عليها أقل من 30 دقيقة فقط ===
+    const thirtyMinutesAgo = new Date(Date.now() - (30 * 60 * 1000)).toISOString();
+    const { data: snapshot, error } = await supabase.from('medicine_requests')
+        .select('*')
+        .in('status', ['active', 'searching', 'available', 'unavailable'])
+        .gt('created_at', thirtyMinutesAgo); // أكبر من (بعد) وقت قبل 30 دقيقة
+        
     if (error) { container.innerHTML = '<p class="text-center py-10 text-red-500">حدث خطأ.</p>'; return; }
     if (snapshot.length === 0) { container.innerHTML = '<p class="text-center py-10" style="color: var(--muted)">لا توجد طلبات أدوية حالياً.</p>'; return; } 
     
