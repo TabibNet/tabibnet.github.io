@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 
-const IMGBB_API_KEY = "8a92929a2c1c90634ffc7ba88f2d481d"; 
+
 const daysOfWeek = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
 let currentAnnouncement = null;
@@ -1645,12 +1645,17 @@ window.submitMedicineRequest = async (e) => {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إرسال الطلب...'; 
     try { 
         let imageUrl = '';
-        if (file) {
+                if (file) {
             const formData = new FormData(); 
             formData.append('image', file); 
-            const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData }); 
-            const imgbbData = await imgbbRes.json(); 
-            if (imgbbData.success) imageUrl = imgbbData.data.url;
+            
+            // استدعاء الدالة السرية في Supabase بدلاً من ImgBB مباشرة
+            const { data: funcData, error: funcError } = await supabase.functions.invoke('upload-image', {
+                body: formData
+            });
+            
+            if (funcError) throw funcError;
+            if (funcData && funcData.success) imageUrl = funcData.data.url;
         }
         const medRef = `MED-${Math.floor(Math.random() * 900) + 100}`; 
                 const { error } = await supabase.from('medicine_requests').insert([{ 
