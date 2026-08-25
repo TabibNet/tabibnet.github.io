@@ -34,7 +34,7 @@ let currentAdIndex = 0;
 let adInterval = null;
 let allHomeAds = [];
 let currentCity = 'all';
-let allCities = ['كل المدن', 'الرحيبة', 'قريبا', 'قريبا', 'المعضمية']; // أضف أو عدل المدن كما تريد
+let allCities = ['كل المدن', 'الرحيبة']; // أضف أو عدل المدن كما تريد
 
 // === محرك الإشعارات المركزي ===
 // === محرك الإشعارات المركزي ===
@@ -626,7 +626,7 @@ window.handleContactSubmit = (e) => {
     e.preventDefault(); const phoneInput = document.getElementById('contactPhone'); const phone = phoneInput.value.trim(); 
     if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('رقم هاتف غير صحيح'); return; } phoneInput.classList.remove('input-invalid'); 
     const name = document.getElementById('contactName').value; const type = document.getElementById('contactType').value; const message = document.getElementById('contactMessage').value; 
-    const text = `*رسالة جديدة من منصة دليل الطبي*%0A*الاسم:* ${name}%0A*الهاتف:* ${phone}%0A*النوع:* ${type}%0A*الرسالة:* ${message}`; 
+    const text = `*رسالة جديدة من منصة الدليل الطبي*%0A*الاسم:* ${name}%0A*الهاتف:* ${phone}%0A*النوع:* ${type}%0A*الرسالة:* ${message}`; 
     const adminWhatsAppNumber = "963980390813"; window.open(`https://wa.me/${adminWhatsAppNumber}?text=${text}`, '_blank'); showToast('جاري تحويلك إلى واتساب لإرسال الرسالة...'); e.target.reset(); 
 }
 
@@ -950,25 +950,39 @@ async function fetchMedRequests(pharmName) {
 }
 
 window.toggleNightShift = async (id, currentStatus) => { try { await supabase.from('listings').update({ night: currentStatus }).eq('id', id); showToast(currentStatus ? 'تم تفعيل المناوبة!' : 'تم إيقاف المناوبة.'); localStorage.setItem('force_listings_update', 'true'); } catch (e) { showToast('خطأ في التحديث'); } }
+window.updateMedStatus = async (id, status) => { try { await supabase.from('medicine_requests').update({ status: status }).eq('id', id); showToast('تم تحديث حالة الدواء'); } catch (e) { showToast('خطأ في التحديث'); } }
+window.updateMedNotes = async (id, notes) => { try { await supabase.from('medicine_requests').update({ notes: notes }).eq('id', id); showToast('تم حفظ الملاحظة'); } catch (e) { showToast('خطأ في الحفظ'); } }
 window.setMedAvailable = async (id, pharmName, patientPushId) => { 
     try { 
+        // 1. جلب الملاحظة التي كتبتها الصيدلية من حقل الإدخال
+        const noteInput = document.getElementById(`medNotes_${id}`);
+        const customNote = noteInput ? noteInput.value.trim() : '';
+        
+        // 2. دمج رسالة التوفير مع الملاحظة المكتوبة
+        let finalNotes = `الدواء متوفر لدى ${pharmName}. يرجى الحضور لاستلامه.`;
+        if (customNote) {
+            finalNotes += `\nملاحظة من الصيدلية: ${customNote}`;
+        }
+
         await supabase.from('medicine_requests').update({ 
             status: 'available', 
-            notes: `الدواء متوفر لدى ${pharmName}. يرجى الحضور لاستلامه.`, 
+            notes: finalNotes, // حفظ الرسالة والملاحظة معاً
             available_pharmacy: pharmName 
         }).eq('id', id); 
         
         // === إشعار للمريض بأن دواءه متوفر الآن ===
         if (patientPushId) {
-            sendPushNotification(null, "تم توفير دوائك ✅", `تم توفير الدواء في صيدلية ${pharmName}. يرجى الحضور لاستلامه.`, 'player', patientPushId);
+            // نرسل الملاحظة كجزء من الإشعار إذا وجدت
+            let pushMessage = `تم توفير الدواء في  ${pharmName}. يرجى الحضور لاستلامه.`;
+            if (customNote) pushMessage += ` (ملاحظة: ${customNote})`;
+            sendPushNotification(null, "تم توفير دوائك ✅", pushMessage, 'player', patientPushId);
         }
 
         showToast('تم إعلام المريض بتوفر الدواء'); 
-    } catch (e) { showToast('خطأ في التحديث'); } 
+    } catch (e) { 
+        showToast('خطأ في التحديث'); 
+    } 
 }
-window.updateMedStatus = async (id, status) => { try { await supabase.from('medicine_requests').update({ status: status }).eq('id', id); showToast('تم تحديث حالة الدواء'); } catch (e) { showToast('خطأ في التحديث'); } }
-window.updateMedNotes = async (id, notes) => { try { await supabase.from('medicine_requests').update({ notes: notes }).eq('id', id); showToast('تم حفظ الملاحظة'); } catch (e) { showToast('خطأ في الحفظ'); } }
-
 window.openDoctorLogin = async () => { 
     const { data: { session } } = await supabase.auth.getSession();
     if (session && session.user.email && session.user.email.endsWith('@tabibnet.app')) {
@@ -1143,7 +1157,8 @@ window.openDoctorScanner = (docId) => {
 
 window.fetchPatientHealthFile = async (userId, doctorData) => {
     try {
-        const { data: p, error } = await supabase.from('health_files').select('*').eq('id', userId).maybeSingle();
+        // البحث باستخدام رمز QR (qr_token) بدلاً من الـ ID الأساسي
+const { data: p, error } = await supabase.from('health_files').select('*').eq('qr_token', userId).maybeSingle();
         if (error || !p) { showToast("لم يتم العثور على ملف بهذا الرمز."); return; }
         closeCtrlPanel();
         
@@ -1667,7 +1682,7 @@ window.quickLookup = async () => {
             else if (m.status === 'available') { statusText = 'تم التوفير - جاهز للاستلام'; statusColor = '#10B981'; statusIcon = 'fa-check-circle'; }
             else if (m.status === 'unavailable') { statusText = 'غير متوفر حالياً'; statusColor = '#6B7280'; statusIcon = 'fa-times-circle'; }
             else { statusText = 'تم إنهاء الطلب'; statusColor = '#6B7280'; statusIcon = 'fa-archive'; }
-            document.getElementById('modalContent').innerHTML = `<div class="p-6 text-center"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-pills ml-2" style="color: var(--gold)"></i> حالة طلب الدواء</h3><button onclick="closeModal()" class="text-2xl">&times;</button></div><div class="text-sm text-gray-500 mb-1">رقم الطلب</div><div class="text-xl font-black text-yellow-600 mb-6">#${escapeHtml(m.med_ref)}</div><div class="p-4 rounded-xl mb-4" style="background: ${statusColor}20; color: ${statusColor};"><i class="fas ${statusIcon} text-3xl mb-2"></i><div class="font-bold text-lg">${statusText}</div></div>${m.notes ? `<div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 text-right"><b>ملاحظة الصيدلية:</b><br>${escapeHtml(m.notes)}</div>` : '<div class="text-xs text-gray-400">لا توجد ملاحظات.</div>'}</div>`;
+            document.getElementById('modalContent').innerHTML = `<div class="p-6 text-center"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-pills ml-2" style="color: var(--gold)"></i> حالة طلب الدواء</h3><button onclick="closeModal()" class="text-2xl">&times;</button></div><div class="text-sm text-gray-500 mb-1">رقم الطلب</div><div class="text-xl font-black text-yellow-600 mb-6">#${escapeHtml(m.med_ref)}</div><div class="p-4 rounded-xl mb-4" style="background: ${statusColor}20; color: ${statusColor};"><i class="fas ${statusIcon} text-3xl mb-2"></i><div class="font-bold text-lg">${statusText}</div></div> ${m.notes ? `<div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 text-right" style="white-space: pre-line;"><b>ملاحظة الصيدلية:</b><br>${escapeHtml(m.notes)}</div>` : '<div class="text-xs text-gray-400">لا توجد ملاحظات.</div>'}
             document.getElementById('modalOverlay').classList.add('active'); lockScroll();
         } else { showToast('لم يتم العثور على طلب دواء'); }
     } else { showToast('صيغة غير صحيحة. استخدم R-XXX أو MED-XXX'); }
@@ -1897,7 +1912,8 @@ window.openHealthFile = async () => {
             return; 
         } else {
             const defaultName = session.user.email ? session.user.email.split('@')[0] : 'مريض';
-            const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName }]).select().single();
+            const newQrToken = generateUniqueId() + generateUniqueId(); // رمز عشوائي
+            const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: newQrToken }]).select().single();
             if (insertError) {
                 console.error("DB Insert Error:", insertError);
                 showToast('تعذر إنشاء ملف صحي جديد: ' + insertError.message);
@@ -2026,12 +2042,16 @@ window.handleHealthLogin = async (e) => {
 };
  window.renderHealthDashboard = (data) => {
     openCtrlPanel(`الملف الصحي: ${data.full_name || 'مريض'}`,  `
-        <div class="flex flex-col gap-5">
-            <div class="bg-white p-6 rounded-2xl border-2 flex flex-col items-center" style="border-color: #EC4899;">
-                <div class="text-sm font-bold text-pink-500 mb-3">رمز الطوارئ الطبي (QR)</div>
-                <div id="qrcode" class="bg-white p-3 rounded-xl border" style="border-color: var(--border)"></div>
-                <p class="text-xs text-gray-500 mt-3 text-center">وجه الطبيب لمسح هذا الرمز للوصول لملفك فوراً دون كلمة مرور</p>
-            </div>
+        <div class="bg-white p-6 rounded-2xl border-2 flex flex-col items-center" style="border-color: #EC4899;">
+    <div class="flex items-center justify-between w-full mb-3">
+        <div class="text-sm font-bold text-pink-500">رمز الطوارئ الطبي (QR)</div>
+        <button onclick="regenerateQrToken()" class="text-[10px] bg-pink-100 text-pink-700 px-2 py-1 rounded-lg font-bold hover:bg-pink-200 transition-all">
+            <i class="fas fa-rotate ml-1"></i> تغيير الرمز
+        </button>
+       </div>
+    <div id="qrcode" class="bg-white p-3 rounded-xl border" style="border-color: var(--border)"></div>
+      <p class="text-xs text-gray-500 mt-3 text-center">وجه الطبيب لمسح هذا الرمز للوصول لملفك فوراً دون كلمة مرور</p>
+          </div>
             <form onsubmit="saveHealthProfile(event)" class="bg-white p-5 rounded-xl border grid grid-cols-1 sm:grid-cols-2 gap-3" style="border-color: var(--border)">
                 <div class="col-span-1 sm:col-span-2"><label class="text-xs font-bold text-gray-500">الاسم الكامل</label><input type="text" id="hfFullName" class="ctrl-input" value="${escapeHtml(data.full_name || data.fullName || '')}" required></div>
                 <div><label class="text-xs font-bold text-gray-500">العمر</label><input type="number" id="hfAge" class="ctrl-input" value="${escapeHtml(data.age || '')}"></div>
@@ -2102,10 +2122,12 @@ window.handleHealthLogin = async (e) => {
         </div>
     `, '#EC4899');
     
-    const qrContainer = document.getElementById('qrcode');
+        const qrContainer = document.getElementById('qrcode');
     if (qrContainer) {
         qrContainer.innerHTML = '';
-        new QRCode(qrContainer, { text: currentHealthFileId || 'null', width: 180, height: 180, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
+        // استخدام الـ token إذا كان موجوداً، وإلا نستخدم الـ ID مؤقتاً للملفات القديمة
+        const qrToken = data.qr_token || currentHealthFileId; 
+        new QRCode(qrContainer, { text: qrToken, width: 180, height: 180, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
     }
 }
 
@@ -2120,6 +2142,19 @@ window.saveHealthProfile = async (e) => {
         emergency_name: document.getElementById('hfEmergencyName').value, emergency_phone: document.getElementById('hfEmergencyPhone').value
     };
     try { await supabase.from('health_files').update(data).eq('id', currentHealthFileId); showToast('تم الحفظ!'); renderHealthDashboard(data); } catch (err) { showToast('خطأ'); }
+}
+window.regenerateQrToken = async () => {
+    if (!confirm("هل أنت متأكد من تغيير رمز QR الخاص بك؟ أي رمز قديم سيصبح غير صالح للاستخدام.")) return;
+    try {
+        const newToken = generateUniqueId() + generateUniqueId();
+        await supabase.from('health_files').update({ qr_token: newToken }).eq('id', currentHealthFileId);
+        showToast('تم تغيير رمز QR بنجاح!');
+        // إعادة تحميل اللوحة لإظهار الرمز الجديد
+        const { data: updatedFile } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
+        if (updatedFile) renderHealthDashboard(updatedFile);
+    } catch (err) {
+        showToast('حدث خطأ أثناء تغيير الرمز');
+    }
 }
 window.logoutHealthFile = async () => { 
     await supabase.auth.signOut();
