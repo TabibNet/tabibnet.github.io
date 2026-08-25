@@ -112,6 +112,10 @@ window.setupOneSignal = async () => {
     });
 };
 function generateUniqueId() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
+// دالة احترافية وآمنة جداً لتوليد رمز QR
+function generateSecureQrToken() {
+    return crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+}
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     return String(text)
@@ -1912,7 +1916,7 @@ window.openHealthFile = async () => {
             return; 
         } else {
             const defaultName = session.user.email ? session.user.email.split('@')[0] : 'مريض';
-            const newQrToken = generateUniqueId() + generateUniqueId(); // رمز عشوائي
+            const newQrToken = generateSecureQrToken(); // رمز عشوائي
             const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: newQrToken }]).select().single();
             if (insertError) {
                 console.error("DB Insert Error:", insertError);
@@ -2146,7 +2150,7 @@ window.saveHealthProfile = async (e) => {
 window.regenerateQrToken = async () => {
     if (!confirm("هل أنت متأكد من تغيير رمز QR الخاص بك؟ أي رمز قديم سيصبح غير صالح للاستخدام.")) return;
     try {
-        const newToken = generateUniqueId() + generateUniqueId();
+        const newToken = generateSecureQrToken();
         await supabase.from('health_files').update({ qr_token: newToken }).eq('id', currentHealthFileId);
         showToast('تم تغيير رمز QR بنجاح!');
         // إعادة تحميل اللوحة لإظهار الرمز الجديد
