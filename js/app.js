@@ -14,6 +14,7 @@ let currentFollowupBookingId = null;
 let tempBooking = {}; 
 let scrollLockCount = 0;
 let unsubscribeMedRequests = null; 
+let unsubscribeDocBookings = null;
 let unsubscribeMedRequestsInterval = null;
 let bloodRequests = []; 
 let medicineDonations = [];
@@ -661,6 +662,7 @@ window.closeCtrlPanel = (event) => {
     if (doctorDashboardInterval) { clearInterval(doctorDashboardInterval); doctorDashboardInterval = null; } 
     if (unsubscribeMedRequests) { supabase.removeChannel(unsubscribeMedRequests); unsubscribeMedRequests = null; } 
     if (unsubscribeMedRequestsInterval) { clearInterval(unsubscribeMedRequestsInterval); unsubscribeMedRequestsInterval = null; } 
+    if (unsubscribeDocBookings) { supabase.removeChannel(unsubscribeDocBookings); unsubscribeDocBookings = null; }
     if (activeFollowupUnsub) { clearInterval(activeFollowupUnsub); activeFollowupUnsub = null; } 
     currentFollowupBookingId = null;
 }
@@ -1041,73 +1043,105 @@ window.renderDoctorDashboard = async (doc) => {
         return;
     }
     
-    fetchBookings().then(() => {
-        const docBookings = bookings.filter(b => b.itemid === doc.id); 
-        const daysCheckboxes = daysOfWeek.map(day => `<label class="flex items-center gap-2"><input type="checkbox" name="docWorkingDays" value="${day}" class="day-checkbox" ${doc.workingdays?.includes(day) ? 'checked' : ''}><span class="text-sm">${day}</span></label>`).join(''); 
+        // === العداد التراكمي الذي لا يتنقص عند الحذف ===
+    const totalBookings = doc.total_bookings_count || 0;
+
+    const daysCheckboxes = daysOfWeek.map(day => `<label class="flex items-center gap-2"><input type="checkbox" name="docWorkingDays" value="${day}" class="day-checkbox" ${doc.workingdays?.includes(day) ? 'checked' : ''}><span class="text-sm">${day}</span></label>`).join(''); 
+    
+    openCtrlPanel(`لوحة: ${doc.name}`, `<div class="flex flex-col gap-5">
+        <div class="bg-white p-5 rounded-xl border flex items-center gap-4" style="border-color: var(--border)">
+            <img src="${escapeHtml(doc.image)}" class="w-20 h-20 rounded-2xl object-cover">
+            <div><h3 class="font-bold text-lg">${escapeHtml(doc.name)}</h3><p class="text-sm" style="color: var(--doctor)">${escapeHtml(doc.specialty)}</p></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
+                <i class="fas fa-eye text-blue-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.view_count || 0}</div><div class="text-xs text-gray-500">زيارة الملف</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
+                <i class="fas fa-calendar-check text-green-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${totalBookings || 0}</div><div class="text-xs text-gray-500">إجمالي الحجوزات</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
+                <i class="fas fa-phone-alt text-purple-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.phone_clicks || 0}</div><div class="text-xs text-gray-500">نقرات الهاتف</div>
+            </div>
+        </div>
+        <div class="bg-white p-3 rounded-xl border flex items-center justify-between gap-2 mb-3" style="border-color: var(--border);">
+            <span class="text-sm font-bold text-gray-700">حالة العمل:</span>
+            <div class="flex gap-1 bg-gray-50 p-1 rounded-lg">
+                <button onclick="setStatus('${doc.id}', true)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen === true ? 'bg-green-500 text-white shadow' : 'text-gray-500'}">مفتوح</button>
+                <button onclick="setStatus('${doc.id}', false)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen === false ? 'bg-red-500 text-white shadow' : 'text-gray-500'}">مغلق</button>
+                <button onclick="setStatus('${doc.id}', null)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen == null ? 'bg-gray-700 text-white shadow' : 'text-gray-500'}">لا شيء</button>
+            </div>
+        </div>
+        <button onclick="openDoctorScanner('${doc.id}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2" style="background: #0D9488">
+            <i class="fas fa-qrcode"></i> قراءة الملف الصحي للمريض
+        </button>
+        <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-toolbox" style="color: var(--doctor)"></i> أدوات الطبيب</h4>
+            <button onclick="openAskDoctor('${doc.name}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 mb-2" style="background: #2563EB;">
+                <i class="fas fa-comments"></i> فتح قسم اسأل طبيب
+            </button>
+            <p class="text-xs text-center text-gray-500">يمكنك إنشاء روشتة طبية إلكترونية من داخل ملف المريض بعد مسح QR.</p>
+        </div>
+        <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-week" style="color: var(--doctor)"></i> أيام العمل</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">${daysCheckboxes}</div>
+            <button onclick="saveDoctorSettings('${doc.id}')" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--doctor)">
+                <i class="fas fa-save ml-2"></i> حفظ أيام العمل
+            </button>
+        </div>
+        <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-check" style="color: var(--doctor)"></i> طلبات الحجز الواردة</h4>
+            <div id="docBookingsContainer" class="flex flex-col gap-3">
+                <p class="text-sm text-center py-4" style="color: var(--muted)">جاري تحميل الحجوزات...</p>
+            </div>
+        </div>
         
-        const bookingsListHtml = docBookings.length === 0 ? '<p class="text-sm text-center py-4" style="color: var(--muted)">لا توجد طلبات.</p>' : docBookings.map(b => { 
-            let statusBadge = ''; let actionButtons = ''; 
-            if (b.status === 'accepted') { statusBadge = `<span class="text-xs px-2 py-1 rounded block mb-1" style="background: #D1FAE5; color: #065F46">مقبول - ${escapeHtml(b.time)}</span>`; actionButtons = `<button onclick="updateBookingStatus('${b.id}', 'canceled')" class="text-xs text-white px-2 py-1 rounded bg-red-500">إلغاء</button><button onclick="updateBookingStatus('${b.id}', 'deleted')" class="text-xs text-white px-2 py-1 rounded bg-gray-800">حذف</button>`; } 
-            else if (b.status === 'canceled') { statusBadge = '<span class="text-xs px-2 py-1 rounded block mb-1" style="background: #F3F4F6; color: #4B5563">ملغي</span>'; actionButtons = `<button onclick="updateBookingStatus('${b.id}', 'pending')" class="text-xs text-white px-2 py-1 rounded bg-gray-500">استعادة</button><button onclick="updateBookingStatus('${b.id}', 'deleted')" class="text-xs text-white px-2 py-1 rounded bg-gray-800">حذف</button>`; } 
-            else { statusBadge = '<span class="text-xs px-2 py-1 rounded block mb-1" style="background: #FEF3C7; color: #92400E">طلب جديد</span>'; actionButtons = `<div class="flex flex-col gap-1 w-full"><input type="text" id="time_${b.id}" placeholder="حدد الموعد" class="ctrl-input text-sm py-1"><div class="flex gap-1"><button onclick="acceptBooking('${b.id}')" class="text-xs text-white px-2 py-1 rounded bg-green-600 flex-1">قبول</button><button onclick="updateBookingStatus('${b.id}', 'canceled')" class="text-xs text-white px-2 py-1 rounded bg-red-500">رفض</button></div></div>`; }
-            let chatHtml = '';
-            if (b.chat && b.chat.length > 0) { chatHtml = b.chat.map(msg => `<div class="text-xs p-2 rounded-lg mb-1 ${msg.sender === 'doctor' ? 'bg-blue-100 text-left' : 'bg-gray-100 text-right'}">${escapeHtml(msg.text)}</div>`).join(''); }
-            return `<div class="flex flex-col p-3 rounded-lg border mb-3" style="border-color: var(--border)"><div class="flex items-center justify-between mb-2"><div><span class="text-sm font-bold">${escapeHtml(b.name)}</span><br><span class="text-xs" style="color: var(--muted)">${escapeHtml(b.daystr)}</span></div><div>${statusBadge}<span class="text-[10px] text-gray-400">مرجع: #${escapeHtml(b.ref)}</span></div></div><div class="flex items-center justify-between border-t pt-2 mb-2" style="border-color: var(--border)"><a href="tel:${escapeHtml(b.phone)}" class="text-xs text-blue-600">${escapeHtml(b.phone)}</a><div class="flex gap-1">${actionButtons}</div></div><div class="border-t pt-2" style="border-color: var(--border)"><div class="text-xs font-bold text-gray-600 mb-1">المحادثة:</div><div class="max-h-32 overflow-y-auto mb-2 bg-gray-50 p-2 rounded-lg">${chatHtml || '<span class="text-xs text-gray-400">لا توجد رسائل</span>'}</div><div class="flex gap-1"><input type="text" id="docChat_${b.id}" placeholder="اكتب ردك..." class="ctrl-input text-sm py-1 flex-1"><button onclick="sendDocMessage('${b.id}')" class="text-xs text-white px-3 py-1 rounded bg-blue-500"><i class="fas fa-paper-plane"></i></button></div></div></div>`; 
-        }).join('');
-
-        openCtrlPanel(`لوحة: ${doc.name}`, `<div class="flex flex-col gap-5">
-            <div class="bg-white p-5 rounded-xl border flex items-center gap-4" style="border-color: var(--border)">
-                <img src="${escapeHtml(doc.image)}" class="w-20 h-20 rounded-2xl object-cover">
-                <div><h3 class="font-bold text-lg">${escapeHtml(doc.name)}</h3><p class="text-sm" style="color: var(--doctor)">${escapeHtml(doc.specialty)}</p></div>
-            </div>
-            <div class="grid grid-cols-3 gap-3">
-                <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
-                    <i class="fas fa-eye text-blue-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.view_count || 0}</div><div class="text-xs text-gray-500">زيارة الملف</div>
-                </div>
-                <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
-                    <i class="fas fa-calendar-check text-green-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${bookings.filter(b => b.itemid === doc.id).length}</div><div class="text-xs text-gray-500">إجمالي الحجوزات</div>
-                </div>
-                <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
-                    <i class="fas fa-phone-alt text-purple-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.phone_clicks || 0}</div><div class="text-xs text-gray-500">نقرات الهاتف</div>
-                </div>
-            </div>
-            <div class="bg-white p-3 rounded-xl border flex items-center justify-between gap-2 mb-3" style="border-color: var(--border);">
-                <span class="text-sm font-bold text-gray-700">حالة العمل:</span>
-                <div class="flex gap-1 bg-gray-50 p-1 rounded-lg">
-                    <button onclick="setStatus('${doc.id}', true)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen === true ? 'bg-green-500 text-white shadow' : 'text-gray-500'}">مفتوح</button>
-                    <button onclick="setStatus('${doc.id}', false)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen === false ? 'bg-red-500 text-white shadow' : 'text-gray-500'}">مغلق</button>
-                    <button onclick="setStatus('${doc.id}', null)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen == null ? 'bg-gray-700 text-white shadow' : 'text-gray-500'}">لا شيء</button>
-                </div>
-            </div>
-            <button onclick="openDoctorScanner('${doc.id}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2" style="background: #0D9488">
-                <i class="fas fa-qrcode"></i> قراءة الملف الصحي للمريض
-            </button>
-            <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
-                <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-toolbox" style="color: var(--doctor)"></i> أدوات الطبيب</h4>
-                <button onclick="openAskDoctor('${doc.name}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 mb-2" style="background: #2563EB;">
-                    <i class="fas fa-comments"></i> فتح قسم اسأل طبيب
-                </button>
-                <p class="text-xs text-center text-gray-500">يمكنك إنشاء روشتة طبية إلكترونية من داخل ملف المريض بعد مسح QR.</p>
-            </div>
-            <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
-                <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-week" style="color: var(--doctor)"></i> أيام العمل</h4>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">${daysCheckboxes}</div>
-                <button onclick="saveDoctorSettings('${doc.id}')" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--doctor)">
-                    <i class="fas fa-save ml-2"></i> حفظ أيام العمل
-                </button>
-            </div>
-            <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
-                <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-check" style="color: var(--doctor)"></i> طلبات الحجز الواردة</h4>
-                <div>${bookingsListHtml}</div>
-            </div>
-            
-            <button onclick="logoutHealthFile()" class="w-full py-3 rounded-xl border font-bold text-sm mt-4" style="border-color: #EF4444; color: #EF4444;">
-                <i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج
-            </button>
-        </div>`, '#2563EB', true); 
-    });
+        <button onclick="logoutHealthFile()" class="w-full py-3 rounded-xl border font-bold text-sm mt-4" style="border-color: #EF4444; color: #EF4444;">
+            <i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج
+        </button>
+    </div>`, '#2563EB', true); 
+    
+    // إيقاف أي اشتراك سابق
+    if (unsubscribeDocBookings) { supabase.removeChannel(unsubscribeDocBookings); }
+    
+    // جلب الحجوزات لأول مرة
+    fetchDocBookings(doc.id);
+    
+    // === التحديث اللحظي (Realtime) ===
+    unsubscribeDocBookings = supabase
+      .channel('doctor_bookings_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `itemid=eq.${doc.id}` }, payload => {
+          fetchDocBookings(doc.id);
+      })
+      .subscribe();
 }
-
+async function fetchDocBookings(docId) {
+    const container = document.getElementById('docBookingsContainer'); 
+    if (!container) return; 
+        // حماية الدردشة: إذا كان الطبيب يكتب حالياً، نؤجل التحديث
+    const activeElement = document.activeElement;
+    if (activeElement && activeElement.id && activeElement.id.startsWith('docChat_')) {
+        return; 
+    }
+    // جلب الحجوزات النشطة (استثناء المؤرشفة)
+    const { data: docBookings, error } = await supabase.from('bookings')
+        .select('*').eq('itemid', docId).neq('status', 'archived').order('created_at', { ascending: false });
+        
+    if (error || !docBookings) { container.innerHTML = '<p class="text-sm text-center py-4 text-red-500">خطأ في تحميل الحجوزات.</p>'; return; }
+    if (docBookings.length === 0) { container.innerHTML = '<p class="text-sm text-center py-4" style="color: var(--muted)">لا توجد طلبات حجز حالياً.</p>'; return; }
+    
+    const bookingsListHtml = docBookings.map(b => { 
+        let statusBadge = ''; let actionButtons = ''; 
+        if (b.status === 'accepted') { statusBadge = `<span class="text-xs px-2 py-1 rounded block mb-1" style="background: #D1FAE5; color: #065F46">مقبول - ${escapeHtml(b.time)}</span>`; actionButtons = `<button onclick="updateBookingStatus('${b.id}', 'canceled')" class="text-xs text-white px-2 py-1 rounded bg-red-500">إلغاء</button><button onclick="updateBookingStatus('${b.id}', 'deleted')" class="text-xs text-white px-2 py-1 rounded bg-gray-800">أرشفة</button>`; } 
+        else if (b.status === 'canceled') { statusBadge = '<span class="text-xs px-2 py-1 rounded block mb-1" style="background: #F3F4F6; color: #4B5563">ملغي</span>'; actionButtons = `<button onclick="updateBookingStatus('${b.id}', 'pending')" class="text-xs text-white px-2 py-1 rounded bg-gray-500">استعادة</button><button onclick="updateBookingStatus('${b.id}', 'deleted')" class="text-xs text-white px-2 py-1 rounded bg-gray-800">أرشفة</button>`; } 
+        else { statusBadge = '<span class="text-xs px-2 py-1 rounded block mb-1" style="background: #FEF3C7; color: #92400E">طلب جديد</span>'; actionButtons = `<div class="flex flex-col gap-1 w-full"><input type="text" id="time_${b.id}" placeholder="حدد الموعد" class="ctrl-input text-sm py-1"><div class="flex gap-1"><button onclick="acceptBooking('${b.id}')" class="text-xs text-white px-2 py-1 rounded bg-green-600 flex-1">قبول</button><button onclick="updateBookingStatus('${b.id}', 'canceled')" class="text-xs text-white px-2 py-1 rounded bg-red-500">رفض</button></div></div>`; }
+        let chatHtml = '';
+        if (b.chat && b.chat.length > 0) { chatHtml = b.chat.map(msg => `<div class="text-xs p-2 rounded-lg mb-1 ${msg.sender === 'doctor' ? 'bg-blue-100 text-left' : 'bg-gray-100 text-right'}">${escapeHtml(msg.text)}</div>`).join(''); }
+        return `<div class="flex flex-col p-3 rounded-lg border mb-3" style="border-color: var(--border)"><div class="flex items-center justify-between mb-2"><div><span class="text-sm font-bold">${escapeHtml(b.name)}</span><br><span class="text-xs" style="color: var(--muted)">${escapeHtml(b.daystr)}</span></div><div>${statusBadge}<span class="text-[10px] text-gray-400">مرجع: #${escapeHtml(b.ref)}</span></div></div><div class="flex items-center justify-between border-t pt-2 mb-2" style="border-color: var(--border)"><a href="tel:${escapeHtml(b.phone)}" class="text-xs text-blue-600">${escapeHtml(b.phone)}</a><div class="flex gap-1">${actionButtons}</div></div><div class="border-t pt-2" style="border-color: var(--border)"><div class="text-xs font-bold text-gray-600 mb-1">المحادثة:</div><div class="max-h-32 overflow-y-auto mb-2 bg-gray-50 p-2 rounded-lg">${chatHtml || '<span class="text-xs text-gray-400">لا توجد رسائل</span>'}</div><div class="flex gap-1"><input type="text" id="docChat_${b.id}" placeholder="اكتب ردك..." class="ctrl-input text-sm py-1 flex-1"><button onclick="sendDocMessage('${b.id}')" class="text-xs text-white px-3 py-1 rounded bg-blue-500"><i class="fas fa-paper-plane"></i></button></div></div></div>`; 
+    }).join('');
+    
+    container.innerHTML = bookingsListHtml;
+}
 window.acceptBooking = async (bookingId) => { 
     const timeInput = document.getElementById(`time_${bookingId}`); const time = timeInput.value.trim(); 
     if (!time) { showToast('أدخل وقت الموعد'); return; } 
@@ -1127,8 +1161,14 @@ window.acceptBooking = async (bookingId) => {
 }
 window.updateBookingStatus = async (bookingId, newStatus) => { 
     try { 
-        if (newStatus === 'deleted') { await supabase.from('bookings').delete().eq('id', bookingId); showToast('تم الحذف'); return; } 
-        await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId); showToast('تم التحديث'); 
+    
+        if (newStatus === 'deleted') { 
+            await supabase.from('bookings').delete().eq('id', bookingId); 
+            showToast('تم حذف الطلب نهائياً'); 
+            return; 
+        } 
+        await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId); 
+        showToast('تم التحديث'); 
     } catch (e) { showToast('خطأ'); } 
 }
 window.saveDoctorSettings = async (id) => { 
