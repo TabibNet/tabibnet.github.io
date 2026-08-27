@@ -549,10 +549,12 @@ window.openModal = (id) => {
     for (let i = 0; i < emptyStars; i++) starsHTML += '<i class="far fa-star"></i>'; 
     let extraHTML = ''; 
     
+        let extraHTML = ''; 
+    
     if (item.type === 'hospital' || item.type === 'center') {
         const primaryColor = item.type === 'hospital' ? 'teal' : 'purple';
         
-        // 1. جلب الأطباء المرتبطين (اختياري)
+        // 1. جلب الأطباء المرتبطين (parent_id)
         const facilityDoctors = allData.filter(d => d.parent_id === item.id);
         let doctorsListHtml = '';
         if (facilityDoctors.length > 0) {
@@ -562,9 +564,9 @@ window.openModal = (id) => {
                         <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-user-md text-blue-600"></i> الأطباء المتواجدون (${facilityDoctors.length})</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400"></i>
                     </div>
-                    <div class="accordion-body px-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${facilityDoctors.map(doc => `
-                            <div onclick="closeModal(); setTimeout(() => openModal('${doc.id}'), 300)" class="detail-mini-card flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-blue-200">
+                            <div onclick="closeModal(); setTimeout(() => openModal('${doc.id}'), 300)" class="detail-mini-card flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-blue-200 transition-all">
                                 <div class="flex items-center gap-3">
                                     <img src="${escapeHtml(doc.image)}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
                                     <div><div class="font-bold text-sm text-gray-800">${escapeHtml(doc.name)}</div><div class="text-xs text-gray-500">${escapeHtml(doc.specialty)}</div></div>
@@ -577,18 +579,18 @@ window.openModal = (id) => {
             `;
         }
 
-        // 2. قراءة العيادات الداخلية (اختياري)
+        // 2. قراءة العيادات الداخلية (JSONB)
         let clinicsHtml = '';
         if (item.facility_details && Array.isArray(item.facility_details) && item.facility_details.length > 0) {
             clinicsHtml = `
                 <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
                     <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onclick="toggleAccordion(this)">
-                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-stethoscope text-${primaryColor}-600"></i> العيادات الداخلية (${item.facility_details.length})</span>
+                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-stethoscope text-${primaryColor}-600"></i> العيادات الخارجية التخصصية (${item.facility_details.length})</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400"></i>
                     </div>
-                    <div class="accordion-body px-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${item.facility_details.map(clinic => `
-                            <div class="detail-mini-card flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <div class="detail-mini-card flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 transition-all">
                                 <div>
                                     <div class="text-sm font-bold text-gray-800">${escapeHtml(clinic.name)}</div>
                                     ${clinic.doctor ? `<div class="text-xs text-gray-500 mt-1"><i class="fas fa-user text-gray-400 ml-1"></i> ${escapeHtml(clinic.doctor)}</div>` : ''}
@@ -601,33 +603,75 @@ window.openModal = (id) => {
             `;
         }
 
-        // 3. بناء الواجهة النهائية للمشفى
+        // 3. الاقتراح القوي: تحويل نص الأقسام إلى بطاقات بأيقونات تلقائية
+        let departmentsGridHtml = '';
+        if (item.departments) {
+            const depts = item.departments.split('\n').filter(d => d.trim() !== '');
+            const icons = ['fa-bolt', 'fa-cut', 'fa-baby', 'fa-heart-pulse', 'fa-vials', 'fa-x-ray', 'fa-pills', 'fa-procedures', 'fa-tooth', 'fa-brain', 'fa-lungs'];
+            departmentsGridHtml = `
+                <div class="accordion-item active bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onclick="toggleAccordion(this)">
+                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-hospital-symbol text-${primaryColor}-600"></i> الأقسام الطبية والخدمية الرئيسية</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
+                    </div>
+                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${depts.map((dept, index) => `
+                            <div class="p-3 bg-gray-50 rounded-xl flex items-start gap-3">
+                                <i class="fas ${icons[index % icons.length]} text-${primaryColor}-600 text-xl mt-1 w-6 text-center"></i>
+                                <div class="text-xs font-bold text-gray-800 pt-0.5">${escapeHtml(dept)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. بناء شريط الإحصائيات السريعة (ديناميكي)
+        let statsHtml = '';
+        if (item.emergencyphone || item.floors || item.capacity_info) {
+            statsHtml = `<div class="grid grid-cols-3 gap-3 mb-5">`;
+            if (item.emergencyphone) {
+                statsHtml += `
+                    <div class="bg-red-50 p-4 rounded-xl text-center shadow-sm border border-red-100">
+                        <i class="fas fa-ambulance text-red-600 text-2xl mb-1"></i>
+                        <div class="text-xl font-black text-red-600" dir="ltr">${escapeHtml(item.emergencyphone)}</div>
+                        <div class="text-[10px] text-red-400 font-bold">طوارئ دائمة</div>
+                    </div>
+                `;
+            }
+            if (item.floors) {
+                statsHtml += `
+                    <div class="bg-white p-4 rounded-xl text-center shadow-sm border border-gray-100">
+                        <i class="fas fa-building text-${primaryColor}-600 text-2xl mb-1"></i>
+                        <div class="text-sm font-black text-gray-800 mt-2">${escapeHtml(item.floors)}</div>
+                        <div class="text-[10px] text-gray-500 font-bold mt-1">الطوابق</div>
+                    </div>
+                `;
+            } else if (item.capacity_info) {
+                 statsHtml += `
+                    <div class="bg-white p-4 rounded-xl text-center shadow-sm border border-gray-100">
+                        <i class="fas fa-users text-blue-600 text-2xl mb-1"></i>
+                        <div class="text-sm font-black text-gray-800 mt-2">متوفر 24/7</div>
+                        <div class="text-[10px] text-gray-500 font-bold mt-1">الطاقم الطبي</div>
+                    </div>
+                `;
+            }
+            statsHtml += `</div>`;
+        }
+
+        // 5. بناء الواجهة النهائية للمشفى
         extraHTML = `
-            ${item.emergencyphone ? `
-            <div class="bg-red-50 p-4 rounded-2xl border border-red-100 mb-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600 text-xl shadow-sm"><i class="fas fa-ambulance"></i></div>
-                <div><div class="text-xs text-red-400 font-bold">طوارئ على مدار الساعة</div><div class="text-xl font-black text-red-600" dir="ltr">${escapeHtml(item.emergencyphone)}</div></div>
-            </div>` : ''}
+            ${statsHtml}
+
+            ${departmentsGridHtml}
+            ${clinicsHtml}
+            ${doctorsListHtml}
 
             ${item.capacity_info ? `
-            <div class="bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-2xl p-4 mb-4">
+            <div class="bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-2xl p-4 mb-5">
                 <h4 class="font-bold text-sm text-${primaryColor}-800 flex items-center gap-2 mb-1"><i class="fas fa-users"></i> السعة الاستيعابية والكادر</h4>
                 <p class="text-xs text-${primaryColor}-700 leading-relaxed">${escapeHtml(item.capacity_info)}</p>
             </div>` : ''}
-
-            ${item.departments ? `
-            <div class="accordion-item active bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onclick="toggleAccordion(this)">
-                    <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-hospital-symbol text-${primaryColor}-600"></i> الأقسام الطبية الرئيسية</span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400"></i>
-                </div>
-                <div class="accordion-body px-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                    ${escapeHtml(item.departments)}
-                </div>
-            </div>` : ''}
-
-            ${clinicsHtml}
-            ${doctorsListHtml}
         `;
     } else if (item.type === 'doctor') { 
         extraHTML = `
