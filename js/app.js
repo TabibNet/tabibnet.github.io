@@ -554,96 +554,121 @@ window.openModal = (id) => {
         const primaryColor = item.type === 'hospital' ? 'teal' : 'purple';
         
         // بناء واجهة المشفى بنفس النمط المطلوب حرفياً
+            let extraHTML = ''; 
+    
+    if (item.type === 'hospital' || item.type === 'center') {
+        const primaryColor = item.type === 'hospital' ? 'teal' : 'purple';
+        let cData = item.facility_details || {};
+        
+        // 1. شريط الإحصائيات
+        let statsHtml = '';
+        if (cData.stats && cData.stats.length > 0) {
+            statsHtml = `<div class="grid grid-cols-3 gap-3 mb-5">`;
+            cData.stats.forEach(stat => {
+                statsHtml += `
+                    <div class="bg-white p-3 rounded-xl text-center shadow-sm border border-gray-100">
+                        <i class="fas ${stat.icon || 'fa-circle'} text-${primaryColor}-600 text-xl mb-1"></i>
+                        <div class="text-lg font-black text-gray-800">${escapeHtml(stat.value)}</div>
+                        <div class="text-[10px] text-gray-500">${escapeHtml(stat.label)}</div>
+                    </div>
+                `;
+            });
+            statsHtml += `</div>`;
+        }
+
+        // 2. أكورديون الأقسام الرئيسية
+        let deptsHtml = '';
+        if (cData.departments && cData.departments.length > 0) {
+            deptsHtml = `
+                <div class="accordion-item active bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-hospital-symbol text-${primaryColor}-600"></i> الأقسام الطبية والخدمية الرئيسية</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
+                    </div>
+                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${cData.departments.map(dept => `
+                            <div class="p-3 bg-gray-50 rounded-xl">
+                                <i class="fas ${dept.icon || 'fa-circle'} text-yellow-500 mb-1"></i>
+                                <h4 class="text-xs font-bold text-gray-800">${escapeHtml(dept.title)}</h4>
+                                <p class="text-[11px] text-gray-500 mt-1">${escapeHtml(dept.desc)}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. أكورديون العيادات الخارجية
+        let clinicsHtml = '';
+        if (cData.clinics && cData.clinics.length > 0) {
+            clinicsHtml = `
+                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-stethoscope text-blue-600"></i> العيادات الخارجية التخصصية</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
+                    </div>
+                    <div class="accordion-body p-4 pt-0 text-sm text-gray-600 space-y-3">
+                        ${cData.clinics.map(clinic => `
+                            <div><strong class="text-gray-800 block mb-1 text-xs">${escapeHtml(clinic.title)}</strong> ${escapeHtml(clinic.desc)}</div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. أكورديون الوحدات الحرجة
+        let unitsHtml = '';
+        if (cData.units && cData.units.length > 0) {
+            unitsHtml = `
+                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-procedures text-red-600"></i> الوحدات الحرجة الإضافية</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
+                    </div>
+                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${cData.units.map(unit => `
+                            <div class="p-3 bg-red-50 rounded-xl">
+                                <h4 class="text-xs font-bold text-red-800">${escapeHtml(unit.title)}</h4>
+                                <p class="text-[11px] text-red-600 mt-1">${escapeHtml(unit.desc)}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 5. أكورديون الخدمات المساندة
+        let servicesHtml = '';
+        if (cData.services && cData.services.length > 0) {
+            servicesHtml = `
+                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-pills text-green-600"></i> الخدمات الطبية المساندة</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
+                    </div>
+                    <div class="accordion-body p-4 pt-0 text-xs text-gray-600 space-y-2">
+                        ${cData.services.map(serv => `
+                            <p><i class="fas fa-check-circle text-green-500 ml-1"></i> <strong>${escapeHtml(serv.title)}:</strong> ${escapeHtml(serv.desc)}</p>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // بناء الواجهة النهائية للمشفى
         extraHTML = `
-            <!-- شريط الإحصائيات السريعة -->
-            <div class="grid grid-cols-3 gap-3 mb-5">
-                <div class="bg-white p-3 rounded-xl text-center shadow-sm border border-gray-100">
-                    <i class="fas fa-bed text-${primaryColor}-600 text-xl mb-1"></i>
-                    <div class="text-lg font-black text-gray-800">93</div>
-                    <div class="text-[10px] text-gray-500">سرير للإقامة</div>
-                </div>
-                <div class="bg-white p-3 rounded-xl text-center shadow-sm border border-gray-100">
-                    <i class="fas fa-user-md text-blue-600 text-xl mb-1"></i>
-                    <div class="text-lg font-black text-gray-800">+120</div>
-                    <div class="text-[10px] text-gray-500">طبيب وممرض</div>
-                </div>
-                <div class="bg-red-50 p-3 rounded-xl text-center shadow-sm border border-red-100">
-                    <i class="fas fa-ambulance text-red-600 text-xl mb-1"></i>
-                    <div class="text-lg font-black text-red-600">24/7</div>
-                    <div class="text-[10px] text-red-400">طوارئ دائمة</div>
-                </div>
-            </div>
-
-            <!-- الأكورديون 1: الأقسام الطبية الرئيسية -->
-            <div class="accordion-item active bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
-                    <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-hospital-symbol text-${primaryColor}-600"></i> الأقسام الطبية والخدمية الرئيسية</span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
-                </div>
-                <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="p-3 bg-gray-50 rounded-xl"><i class="fas fa-bolt text-yellow-500 mb-1"></i><h4 class="text-xs font-bold">الإسعاف والطوارئ</h4><p class="text-[11px] text-gray-500">يعمل على مدار 24 ساعة لاستقبال الحالات الحرجة.</p></div>
-                    <div class="p-3 bg-gray-50 rounded-xl"><i class="fas fa-cut text-teal-500 mb-1"></i><h4 class="text-xs font-bold">العمليات الجراحية</h4><p class="text-[11px] text-gray-500">غرف عمليات مجهزة للجراحات العامة والنوعية.</p></div>
-                    <div class="p-3 bg-gray-50 rounded-xl"><i class="fas fa-baby text-pink-500 mb-1"></i><h4 class="text-xs font-bold">التوليد والنسائية</h4><p class="text-[11px] text-gray-500">أجنحة للولادات الطبيعية والقيصرية.</p></div>
-                    <div class="p-3 bg-gray-50 rounded-xl"><i class="fas fa-heart-pulse text-red-500 mb-1"></i><h4 class="text-xs font-bold">العناية المشددة (ICU)</h4><p class="text-[11px] text-gray-500">مراقبة الحالات الطبية الحرجة بدقة.</p></div>
-                    <div class="p-3 bg-gray-50 rounded-xl"><i class="fas fa-vials text-purple-500 mb-1"></i><h4 class="text-xs font-bold">المخبر المركزي</h4><p class="text-[11px] text-gray-500">إجراء التحاليل الطبية بمختلف أنواعها.</p></div>
-                    <div class="p-3 bg-gray-50 rounded-xl"><i class="fas fa-x-ray text-indigo-500 mb-1"></i><h4 class="text-xs font-bold">قسم الأشعة</h4><p class="text-[11px] text-gray-500">رنين مغناطيسي، طبقي محوري، وإيكو.</p></div>
-                </div>
-            </div>
-
-            <!-- الأكورديون 2: العيادات الخارجية -->
-            <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
-                    <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-stethoscope text-blue-600"></i> العيادات الخارجية التخصصية</span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
-                </div>
-                <div class="accordion-body p-4 pt-0 text-sm text-gray-600 space-y-3">
-                    <div><strong class="text-gray-800 block mb-1 text-xs">1. العيادات الجراحية:</strong> جراحة عامة، عظمية، عصبية، فكية، وبولية.</div>
-                    <div><strong class="text-gray-800 block mb-1 text-xs">2. العيادات الباطنية:</strong> باطنة عامة، قلبية، صدرية، هضمية وتنظير، غدد صم.</div>
-                    <div><strong class="text-gray-800 block mb-1 text-xs">3. عيادات أخرى:</strong> أطفال، نسائية، عينية، أذنية (أذن وأنف وحنجرة)، ومعالجة فيزيائية.</div>
-                    <p class="text-[11px] text-gray-400 mt-2">تستقبل العيادات المرضى وفق برنامج دوري من الأحد إلى الخميس.</p>
-                </div>
-            </div>
-
-            <!-- الأكورديون 3: الوحدات الحرجة -->
-            <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
-                    <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-procedures text-red-600"></i> الوحدات الحرجة الإضافية</span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
-                </div>
-                <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="p-3 bg-red-50 rounded-xl"><h4 class="text-xs font-bold text-red-800">غسيل الكلى (كلية صناعية)</h4><p class="text-[11px] text-red-600">أجهزة حديثة لمرضى الفشل الكلوي.</p></div>
-                    <div class="p-3 bg-red-50 rounded-xl"><h4 class="text-xs font-bold text-red-800">حواضن الوليد (NICU)</h4><p class="text-[11px] text-red-600">للخدج وحديثي الولادة.</p></div>
-                    <div class="p-3 bg-red-50 rounded-xl"><h4 class="text-xs font-bold text-red-800">بنك الدم</h4><p class="text-[11px] text-red-600">تأمين زمر الدم للحالات الطارئة.</p></div>
-                    <div class="p-3 bg-red-50 rounded-xl"><h4 class="text-xs font-bold text-red-800">غرفة الإنعاش</h4><p class="text-[11px] text-red-600">استعادة الاستقرار الفوري للعلامات الحيوية.</p></div>
-                </div>
-            </div>
-
-            <!-- الأكورديون 4: الخدمات المساندة -->
-            <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
-                    <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-pills text-green-600"></i> الخدمات الطبية المساندة</span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
-                </div>
-                <div class="accordion-body p-4 pt-0 text-xs text-gray-600 space-y-2">
-                    <p><i class="fas fa-check-circle text-green-500 ml-1"></i> <strong>الصيدلية الداخلية:</strong> توزيع الأدوية الإسعافية والمستلزمات المجانية.</p>
-                    <p><i class="fas fa-check-circle text-green-500 ml-1"></i> <strong>قسم التعقيم المركزي:</strong> وفق معايير وزارة الصحة.</p>
-                    <p><i class="fas fa-check-circle text-green-500 ml-1"></i> <strong>قسم الطبابة الشرعية:</strong> للتعامل مع الحالات القضائية وحوادث السير.</p>
-                </div>
-            </div>
+            ${statsHtml}
+            ${deptsHtml}
+            ${clinicsHtml}
+            ${unitsHtml}
+            ${servicesHtml}
         `;
     } else if (item.type === 'doctor') { 
-        extraHTML = `
-            ${item.bookingnotes ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-info-circle" style="color: var(--doctor)"></i><div><div class="text-xs" style="color: var(--muted)">تفاصيل إضافية</div><div class="text-sm font-bold">${escapeHtml(item.bookingnotes)}</div></div></div>` : ''}
-        `;
+        extraHTML = `${item.bookingnotes ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-info-circle" style="color: var(--doctor)"></i><div><div class="text-xs" style="color: var(--muted)">تفاصيل إضافية</div><div class="text-sm font-bold">${escapeHtml(item.bookingnotes)}</div></div></div>` : ''}`;
     } else if (item.type === 'lab') {
-        extraHTML = `
-            ${item.tests ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: #FEE2E2"><i class="fas fa-vials" style="color: var(--lab)"></i><div><div class="text-xs" style="color: var(--muted)">نوع التحاليل والخدمات</div><div class="text-sm font-bold" style="color: var(--lab)">${escapeHtml(item.tests)}</div></div></div>` : ''}
-            ${item.homesample && item.homesample !== 'لا' ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: #D1FAE5"><i class="fas fa-house-user" style="color: #059669"></i><div><div class="text-xs" style="color: var(--muted)">خدمة سحب العينات من المنزل</div><div class="text-sm font-bold" style="color: #059669">متوفرة</div></div></div>` : ''}
-        `;
+        extraHTML = `${item.tests ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: #FEE2E2"><i class="fas fa-vials" style="color: var(--lab)"></i><div><div class="text-xs" style="color: var(--muted)">نوع التحاليل والخدمات</div><div class="text-sm font-bold" style="color: var(--lab)">${escapeHtml(item.tests)}</div></div></div>` : ''}${item.homesample && item.homesample !== 'لا' ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: #D1FAE5"><i class="fas fa-house-user" style="color: #059669"></i><div><div class="text-xs" style="color: var(--muted)">خدمة سحب العينات من المنزل</div><div class="text-sm font-bold" style="color: #059669">متوفرة</div></div></div>` : ''}`;
     } else if (item.type === 'pharmacy') {
-        extraHTML = `
-            ${item.night ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--gold-light)"><i class="fas fa-moon" style="color: var(--gold)"></i><div><div class="text-xs" style="color: var(--muted)">المناوبة</div><div class="text-sm font-bold" style="color: var(--gold)">${escapeHtml(item.nightdetails || 'صيدلية مناوبة ليلية')}</div></div></div>` : ''}
-        `;
+        extraHTML = `${item.night ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--gold-light)"><i class="fas fa-moon" style="color: var(--gold)"></i><div><div class="text-xs" style="color: var(--muted)">المناوبة</div><div class="text-sm font-bold" style="color: var(--gold)">${escapeHtml(item.nightdetails || 'صيدلية مناوبة ليلية')}</div></div></div>` : ''}`;
     }
 
     const canBook = item.type === 'doctor' && item.is_subscribed; 
@@ -1854,14 +1879,72 @@ window.logoutAdmin = async () => {
 }
 window.updateAdminFormFields = (type) => {
     let html = '';
-    // المشفى والمركز لم يعد يحتاج حقول مخصصة، فقط الحقول الأساسية (الاسم، الهاتف، إلخ)
-    if (type === 'doctor') html = `<input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة"><input type="text" id="new_extra" class="ctrl-input text-sm" placeholder="تفاصيل إضافية">`;
-    else if (type === 'lab') html = `<input type="text" id="new_extra" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="نوع التحاليل"><select id="new_home_sample" class="ctrl-input text-sm"><option value="لا">لا يوجد سحب منزلي</option><option value="نعم">يوجد سحب منزلي</option></select>`;
-    else if (type === 'pharmacy') html = `<input type="text" id="new_night_details" class="ctrl-input text-sm" placeholder="تفاصيل المناوبة"><input type="text" id="new_extra" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="ملاحظات">`;
+    if (type === 'hospital' || type === 'center') {
+        html = `
+            <input type="text" id="new_capacity_info" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="معلومات السعة الاستيعابية (اختياري)">
+            
+            <div class="col-span-1 sm:col-span-2 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <h4 class="font-bold text-sm mb-3 text-gray-700">شريط الإحصائيات السريعة</h4>
+                <div id="statsContainer" class="grid grid-cols-1 gap-2"></div>
+                <button type="button" onclick="addAdminRow('statsContainer', ['icon', 'value', 'label'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-teal-600 border-teal-500 hover:bg-teal-50">+ إضافة إحصائية</button>
+            </div>
+            
+            <div class="col-span-1 sm:col-span-2 p-4 border-t border-dashed" style="border-color: var(--border);">
+                <h4 class="font-bold text-sm mb-2 text-gray-700">الأقسام الطبية الرئيسية</h4>
+                <div id="deptContainer" class="flex flex-col gap-2"></div>
+                <button type="button" onclick="addAdminRow('deptContainer', ['icon', 'title', 'desc'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-teal-600 border-teal-500 hover:bg-teal-50">+ إضافة قسم</button>
+            </div>
+            
+            <div class="col-span-1 sm:col-span-2 p-4 border-t border-dashed" style="border-color: var(--border);">
+                <h4 class="font-bold text-sm mb-2 text-gray-700">العيادات الخارجية</h4>
+                <div id="clinicContainer" class="flex flex-col gap-2"></div>
+                <button type="button" onclick="addAdminRow('clinicContainer', ['title', 'desc'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-blue-600 border-blue-500 hover:bg-blue-50">+ إضافة عيادة</button>
+            </div>
+            
+            <div class="col-span-1 sm:col-span-2 p-4 border-t border-dashed" style="border-color: var(--border);">
+                <h4 class="font-bold text-sm mb-2 text-gray-700">الوحدات الحرجة</h4>
+                <div id="unitContainer" class="flex flex-col gap-2"></div>
+                <button type="button" onclick="addAdminRow('unitContainer', ['title', 'desc'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-red-600 border-red-500 hover:bg-red-50">+ إضافة وحدة</button>
+            </div>
+
+            <div class="col-span-1 sm:col-span-2 p-4 border-t border-dashed" style="border-color: var(--border);">
+                <h4 class="font-bold text-sm mb-2 text-gray-700">الخدمات المساندة</h4>
+                <div id="servContainer" class="flex flex-col gap-2"></div>
+                <button type="button" onclick="addAdminRow('servContainer', ['title', 'desc'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-green-600 border-green-500 hover:bg-green-50">+ إضافة خدمة</button>
+            </div>
+        `;
+    } else if (type === 'doctor') {
+        html = `<input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة"><input type="text" id="new_parent_id" class="ctrl-input text-sm" placeholder="ID المشفى التابع له (اختياري)"><input type="text" id="new_extra" class="ctrl-input text-sm" placeholder="تفاصيل إضافية">`;
+    } else if (type === 'lab') {
+        html = `<input type="text" id="new_extra" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="نوع التحاليل"><select id="new_home_sample" class="ctrl-input text-sm"><option value="لا">لا يوجد سحب منزلي</option><option value="نعم">يوجد سحب منزلي</option></select>`;
+    } else if (type === 'pharmacy') {
+        html = `<input type="text" id="new_night_details" class="ctrl-input text-sm" placeholder="تفاصيل المناوبة"><input type="text" id="new_extra" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="ملاحظات">`;
+    }
     
     html += '<input type="text" id="new_latlng" class="ctrl-input text-sm col-span-1 sm:col-span-2 mt-2" placeholder="إحداثيات الموقع (33.5, 36.3)">';
     document.getElementById('adminExtraFields').innerHTML = html;
 }
+
+// دالة مساعدة لإنشاء صفوف الإدخال في لوحة التحكم
+window.addAdminRow = (containerId, fields) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'flex gap-2 items-center';
+    
+    let innerHtml = '';
+    fields.forEach(field => {
+        if (field === 'icon') innerHtml += `<input type="text" class="row-icon ctrl-input text-xs w-24" placeholder="أيقونة (fa-bolt)">`;
+        if (field === 'value') innerHtml += `<input type="text" class="row-value ctrl-input text-xs w-24" placeholder="القيمة (93)">`;
+        if (field === 'label') innerHtml += `<input type="text" class="row-label ctrl-input text-xs flex-1" placeholder="الوصف (سرير)">`;
+        if (field === 'title') innerHtml += `<input type="text" class="row-title ctrl-input text-xs flex-1" placeholder="العنوان">`;
+        if (field === 'desc') innerHtml += `<input type="text" class="row-desc ctrl-input text-xs flex-1" placeholder="الوصف">`;
+    });
+    innerHtml += `<button type="button" onclick="this.parentElement.remove()" class="text-red-500 px-2"><i class="fas fa-times"></i></button>`;
+    
+    row.innerHTML = innerHtml;
+    container.appendChild(row);
+};
 
 window.renderAdminDashboard = async () => { 
     const { data: { session } } = await supabase.auth.getSession();
@@ -1965,11 +2048,25 @@ window.editFacility = (id) => {
         document.getElementById('new_phone').value = item.phone; 
         document.getElementById('new_hours').value = item.hours; 
         document.getElementById('new_desc').value = item.description; 
+
+            if (item.type === 'hospital' || item.type === 'center') { 
+        if(document.getElementById('new_capacity_info')) document.getElementById('new_capacity_info').value = item.capacity_info || '';
         
-        if (item.type === 'doctor') { 
-            document.getElementById('new_consult_hours').value = item.consulthours || ''; 
-            document.getElementById('new_extra').value = item.bookingnotes || ''; 
-        } 
+        if (item.facility_details) {
+            const cData = item.facility_details;
+            if (cData.stats) cData.stats.forEach(s => { addAdminRow('statsContainer', ['icon', 'value', 'label']); const lastRow = document.querySelector('#statsContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-icon').value = s.icon || ''; lastRow.querySelector('.row-value').value = s.value || ''; lastRow.querySelector('.row-label').value = s.label || ''; } });
+            if (cData.departments) cData.departments.forEach(d => { addAdminRow('deptContainer', ['icon', 'title', 'desc']); const lastRow = document.querySelector('#deptContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-icon').value = d.icon || ''; lastRow.querySelector('.row-title').value = d.title || ''; lastRow.querySelector('.row-desc').value = d.desc || ''; } });
+            if (cData.clinics) cData.clinics.forEach(c => { addAdminRow('clinicContainer', ['title', 'desc']); const lastRow = document.querySelector('#clinicContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-title').value = c.title || ''; lastRow.querySelector('.row-desc').value = c.desc || ''; } });
+            if (cData.units) cData.units.forEach(u => { addAdminRow('unitContainer', ['title', 'desc']); const lastRow = document.querySelector('#unitContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-title').value = u.title || ''; lastRow.querySelector('.row-desc').value = u.desc || ''; } });
+            if (cData.services) cData.services.forEach(s => { addAdminRow('servContainer', ['title', 'desc']); const lastRow = document.querySelector('#servContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-title').value = s.title || ''; lastRow.querySelector('.row-desc').value = s.desc || ''; } });
+        }
+    } 
+    else if (item.type === 'doctor') { 
+        document.getElementById('new_consult_hours').value = item.consulthours || ''; 
+        document.getElementById('new_extra').value = item.bookingnotes || ''; 
+        if(document.getElementById('new_parent_id')) document.getElementById('new_parent_id').value = item.parent_id || '';
+    } 
+        
         else if (item.type === 'pharmacy') { 
             document.getElementById('new_night_details').value = item.nightdetails || ''; 
             document.getElementById('new_extra').value = item.description || ''; 
@@ -2026,16 +2123,40 @@ window.saveFacility = async (e) => {
         if (authError) { showToast('خطأ في إنشاء حساب الصيدلية: ' + authError.message); return; }
     } 
     
-    if (type === 'hospital' || type === 'center') { 
+         if (type === 'hospital' || type === 'center') { 
         data.specialty = specialty; 
         data.address = address; 
+        data.capacity_info = document.getElementById('new_capacity_info')?.value || '';
+        
+        // جمع البيانات المركبة (facility_details)
+        let facilityData = { stats: [], departments: [], clinics: [], units: [], services: [] };
+        
+        document.querySelectorAll('#statsContainer > div').forEach(row => {
+            facilityData.stats.push({ icon: row.querySelector('.row-icon')?.value, value: row.querySelector('.row-value')?.value, label: row.querySelector('.row-label')?.value });
+        });
+        document.querySelectorAll('#deptContainer > div').forEach(row => {
+            facilityData.departments.push({ icon: row.querySelector('.row-icon')?.value, title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
+        });
+        document.querySelectorAll('#clinicContainer > div').forEach(row => {
+            facilityData.clinics.push({ title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
+        });
+        document.querySelectorAll('#unitContainer > div').forEach(row => {
+            facilityData.units.push({ title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
+        });
+        document.querySelectorAll('#servContainer > div').forEach(row => {
+            facilityData.services.push({ title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
+        });
+        
+        data.facility_details = facilityData;
     } 
     else if (type === 'doctor') { 
         data.specialty = specialty; 
         data.clinic = address; 
         data.consulthours = document.getElementById('new_consult_hours')?.value || ''; 
         data.bookingnotes = document.getElementById('new_extra')?.value || ''; 
+        data.parent_id = document.getElementById('new_parent_id')?.value || '';
     } 
+    
     else if (type === 'pharmacy') { 
         data.address = address; 
         data.night = false; 
