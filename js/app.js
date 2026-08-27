@@ -548,10 +548,6 @@ window.openModal = (id) => {
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0); 
     for (let i = 0; i < emptyStars; i++) starsHTML += '<i class="far fa-star"></i>'; 
     
-        let extraHTML = ''; 
-    
-    if (item.type === 'hospital' || item.type === 'center') {
-        const primaryColor = item.type === 'hospital' ? 'teal' : 'purple';
         
         // بناء واجهة المشفى بنفس النمط المطلوب حرفياً
             let extraHTML = ''; 
