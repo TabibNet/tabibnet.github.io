@@ -522,7 +522,6 @@ window.selectCity = (city) => {
     renderData();
 };  
 window.resetSearch = () => { searchQuery = ''; currentFilter = 'all'; const heroSearch = document.getElementById('heroSearch'); if(heroSearch) heroSearch.value = ''; document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('active'); b.style.background = ''; b.style.color = ''; b.style.borderColor = ''; }); const allBtn = document.querySelector('[data-filter="all"]'); allBtn.classList.add('active'); allBtn.style.background = 'var(--accent)'; allBtn.style.color = 'white'; allBtn.style.borderColor = 'var(--accent)'; renderData(); }
-
 window.openModal = (id) => { 
     const item = allData.find(d => d.id === id);
     if (!item) return;
@@ -548,53 +547,54 @@ window.openModal = (id) => {
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0); 
     for (let i = 0; i < emptyStars; i++) starsHTML += '<i class="far fa-star"></i>'; 
     
-        
-        // بناء واجهة المشفى بنفس النمط المطلوب حرفياً
-            let extraHTML = ''; 
-        if (item.type === 'hospital' || item.type === 'center') {
+    let extraHTML = ''; 
+    let doctorsListHtml = ''; // متغير مستقل للأطباء لوضعه أسفل البطاقة وأعلى الخريطة
+    
+    if (item.type === 'hospital' || item.type === 'center') {
         const primaryColor = item.type === 'hospital' ? 'teal' : 'purple';
         let cData = item.facility_details || {};
         
-        // 1. شريط الإحصائيات
+        // 1. شريط الإحصائيات الأنيق
         let statsHtml = '';
         if (cData.stats && cData.stats.length > 0) {
-            statsHtml = `<div class="grid grid-cols-3 gap-3 mb-5">`;
+            statsHtml = `<div class="grid grid-cols-3 gap-3 mb-4">`;
             cData.stats.forEach(stat => {
                 statsHtml += `
-                    <div class="bg-white p-3 rounded-xl text-center shadow-sm border border-gray-100">
-                        <i class="fas ${stat.icon || 'fa-circle'} text-${primaryColor}-600 text-xl mb-1"></i>
+                    <div class="bg-white p-3 rounded-xl text-center shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                        <i class="fas ${stat.icon || 'fa-circle'} text-${primaryColor}-600 text-xl mb-2"></i>
                         <div class="text-lg font-black text-gray-800">${escapeHtml(stat.value)}</div>
-                        <div class="text-[10px] text-gray-500">${escapeHtml(stat.label)}</div>
+                        <div class="text-[10px] text-gray-500 mt-1">${escapeHtml(stat.label)}</div>
                     </div>
                 `;
             });
             statsHtml += `</div>`;
         }
 
-        // 2. السعة الاستيعابية (تمت إضافتها هنا لضمان ظهورها)
+        // 2. معلومات السعة الاستيعابية
         let capacityHtml = '';
         if (item.capacity_info) {
             capacityHtml = `
-                <div class="bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-2xl p-4 mb-4">
-                    <h4 class="font-bold text-sm text-${primaryColor}-800 flex items-center gap-2 mb-1"><i class="fas fa-users"></i> السعة الاستيعابية والكادر</h4>
-                    <p class="text-xs text-${primaryColor}-700 leading-relaxed">${escapeHtml(item.capacity_info)}</p>
+                <div class="bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-2xl p-4 mb-4 flex items-start gap-3">
+                    <i class="fas fa-users text-${primaryColor}-600 text-xl mt-1"></i>
+                    <div>
+                        <h4 class="font-bold text-sm text-${primaryColor}-800 mb-1">السعة الاستيعابية والكادر</h4>
+                        <p class="text-xs text-${primaryColor}-700 leading-relaxed">${escapeHtml(item.capacity_info)}</p>
+                    </div>
                 </div>
             `;
         }
 
-        // 3. جلب الأطباء المرتبطين (عبر parent_id)
+        // 3. الأطباء المرتبطين (يتم وضعهم في متغير مستقل لعرضهم أسفل البطاقة وأعلى الخريطة)
         const facilityDoctors = allData.filter(d => d.parent_id === item.id);
-        let doctorsListHtml = '';
         if (facilityDoctors.length > 0) {
             doctorsListHtml = `
-                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
-                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-user-md text-blue-600"></i> الأطباء المتواجدون (${facilityDoctors.length})</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
-                    </div>
-                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-white p-4 mt-5 rounded-2xl border" style="border-color: var(--border);">
+                    <h4 class="font-bold text-sm mb-3 flex items-center gap-2" style="color: var(--fg);">
+                        <i class="fas fa-user-md text-blue-600"></i> الأطباء المتواجدون داخل المنشأة (${facilityDoctors.length})
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${facilityDoctors.map(doc => `
-                            <div onclick="closeModal(); setTimeout(() => openModal('${doc.id}'), 300)" class="detail-mini-card flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-blue-200 transition-all">
+                            <div onclick="closeModal(); setTimeout(() => openModal('${doc.id}'), 300)" class="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-blue-200 transition-all">
                                 <div class="flex items-center gap-3">
                                     <img src="${escapeHtml(doc.image)}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
                                     <div><div class="font-bold text-sm text-gray-800">${escapeHtml(doc.name)}</div><div class="text-xs text-gray-500">${escapeHtml(doc.specialty)}</div></div>
@@ -611,17 +611,19 @@ window.openModal = (id) => {
         let deptsHtml = '';
         if (cData.departments && cData.departments.length > 0) {
             deptsHtml = `
-                <div class="accordion-item active bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                <div class="accordion-item active bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onclick="toggleAccordion(this)">
                         <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-hospital-symbol text-${primaryColor}-600"></i> الأقسام الطبية والخدمية الرئيسية</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
                     </div>
                     <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${cData.departments.map(dept => `
-                            <div class="p-3 bg-gray-50 rounded-xl">
-                                <i class="fas ${dept.icon || 'fa-circle'} text-yellow-500 mb-1"></i>
-                                <h4 class="text-xs font-bold text-gray-800">${escapeHtml(dept.title)}</h4>
-                                <p class="text-[11px] text-gray-500 mt-1">${escapeHtml(dept.desc)}</p>
+                            <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-3">
+                                <i class="fas ${dept.icon || 'fa-circle'} text-yellow-500 text-lg mt-1"></i>
+                                <div>
+                                    <h4 class="text-sm font-bold text-gray-800">${escapeHtml(dept.title)}</h4>
+                                    <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">${escapeHtml(dept.desc)}</p>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -629,38 +631,20 @@ window.openModal = (id) => {
             `;
         }
 
-        // 5. أكورديون العيادات الخارجية
-        let clinicsHtml = '';
-        if (cData.clinics && cData.clinics.length > 0) {
-            clinicsHtml = `
-                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
-                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-stethoscope text-blue-600"></i> العيادات الخارجية التخصصية</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
-                    </div>
-                    <div class="accordion-body p-4 pt-0 text-sm text-gray-600 space-y-3">
-                        ${cData.clinics.map(clinic => `
-                            <div><strong class="text-gray-800 block mb-1 text-xs">${escapeHtml(clinic.title)}</strong> ${escapeHtml(clinic.desc)}</div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        // 6. أكورديون الوحدات الحرجة
+        // 5. أكورديون الوحدات الحرجة
         let unitsHtml = '';
         if (cData.units && cData.units.length > 0) {
             unitsHtml = `
-                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onclick="toggleAccordion(this)">
                         <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-procedures text-red-600"></i> الوحدات الحرجة الإضافية</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
                     </div>
                     <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${cData.units.map(unit => `
-                            <div class="p-3 bg-red-50 rounded-xl">
-                                <h4 class="text-xs font-bold text-red-800">${escapeHtml(unit.title)}</h4>
-                                <p class="text-[11px] text-red-600 mt-1">${escapeHtml(unit.desc)}</p>
+                            <div class="p-3 bg-red-50 rounded-xl border border-red-100">
+                                <h4 class="text-sm font-bold text-red-800">${escapeHtml(unit.title)}</h4>
+                                <p class="text-[11px] text-red-600 mt-1 leading-relaxed">${escapeHtml(unit.desc)}</p>
                             </div>
                         `).join('')}
                     </div>
@@ -668,33 +652,34 @@ window.openModal = (id) => {
             `;
         }
 
-        // 7. أكورديون الخدمات المساندة
+        // 6. أكورديون الخدمات المساندة
         let servicesHtml = '';
         if (cData.services && cData.services.length > 0) {
             servicesHtml = `
-                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onclick="toggleAccordion(this)">
                         <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-pills text-green-600"></i> الخدمات الطبية المساندة</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
                     </div>
-                    <div class="accordion-body p-4 pt-0 text-xs text-gray-600 space-y-2">
+                    <div class="accordion-body p-4 pt-0 flex flex-col gap-2">
                         ${cData.services.map(serv => `
-                            <p><i class="fas fa-check-circle text-green-500 ml-1"></i> <strong>${escapeHtml(serv.title)}:</strong> ${escapeHtml(serv.desc)}</p>
+                            <div class="flex items-start gap-2 text-xs text-gray-600">
+                                <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                <div><strong class="text-gray-800">${escapeHtml(serv.title)}:</strong> ${escapeHtml(serv.desc)}</div>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
             `;
         }
 
-        // بناء الواجهة النهائية للمشفى
+        // دمج العناصر داخل extraHTML (بدون الأطباء)
         extraHTML = `
             ${statsHtml}
             ${capacityHtml}
             ${deptsHtml}
-            ${clinicsHtml}
             ${unitsHtml}
             ${servicesHtml}
-            ${doctorsListHtml}
         `;
     } else if (item.type === 'doctor') { 
         extraHTML = `${item.bookingnotes ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-info-circle" style="color: var(--doctor)"></i><div><div class="text-xs" style="color: var(--muted)">تفاصيل إضافية</div><div class="text-sm font-bold">${escapeHtml(item.bookingnotes)}</div></div></div>` : ''}`;
@@ -703,13 +688,13 @@ window.openModal = (id) => {
     } else if (item.type === 'pharmacy') {
         extraHTML = `${item.night ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--gold-light)"><i class="fas fa-moon" style="color: var(--gold)"></i><div><div class="text-xs" style="color: var(--muted)">المناوبة</div><div class="text-sm font-bold" style="color: var(--gold)">${escapeHtml(item.nightdetails || 'صيدلية مناوبة ليلية')}</div></div></div>` : ''}`;
     }
-    
 
     const canBook = item.type === 'doctor' && item.is_subscribed; 
-let bookingBtnModal = ''; 
-if (canBook) {
-    bookingBtnModal = `<button onclick="openBookingModal('${escapeHtml(item.id)}')" class="flex-1 py-3.5 rounded-xl text-white text-sm font-bold text-center flex items-center justify-center gap-2" style="background: var(--accent)"><i class="fas fa-calendar-check"></i> طلب موعد</button>`;
-}
+    let bookingBtnModal = ''; 
+    if (canBook) {
+        bookingBtnModal = `<button onclick="openBookingModal('${escapeHtml(item.id)}')" class="flex-1 py-3.5 rounded-xl text-white text-sm font-bold text-center flex items-center justify-center gap-2" style="background: var(--accent)"><i class="fas fa-calendar-check"></i> طلب موعد</button>`;
+    }
+    
     const mapQuery = item.latlng || ((item.address || item.clinic) + ' الرحيبة سوريا');
     const mapEmbed = (mapQuery) ? `
     <div class="mt-5 rounded-2xl overflow-hidden border-2" style="border-color: var(--border)">
@@ -724,7 +709,10 @@ if (canBook) {
         </div>
         <iframe width="100%" height="220" frameborder="0" style="border:0; display: block;" src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=16&output=embed" allowfullscreen loading="lazy"></iframe>
     </div>` : '';
-    document.getElementById('modalContent').innerHTML = `<div class="relative h-48 overflow-hidden rounded-t-2xl"><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src)"><div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent)"></div><button onclick="closeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-all"><i class="fas fa-times text-sm"></i></button><div class="absolute bottom-4 right-5 left-5"><span class="badge ${t.badgeClass} mb-2 inline-block">${t.label}</span><h3 class="text-white font-bold text-lg" style="font-family: 'Noto Kufi Arabic'">${escapeHtml(item.name)}</h3></div></div><div class="p-6"><div class="flex items-center gap-2 mb-4"><div class="flex items-center gap-0.5 text-sm" style="color: ${t.color}">${starsHTML}</div><span class="text-sm font-bold">${escapeHtml(item.rating || 0)}</span><span class="text-xs" style="color: var(--muted)">/ 5</span></div><p class="text-sm leading-relaxed mb-5" style="color: var(--fg-light)">${escapeHtml(item.description || '')}</p><div class="flex flex-col gap-2 mb-5"><div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas ${t.icon}" style="color: ${t.color}"></i><div><div class="text-xs" style="color: var(--muted)">${item.type === 'doctor' ? 'التخصص' : (item.type === 'clinic' || item.type === 'center' ? 'التخصص الأساسي' : 'النوع')}</div><div class="text-sm font-bold">${escapeHtml(item.specialty || 'غير محدد')}</div></div></div> ${(item.address || item.clinic) ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-map-marker-alt" style="color: ${t.color}"></i><div><div class="text-xs" style="color: var(--muted)">العنوان / الموقع</div><div class="text-sm font-bold">${escapeHtml(item.address || item.clinic)}</div></div></div>` : ''}<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-clock" style="color: ${t.color}"></i><div class="flex-1"><div class="text-xs" style="color: var(--muted)">${item.type === 'doctor' ? 'أوقات المعاينة' : 'أوقات العمل'}</div><div class="text-sm font-bold">${escapeHtml(item.consulthours || item.hours || '')}</div></div>${['doctor', 'clinic', 'pharmacy'].includes(item.type) && item.isopen === true ? '<span class="text-xs px-2 py-1 rounded bg-green-100 text-green-700 font-bold">مفتوح الآن</span>' : ''}${['doctor', 'clinic', 'pharmacy'].includes(item.type) && item.isopen === false ? '<span class="text-xs px-2 py-1 rounded bg-red-100 text-red-700 font-bold">مغلق حالياً</span>' : ''}</div>${extraHTML}</div>${mapEmbed}<div class="flex items-center gap-3 mt-4"> ${item.phone ? `<a href="tel:${escapeHtml(item.phone)}" onclick="trackPhoneClick('${escapeHtml(item.id)}')" class="call-btn flex-1 py-3.5 rounded-xl text-white text-sm font-bold text-center flex items-center justify-center gap-2" style="background: ${t.color}"><i class="fas fa-phone-alt"></i> اتصال ${escapeHtml(item.phone)}</a>` : `<div class="flex-1 py-3.5 rounded-xl text-gray-400 text-sm font-bold text-center flex items-center justify-center gap-2 bg-gray-100 cursor-not-allowed"><i class="fas fa-phone-slash"></i> لا يوجد رقم هاتف</div>`}<button onclick="copyNumber('${escapeHtml(item.phone)}')" class="w-12 h-12 rounded-xl border flex items-center justify-center transition-all hover:bg-gray-50 flex-shrink-0" style="border-color: var(--border)"><i class="fas fa-copy" style="color: var(--muted)"></i></button></div>${canBook ? `<div class="mt-3">${bookingBtnModal}</div>` : ''}</div>`;  
+    
+    // لاحظ هنا أننا نضع ${doctorsListHtml} قبل ${mapEmbed} مباشرة
+    document.getElementById('modalContent').innerHTML = `<div class="relative h-48 overflow-hidden rounded-t-2xl"><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src)"><div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent)"></div><button onclick="closeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-all"><i class="fas fa-times text-sm"></i></button><div class="absolute bottom-4 right-5 left-5"><span class="badge ${t.badgeClass} mb-2 inline-block">${t.label}</span><h3 class="text-white font-bold text-lg" style="font-family: 'Noto Kufi Arabic'">${escapeHtml(item.name)}</h3></div></div><div class="p-6"><div class="flex items-center gap-2 mb-4"><div class="flex items-center gap-0.5 text-sm" style="color: ${t.color}">${starsHTML}</div><span class="text-sm font-bold">${escapeHtml(item.rating || 0)}</span><span class="text-xs" style="color: var(--muted)">/ 5</span></div><p class="text-sm leading-relaxed mb-5" style="color: var(--fg-light)">${escapeHtml(item.description || '')}</p><div class="flex flex-col gap-2 mb-5"><div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas ${t.icon}" style="color: ${t.color}"></i><div><div class="text-xs" style="color: var(--muted)">${item.type === 'doctor' ? 'التخصص' : (item.type === 'clinic' || item.type === 'center' ? 'التخصص الأساسي' : 'النوع')}</div><div class="text-sm font-bold">${escapeHtml(item.specialty || 'غير محدد')}</div></div></div> ${(item.address || item.clinic) ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-map-marker-alt" style="color: ${t.color}"></i><div><div class="text-xs" style="color: var(--muted)">العنوان / الموقع</div><div class="text-sm font-bold">${escapeHtml(item.address || item.clinic)}</div></div></div>` : ''}<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-clock" style="color: ${t.color}"></i><div class="flex-1"><div class="text-xs" style="color: var(--muted)">${item.type === 'doctor' ? 'أوقات المعاينة' : 'أوقات العمل'}</div><div class="text-sm font-bold">${escapeHtml(item.consulthours || item.hours || '')}</div></div>${['doctor', 'clinic', 'pharmacy'].includes(item.type) && item.isopen === true ? '<span class="text-xs px-2 py-1 rounded bg-green-100 text-green-700 font-bold">مفتوح الآن</span>' : ''}${['doctor', 'clinic', 'pharmacy'].includes(item.type) && item.isopen === false ? '<span class="text-xs px-2 py-1 rounded bg-red-100 text-red-700 font-bold">مغلق حالياً</span>' : ''}</div>${extraHTML}</div>${doctorsListHtml}${mapEmbed}${item.phone ? `<div class="flex items-center gap-3 mt-4"> <a href="tel:${escapeHtml(item.phone)}" onclick="trackPhoneClick('${escapeHtml(item.id)}')" class="call-btn flex-1 py-3.5 rounded-xl text-white text-sm font-bold text-center flex items-center justify-center gap-2" style="background: ${t.color}"><i class="fas fa-phone-alt"></i> اتصال ${escapeHtml(item.phone)}</a><button onclick="copyNumber('${escapeHtml(item.phone)}')" class="w-12 h-12 rounded-xl border flex items-center justify-center transition-all hover:bg-gray-50 flex-shrink-0" style="border-color: var(--border)"><i class="fas fa-copy" style="color: var(--muted)"></i></button></div>` : ''}${canBook ? `<div class="mt-3">${bookingBtnModal}</div>` : ''}</div>`;  
+    
     document.getElementById('modalOverlay').classList.add('active'); 
     lockScroll(); 
 }
@@ -1912,6 +1900,15 @@ window.logoutAdmin = async () => {
     showToast('تم تسجيل الخروج بنجاح');
 }
 window.updateAdminFormFields = (type) => {
+        // إخفاء حقل الهاتف للمشافي والمراكز فقط
+    const phoneInput = document.getElementById('new_phone');
+    if (phoneInput) {
+        if (type === 'hospital' || type === 'center') {
+            phoneInput.classList.add('hidden');
+        } else {
+            phoneInput.classList.remove('hidden');
+        }
+    }
     let html = '';
     if (type === 'hospital' || type === 'center') {
         html = `
@@ -1927,12 +1924,6 @@ window.updateAdminFormFields = (type) => {
                 <h4 class="font-bold text-sm mb-2 text-gray-700">الأقسام الطبية الرئيسية</h4>
                 <div id="deptContainer" class="flex flex-col gap-2"></div>
                 <button type="button" onclick="addAdminRow('deptContainer', ['icon', 'title', 'desc'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-teal-600 border-teal-500 hover:bg-teal-50">+ إضافة قسم</button>
-            </div>
-            
-            <div class="col-span-1 sm:col-span-2 p-4 border-t border-dashed" style="border-color: var(--border);">
-                <h4 class="font-bold text-sm mb-2 text-gray-700">العيادات الخارجية</h4>
-                <div id="clinicContainer" class="flex flex-col gap-2"></div>
-                <button type="button" onclick="addAdminRow('clinicContainer', ['title', 'desc'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-blue-600 border-blue-500 hover:bg-blue-50">+ إضافة عيادة</button>
             </div>
             
             <div class="col-span-1 sm:col-span-2 p-4 border-t border-dashed" style="border-color: var(--border);">
