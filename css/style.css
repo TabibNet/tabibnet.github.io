@@ -712,3 +712,5 @@ html.dark .filter-btn { background: var(--card) !important; border-color: var(--
 }
 .city-option:hover { border-color: var(--accent); background: var(--accent-light); transform: translateX(5px); }
 .city-option.selected { background: var(--accent); color: white; border-color: var(--accent); }
+.detail-mini-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.detail-mini-card:hover { transform: translateY(-2px); box-shadow: 0 8px 15px -5px rgba(0,0,0,0.1); }
