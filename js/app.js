@@ -547,7 +547,7 @@ window.openModal = (id) => {
     if (halfStar) starsHTML += '<i class="fas fa-star-half-alt"></i>'; 
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0); 
     for (let i = 0; i < emptyStars; i++) starsHTML += '<i class="far fa-star"></i>'; 
-    let extraHTML = ''; 
+    
     
         let extraHTML = ''; 
     
@@ -2045,7 +2045,7 @@ else if (item.type === 'doctor') {
     document.getElementById('new_extra').value = item.bookingnotes || ''; 
     if(document.getElementById('new_parent_id')) document.getElementById('new_parent_id').value = item.parent_id || '';
 } 
-        else if (item.type === 'doctor') { document.getElementById('new_consult_hours').value = item.consulthours || ''; document.getElementById('new_extra').value = item.bookingnotes || ''; } 
+    
         else if (item.type === 'pharmacy') { document.getElementById('new_night_details').value = item.nightdetails || ''; document.getElementById('new_extra').value = item.description || ''; } 
         else if (item.type === 'center') { document.getElementById('new_floors').value = item.floors || ''; document.getElementById('new_extra').value = item.services || ''; } 
         else if (item.type === 'lab') { document.getElementById('new_extra').value = item.tests || ''; document.getElementById('new_home_sample').value = item.homesample || 'لا'; } 
@@ -2114,7 +2114,6 @@ else if (type === 'doctor') {
     data.bookingnotes = document.getElementById('new_extra')?.value || ''; 
     data.parent_id = document.getElementById('new_parent_id')?.value || '';
 } 
-    else if (type === 'doctor') { data.specialty = specialty; data.clinic = address; data.consulthours = document.getElementById('new_consult_hours')?.value || ''; data.bookingnotes = document.getElementById('new_extra')?.value || ''; } 
     else if (type === 'pharmacy') { data.address = address; data.night = false; data.nightdetails = document.getElementById('new_night_details')?.value || ''; data.description = document.getElementById('new_extra')?.value || ''; } 
     else if (type === 'center') { data.specialty = specialty; data.address = address; data.floors = document.getElementById('new_floors')?.value || ''; data.services = document.getElementById('new_extra')?.value || ''; } 
     else if (type === 'lab') { data.specialty = specialty; data.address = address; data.tests = document.getElementById('new_extra')?.value || ''; data.homesample = document.getElementById('new_home_sample')?.value || 'لا'; } 
