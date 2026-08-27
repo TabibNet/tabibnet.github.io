@@ -551,8 +551,7 @@ window.openModal = (id) => {
         
         // بناء واجهة المشفى بنفس النمط المطلوب حرفياً
             let extraHTML = ''; 
-    
-    if (item.type === 'hospital' || item.type === 'center') {
+        if (item.type === 'hospital' || item.type === 'center') {
         const primaryColor = item.type === 'hospital' ? 'teal' : 'purple';
         let cData = item.facility_details || {};
         
@@ -572,7 +571,43 @@ window.openModal = (id) => {
             statsHtml += `</div>`;
         }
 
-        // 2. أكورديون الأقسام الرئيسية
+        // 2. السعة الاستيعابية (تمت إضافتها هنا لضمان ظهورها)
+        let capacityHtml = '';
+        if (item.capacity_info) {
+            capacityHtml = `
+                <div class="bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-2xl p-4 mb-4">
+                    <h4 class="font-bold text-sm text-${primaryColor}-800 flex items-center gap-2 mb-1"><i class="fas fa-users"></i> السعة الاستيعابية والكادر</h4>
+                    <p class="text-xs text-${primaryColor}-700 leading-relaxed">${escapeHtml(item.capacity_info)}</p>
+                </div>
+            `;
+        }
+
+        // 3. جلب الأطباء المرتبطين (عبر parent_id)
+        const facilityDoctors = allData.filter(d => d.parent_id === item.id);
+        let doctorsListHtml = '';
+        if (facilityDoctors.length > 0) {
+            doctorsListHtml = `
+                <div class="accordion-item bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+                    <div class="accordion-header p-4 flex justify-between items-center cursor-pointer" onclick="toggleAccordion(this)">
+                        <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-user-md text-blue-600"></i> الأطباء المتواجدون (${facilityDoctors.length})</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                    </div>
+                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${facilityDoctors.map(doc => `
+                            <div onclick="closeModal(); setTimeout(() => openModal('${doc.id}'), 300)" class="detail-mini-card flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-blue-200 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <img src="${escapeHtml(doc.image)}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
+                                    <div><div class="font-bold text-sm text-gray-800">${escapeHtml(doc.name)}</div><div class="text-xs text-gray-500">${escapeHtml(doc.specialty)}</div></div>
+                                </div>
+                                <i class="fas fa-chevron-left text-blue-600 text-xs"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. أكورديون الأقسام الرئيسية
         let deptsHtml = '';
         if (cData.departments && cData.departments.length > 0) {
             deptsHtml = `
@@ -594,7 +629,7 @@ window.openModal = (id) => {
             `;
         }
 
-        // 3. أكورديون العيادات الخارجية
+        // 5. أكورديون العيادات الخارجية
         let clinicsHtml = '';
         if (cData.clinics && cData.clinics.length > 0) {
             clinicsHtml = `
@@ -612,7 +647,7 @@ window.openModal = (id) => {
             `;
         }
 
-        // 4. أكورديون الوحدات الحرجة
+        // 6. أكورديون الوحدات الحرجة
         let unitsHtml = '';
         if (cData.units && cData.units.length > 0) {
             unitsHtml = `
@@ -633,7 +668,7 @@ window.openModal = (id) => {
             `;
         }
 
-        // 5. أكورديون الخدمات المساندة
+        // 7. أكورديون الخدمات المساندة
         let servicesHtml = '';
         if (cData.services && cData.services.length > 0) {
             servicesHtml = `
@@ -654,10 +689,12 @@ window.openModal = (id) => {
         // بناء الواجهة النهائية للمشفى
         extraHTML = `
             ${statsHtml}
+            ${capacityHtml}
             ${deptsHtml}
             ${clinicsHtml}
             ${unitsHtml}
             ${servicesHtml}
+            ${doctorsListHtml}
         `;
     } else if (item.type === 'doctor') { 
         extraHTML = `${item.bookingnotes ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--bg)"><i class="fas fa-info-circle" style="color: var(--doctor)"></i><div><div class="text-xs" style="color: var(--muted)">تفاصيل إضافية</div><div class="text-sm font-bold">${escapeHtml(item.bookingnotes)}</div></div></div>` : ''}`;
@@ -666,6 +703,7 @@ window.openModal = (id) => {
     } else if (item.type === 'pharmacy') {
         extraHTML = `${item.night ? `<div class="flex items-center gap-3 p-3 rounded-xl" style="background: var(--gold-light)"><i class="fas fa-moon" style="color: var(--gold)"></i><div><div class="text-xs" style="color: var(--muted)">المناوبة</div><div class="text-sm font-bold" style="color: var(--gold)">${escapeHtml(item.nightdetails || 'صيدلية مناوبة ليلية')}</div></div></div>` : ''}`;
     }
+    
 
     const canBook = item.type === 'doctor' && item.is_subscribed; 
 let bookingBtnModal = ''; 
@@ -1981,7 +2019,7 @@ window.renderAdminDashboard = async () => {
     let bloodHtml = activeBloodRequests.length === 0 ? '<p class="text-center py-4 text-gray-400 text-sm">لا توجد استغاثات حالياً.</p>' : activeBloodRequests.map(b => `<div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)"><div class="flex items-center gap-3"><span class="blood-type-badge text-sm py-1 px-3">${escapeHtml(b.blood_type)}</span><div><div class="text-sm font-semibold">${escapeHtml(b.patient_name)} ${b.responses_count > 0 ? '<span class="text-xs text-green-500">(مستجيب: '+escapeHtml(b.responses_count)+')</span>' : ''}</div><div class="text-xs text-gray-500">${escapeHtml(b.hospital)}</div></div></div><button onclick="resolveBloodRequest('${b.id}')" class="text-xs text-white px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 transition-colors">إنهاء الطلب</button></div>`).join('');
     let medDonHtml = medicineDonations.length === 0 ? '<p class="text-center py-4 text-gray-400 text-sm">لا توجد مستلزمات طبية مُتبرع او طلب حالياً.</p>' : medicineDonations.map(m => `<div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)"><div class="flex items-center gap-3"><i class="fas fa-pills text-green-600"></i><div><div class="text-sm font-semibold">${escapeHtml(m.medicine_name)} (${escapeHtml(m.quantity)})</div><div class="text-xs text-gray-500">ينتهي: ${escapeHtml(m.expiry_date)} | المتبرع: ${escapeHtml(m.donor_name)}</div></div></div><button onclick="resolveMedicineDonation('${m.id}')" class="text-xs text-white px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 transition-colors">حذف/إنهاء</button></div>`).join('');
 
-    openCtrlPanel('لوحة الإدارة', `<div class="flex flex-col gap-6"> ${announcementsHtml} ${homeAdsHtml} ${radarAdminHtml} ${patientsAdminHtml} <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-tint text-red-600"></i> إدارة استغاثات الدم (${bloodRequests.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${bloodHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-hand-holding-medical text-green-600"></i>إدارة المستلزمات الطبية (${medicineDonations.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${medDonHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-plus-circle ml-2" style="color: var(--accent)"></i> <span id="formTitle">إضافة منشأة</span></h4><form onsubmit="saveFacility(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="hidden" id="edit_id"><select id="new_type" class="ctrl-input text-sm" required onchange="updateAdminFormFields(this.value)"><option value="hospital">مشفى</option><option value="center">مركز</option><option value="lab">مخبر</option><option value="doctor">طبيب</option><option value="pharmacy">صيدلية</option></select><input type="text" id="new_name" class="ctrl-input text-sm" placeholder="الاسم" required><input type="text" id="new_specialty" class="ctrl-input text-sm" placeholder="التخصص الأساسي" required><input type="text" id="new_address" class="ctrl-input text-sm" placeholder="العنوان / الموقع" required><input type="text" id="new_phone" class="ctrl-input text-sm" placeholder="رقم الهاتف (اختياري)"><input type="text" id="new_hours" class="ctrl-input text-sm" placeholder="أوقات العمل"><input type="text" id="new_image_url" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)"><textarea id="new_desc" class="ctrl-input text-sm col-span-2" placeholder="وصف عام" rows="2" required></textarea><div id="adminExtraFields" class="contents"></div><button type="submit" class="col-span-1 sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--accent)"><i class="fas fa-save ml-1"></i> حفظ</button></form></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-list ml-2"></i> المنشآت (${allData.length})</h4><div class="flex flex-col gap-2 max-h-96 overflow-y-auto">${listHtml}</div></div> <button onclick="seedDatabase()" class="py-2.5 rounded-xl border border-dashed font-semibold text-sm" style="border-color: var(--gold); color: var(--gold)"><i class="fas fa-database ml-2"></i> ترحيل البيانات الافتراضية</button> <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl border font-semibold text-sm mt-2" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button> </div>`, '#073D2E'); 
+    openCtrlPanel('لوحة الإدارة', `<div class="flex flex-col gap-6"> ${announcementsHtml} ${homeAdsHtml} ${radarAdminHtml} ${patientsAdminHtml} <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-tint text-red-600"></i> إدارة استغاثات الدم (${bloodRequests.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${bloodHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-hand-holding-medical text-green-600"></i>إدارة المستلزمات الطبية (${medicineDonations.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${medDonHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-plus-circle ml-2" style="color: var(--accent)"></i> <span id="formTitle">إضافة منشأة</span></h4><form onsubmit="saveFacility(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="hidden" id="edit_id"><select id="new_type" class="ctrl-input text-sm" required onchange="updateAdminFormFields(this.value)"><option value="hospital">مشفى</option><option value="center">مركز</option><option value="lab">مخبر</option><option value="doctor">طبيب</option><option value="pharmacy">صيدلية</option></select><input type="text" id="new_name" class="ctrl-input text-sm" placeholder="الاسم" required><input type="text" id="new_specialty" class="ctrl-input text-sm" placeholder="التخصص الأساسي" required><input type="text" id="new_address" class="ctrl-input text-sm" placeholder="العنوان / الموقع" required><input type="text" id="new_phone" class="ctrl-input text-sm" placeholder="رقم الهاتف (اختياري)"><input type="text" id="new_hours" class="ctrl-input text-sm" placeholder="أوقات العمل"><input type="text" id="new_image_url" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)"><textarea id="new_desc" class="ctrl-input text-sm col-span-2" placeholder="وصف عام (اختياري)" rows="2"></textarea><div id="adminExtraFields" class="contents"></div><button type="submit" class="col-span-1 sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--accent)"><i class="fas fa-save ml-1"></i> حفظ</button></form></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-list ml-2"></i> المنشآت (${allData.length})</h4><div class="flex flex-col gap-2 max-h-96 overflow-y-auto">${listHtml}</div></div> <button onclick="seedDatabase()" class="py-2.5 rounded-xl border border-dashed font-semibold text-sm" style="border-color: var(--gold); color: var(--gold)"><i class="fas fa-database ml-2"></i> ترحيل البيانات الافتراضية</button> <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl border font-semibold text-sm mt-2" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button> </div>`, '#073D2E'); 
     
     fetchAnnouncements();
     fetchHomeAdsForAdmin();
