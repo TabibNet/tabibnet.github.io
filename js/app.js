@@ -431,7 +431,7 @@ function createCard(item) {
 </div></div><div class="p-5"><div class="flex items-start gap-3 mb-3"><div class="cat-icon ${t.iconClass}"><i class="fas ${t.icon}"></i></div><div class="flex-1 min-w-0"><h3 class="font-bold text-sm mb-1 leading-tight" style="font-family: 'Noto Kufi Arabic'; color: var(--fg);">
     ${escapeHtml(item.name)}
     ${(['doctor', 'pharmacy'].includes(item.type) && item.is_subscribed) ? '<span class="verified-badge verified-gold"><i class="fas fa-circle-check"></i> موثق</span>' : ''}
-</h3><div class="flex items-center gap-1 text-[11px]" style="color: ${t.color};">${starsHTML}<span class="mr-1 font-semibold">${escapeHtml(item.rating || 0)}</span></div></div></div><div class="flex flex-col gap-1.5 mb-4">${detailsHTML}</div><div class="flex items-center gap-2"> ${item.phone ? `<a href="tel:${escapeHtml(item.phone)}" onclick="event.stopPropagation(); trackPhoneClick('${escapeHtml(item.id)}')" class="call-btn flex-1 py-2.5 rounded-xl text-white text-xs font-semibold text-center flex items-center justify-center gap-2" style="background: ${t.color}"><i class="fas fa-phone-alt"></i><span dir="ltr">${escapeHtml(item.phone)}</span></a>` : `<div class="flex-1 py-2.5 rounded-xl text-gray-400 text-xs font-semibold text-center flex items-center justify-center gap-2 bg-gray-100 cursor-not-allowed"><i class="fas fa-phone-slash"></i><span>لا يوجد رقم</span></div>`}${bookingBtn}<button onclick="event.stopPropagation(); openModal('${escapeHtml(item.id)}')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-all hover:bg-gray-50" style="border-color: var(--border); color: var(--muted);" aria-label="تفاصيل"><i class="fas fa-info-circle"></i></button></div></div></div>`;
+</h3><div class="flex items-center gap-1 text-[11px]" style="color: ${t.color};">${starsHTML}<span class="mr-1 font-semibold">${escapeHtml(item.rating || 0)}</span></div></div></div><div class="flex flex-col gap-1.5 mb-4">${detailsHTML}</div><div class="flex items-center gap-2"> ${item.phone ? `<a href="tel:${escapeHtml(item.phone)}" onclick="event.stopPropagation(); trackPhoneClick('${escapeHtml(item.id)}')" class="call-btn flex-1 py-2.5 rounded-xl text-white text-xs font-semibold text-center flex items-center justify-center gap-2" style="background: ${t.color}"><i class="fas fa-phone-alt"></i><span dir="ltr">${escapeHtml(item.phone)}</span></a>` : (['doctor', 'pharmacy', 'lab'].includes(item.type) ? `<div class="flex-1 py-2.5 rounded-xl text-gray-400 text-xs font-semibold text-center flex items-center justify-center gap-2 bg-gray-100 cursor-not-allowed"><i class="fas fa-phone-slash"></i><span>لا يوجد رقم</span></div>` : '')}${bookingBtn}<button onclick="event.stopPropagation(); openModal('${escapeHtml(item.id)}')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition-all hover:bg-gray-50" style="border-color: var(--border); color: var(--muted);" aria-label="تفاصيل"><i class="fas fa-info-circle"></i></button></div></div></div>`;
 }
 
 function renderData() {
@@ -607,7 +607,7 @@ window.openModal = (id) => {
             `;
         }
 
-        // 4. أكورديون الأقسام الرئيسية
+                // 4. أكورديون الأقسام الرئيسية
         let deptsHtml = '';
         if (cData.departments && cData.departments.length > 0) {
             deptsHtml = `
@@ -616,16 +616,20 @@ window.openModal = (id) => {
                         <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-hospital-symbol text-${primaryColor}-600"></i> الأقسام الطبية والخدمية الرئيسية</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
                     </div>
-                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        ${cData.departments.map(dept => `
-                            <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-3">
-                                <i class="fas ${dept.icon || 'fa-circle'} text-yellow-500 text-lg mt-1"></i>
-                                <div>
-                                    <h4 class="text-sm font-bold text-gray-800">${escapeHtml(dept.title)}</h4>
-                                    <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">${escapeHtml(dept.desc)}</p>
+                    <div class="accordion-body p-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            ${cData.departments.map(dept => `
+                                <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                    <div class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center flex-shrink-0">
+                                        <i class="fas ${dept.icon || 'fa-circle'} text-yellow-500 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-gray-800">${escapeHtml(dept.title)}</h4>
+                                        <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">${escapeHtml(dept.desc)}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
             `;
@@ -640,13 +644,20 @@ window.openModal = (id) => {
                         <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-procedures text-red-600"></i> الوحدات الحرجة الإضافية</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
                     </div>
-                    <div class="accordion-body p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        ${cData.units.map(unit => `
-                            <div class="p-3 bg-red-50 rounded-xl border border-red-100">
-                                <h4 class="text-sm font-bold text-red-800">${escapeHtml(unit.title)}</h4>
-                                <p class="text-[11px] text-red-600 mt-1 leading-relaxed">${escapeHtml(unit.desc)}</p>
-                            </div>
-                        `).join('')}
+                    <div class="accordion-body p-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            ${cData.units.map(unit => `
+                                <div class="flex items-start gap-3 p-3 bg-red-50/50 rounded-xl border border-red-100/50">
+                                    <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-heart-pulse text-red-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-red-900">${escapeHtml(unit.title)}</h4>
+                                        <p class="text-[11px] text-red-700/80 mt-1 leading-relaxed">${escapeHtml(unit.desc)}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
             `;
@@ -661,13 +672,20 @@ window.openModal = (id) => {
                         <span class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-pills text-green-600"></i> الخدمات الطبية المساندة</span>
                         <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform"></i>
                     </div>
-                    <div class="accordion-body p-4 pt-0 flex flex-col gap-2">
-                        ${cData.services.map(serv => `
-                            <div class="flex items-start gap-2 text-xs text-gray-600">
-                                <i class="fas fa-check-circle text-green-500 mt-1"></i>
-                                <div><strong class="text-gray-800">${escapeHtml(serv.title)}:</strong> ${escapeHtml(serv.desc)}</div>
-                            </div>
-                        `).join('')}
+                    <div class="accordion-body p-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            ${cData.services.map(serv => `
+                                <div class="flex items-start gap-3 p-3 bg-green-50/50 rounded-xl border border-green-100/50">
+                                    <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-check-circle text-green-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-green-900">${escapeHtml(serv.title)}</h4>
+                                        <p class="text-[11px] text-green-700/80 mt-1 leading-relaxed">${escapeHtml(serv.desc)}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
             `;
