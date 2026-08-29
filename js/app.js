@@ -3974,4 +3974,11 @@ function renderAdminEmergencyList() {
         </div>
     `).join('');
 }
+// دالة إخفاء زر الطوارئ العائم
+window.hideEmergencyFab = () => {
+    const wrapper = document.getElementById('emergencyFabWrapper');
+    if (wrapper) {
+        wrapper.classList.add('hidden-fab');
+    }
+}
 // نهاية ملف app.js
