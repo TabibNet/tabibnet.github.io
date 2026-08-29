@@ -769,3 +769,36 @@ html.dark .filter-btn { background: var(--card) !important; border-color: var(--
     bottom: 30px !important; 
     left: 30px !important;
 }
+/* === تصميم اسم العلامة التجارية LomedX === */
+.lomedx-brand {
+    font-family: 'Outfit', 'Poppins', 'Segoe UI', sans-serif; /* خط إنجليزي عصري */
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--gold) 0%, #f8d674 40%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent; /* لضمان التوافق */
+    letter-spacing: 0.5px;
+    display: inline-block;
+    text-shadow: 0 2px 10px rgba(196, 150, 44, 0.15);
+}
+
+/* نسخة خاصة للشاشات الداكنة لضمان ظهور التدرج */
+html.dark .lomedx-brand {
+    background: linear-gradient(135deg, #f8d674 0%, var(--gold) 50%, #10B981 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* تعديل شاشة التحميل لتبدو احترافية بالتدرج */
+.splash-text-3d {
+    font-family: 'Outfit', sans-serif;
+    background: linear-gradient(135deg, #ffffff 0%, var(--gold) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+    /* تم إزالة الظلال القديمة لأن التدرج لا يدعم text-shadow مباشرة */
+}
