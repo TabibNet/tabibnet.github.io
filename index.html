@@ -730,7 +730,15 @@
             </div>
         </div>
     </footer>
-    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
+
+    <!-- زر الطوارئ العائم -->
+<a href="#emergencies" id="emergencyFab" class="emergency-fab">
+    <i class="fas fa-ambulance"></i>
+    <span class="fab-ping"></span>
+</a>
+
+<!-- ( زر العودة للأعلى ) -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
     <div class="toast" id="toast"></div>
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)"><div class="modal-content" id="modalContent" onclick="event.stopPropagation()"></div></div>
     <div id="lightbox" class="lightbox-overlay"><img src="" alt="معاينة الصورة"></div>
