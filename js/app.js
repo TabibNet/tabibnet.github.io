@@ -951,7 +951,7 @@ window.sendChatMessage = async (bookingId) => {
 
 window.openPharmacyLogin = async () => { 
     const { data: { session } } = await supabase.auth.getSession();
-    if (session && session.user.email && session.user.email.endsWith('@tabibnet.app')) {
+    if (session && session.user.email && session.user.email.endsWith('@lomedx.app')) {
         const userId = session.user.id;
         const listing = allData.find(d => d.user_id === userId && d.type === 'pharmacy');
         if (listing) {
@@ -972,7 +972,7 @@ window.handlePharmacyLogin = async (e) => {
     const passInput = document.getElementById('pharmPass').value.trim();
     const pass = passInput.toUpperCase();
     
-    const dummyEmail = `pharm_${pass.toLowerCase()}@tabibnet.app`;
+    const dummyEmail = `pharm_${pass.toLowerCase()}@lomedx.app`;
 
     const { data, error } = await supabase.auth.signInWithPassword({ email: dummyEmail, password: pass });
     if (error) { showToast('خطأ: ' + error.message); return; }
@@ -1127,7 +1127,7 @@ window.setMedAvailable = async (id, pharmName, patientPushId) => {
 }
 window.openDoctorLogin = async () => { 
     const { data: { session } } = await supabase.auth.getSession();
-    if (session && session.user.email && session.user.email.endsWith('@tabibnet.app')) {
+    if (session && session.user.email && session.user.email.endsWith('@lomedx.app')) {
         const userId = session.user.id;
         const listing = allData.find(d => d.user_id === userId && d.type === 'doctor');
         if (listing) {
@@ -1147,7 +1147,7 @@ window.handleDoctorLogin = async (e) => {
     const name = document.getElementById('docName').value.trim(); 
     const passInput = document.getElementById('docPass').value.trim();
     const pass = passInput.toUpperCase();
-    const dummyEmail = `doc_${pass.toLowerCase()}@tabibnet.app`;
+    const dummyEmail = `doc_${pass.toLowerCase()}@lomedx.app`;
     
     const { data, error } = await supabase.auth.signInWithPassword({ email: dummyEmail, password: pass });
     if (error) { showToast('خطأ: ' + error.message); return; }
@@ -2153,14 +2153,14 @@ window.saveFacility = async (e) => {
     
     if (!id && (type === 'doctor' || type === 'clinic')) { 
         data.bookingpass = generateUniqueId(); 
-        const docEmail = `doc_${data.bookingpass.toLowerCase()}@tabibnet.app`;
+        const docEmail = `doc_${data.bookingpass.toLowerCase()}@lomedx.app`;
         const { data: authData, error: authError } = await supabase.auth.signUp({ email: docEmail, password: data.bookingpass });
         if (authData && authData.user) { data.user_id = authData.user.id; } 
         if (authError) { showToast('خطأ في إنشاء حساب الطبيب: ' + authError.message); return; }
     } 
     if (!id && type === 'pharmacy') { 
         data.pharmacypass = generateUniqueId(); 
-        const pharmEmail = `pharm_${data.pharmacypass.toLowerCase()}@tabibnet.app`;
+        const pharmEmail = `pharm_${data.pharmacypass.toLowerCase()}@lomedx.app`;
         const { data: authData, error: authError } = await supabase.auth.signUp({ email: pharmEmail, password: data.pharmacypass });
         if (authData && authData.user) { data.user_id = authData.user.id; } 
         if (authError) { showToast('خطأ في إنشاء حساب الصيدلية: ' + authError.message); return; }
