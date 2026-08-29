@@ -918,3 +918,51 @@ html.dark .search-input::placeholder {
 .city-pill-btn:hover {
     border-color: rgba(196,150,44,0.5) !important;
 }
+/* === تعديل حاوية زر الطوارئ === */
+.emergency-fab-wrapper {
+    position: fixed;
+    bottom: 90px;
+    left: 30px;
+    z-index: 1000;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* حالة الإخفاء (عند الضغط على X) */
+.emergency-fab-wrapper.hidden-fab {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* تنسيق زر X */
+.emergency-fab-close {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 2px solid #DC2626;
+    color: #DC2626;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+    z-index: 1001; /* ليكون فوق زر الطوارئ */
+}
+
+.emergency-fab-close:hover {
+    background: #DC2626;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* تعديل بسيط لزر الطوارئ ليتناسب مع الحاوية الجديدة */
+.emergency-fab {
+    position: relative; 
+    bottom: auto;
+    left: auto;
+}
