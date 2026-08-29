@@ -307,7 +307,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     trackAndDisplayVisitors();
-});
+    // استدعاء دالة تحديد الموقع
+    detectUserLocation();
+}); // نهاية DOMContentLoaded
 
 async function fetchListings() {
     // حماية: جلب أعمدة محددة فقط لمنع تسريب كلمات المرور
@@ -3806,5 +3808,51 @@ function decryptHealthFile(data, key) {
         emergency_phone: decryptField(data.emergency_phone, key),
         prescriptions: decryptedPrescriptions // إضافة الروشتات المفكوك تشفيرها
     };
+}
+// دالة لتحديد موقع المستخدم تلقائياً
+function detectUserLocation() {
+    const locationBadge = document.getElementById('userLocationBadge');
+    const locationText = document.getElementById('userLocationText');
+    
+    // إذا لم يتم العثور على العنصر، أخر من الدالة
+    if (!locationBadge || !locationText) return;
+
+    // إخفاء الحقل افتراضياً حتى يتم التأكد من الموقع
+    locationBadge.style.display = 'none';
+
+    // التحقق مما إذا كان المتصفح يدعم تحديد الموقع
+    if (!navigator.geolocation) {
+        return; // يبقى مخفياً
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+                // استخدام خدمة OpenStreetMap لجلب اسم المدينة بالعربية مجاناً
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=ar`);
+                const data = await response.json();
+                
+                const address = data.address || {};
+                const city = address.city || address.town || address.village || address.county || '';
+                const state = address.state || '';
+                
+                if (city && state) {
+                    locationText.innerText = `${city} - ${state}`;
+                    locationBadge.style.display = 'inline-flex'; // إظهار الحقل
+                } else if (city) {
+                    locationText.innerText = city;
+                    locationBadge.style.display = 'inline-flex'; // إظهار الحقل
+                } else {
+                    // إذا لم يتم العثور على مدينة واضحة، يبقى مخفياً
+                }
+            } catch (error) {
+                // في حال حدوث خطأ في جلب البيانات، يبقى مخفياً
+            }
+        },
+        (error) => {
+            // في حال رفض المستخدم إعطاء إذن الموقع، يبقى مخفياً
+        }
+    );
 }
 // نهاية ملف app.js
