@@ -348,12 +348,12 @@ function renderEmergencyContacts() {
     // 1. عرض بطاقات الطوارئ (حجم كبير وأيقونات متوهجة)
     if (emergencies.length > 0) {
         emergencyContainer.innerHTML = emergencies.map(c => `
-            <a href="tel:${escapeHtml(c.phone)}" class="group bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center hover:bg-${escapeHtml(c.color)}-500/10 hover:border-${escapeHtml(c.color)}-500/40 transition-all duration-300 shadow-lg">
-                <div class="w-16 h-16 rounded-full bg-${escapeHtml(c.color)}-500/20 flex items-center justify-center text-3xl text-${escapeHtml(c.color)}-400 mb-3 group-hover:scale-110 transition-transform">
+            <a href="tel:${escapeHtml(c.phone)}" class="group bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center hover:bg-${escapeHtml(c.color)}-500/10 hover:border-${escapeHtml(c.color)}-500/40 transition-all duration-300 shadow-lg h-full">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-${escapeHtml(c.color)}-500/20 flex items-center justify-center text-2xl sm:text-3xl text-${escapeHtml(c.color)}-400 mb-3 group-hover:scale-110 transition-transform">
                     <i class="fas ${escapeHtml(c.icon)}"></i>
                 </div>
-                <div class="text-sm text-white/70 mb-1">${escapeHtml(c.name)}</div>
-                <div class="text-3xl sm:text-4xl font-black text-white" dir="ltr">${escapeHtml(c.phone)}</div>
+                <div class="text-xs sm:text-sm text-white/70 mb-1 text-center">${escapeHtml(c.name)}</div>
+                <div class="text-xl sm:text-2xl lg:text-3xl font-black text-${escapeHtml(c.color)}-300 break-all w-full text-center leading-tight" dir="ltr">${escapeHtml(c.phone)}</div>
             </a>
         `).join('');
     } else {
@@ -369,7 +369,7 @@ function renderEmergencyContacts() {
                 </div>
                 <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-white truncate">${escapeHtml(c.name)}</h4>
-                    <p class="text-sm text-white/60" dir="ltr">${escapeHtml(c.phone)}</p>
+                    <p class="text-sm font-bold text-${escapeHtml(c.color)}-300 break-all" dir="ltr">${escapeHtml(c.phone)}</p>
                 </div>
                 <i class="fas fa-phone text-white/30 group-hover:text-white/60 transition-colors"></i>
             </a>
