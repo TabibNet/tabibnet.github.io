@@ -714,3 +714,58 @@ html.dark .filter-btn { background: var(--card) !important; border-color: var(--
 .city-option.selected { background: var(--accent); color: white; border-color: var(--accent); }
 .detail-mini-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .detail-mini-card:hover { transform: translateY(-2px); box-shadow: 0 8px 15px -5px rgba(0,0,0,0.1); }
+
+/* === تنسيق زر الطوارئ العائم === */
+.emergency-fab {
+    position: fixed;
+    bottom: 90px; /* ليرفع الزر للأعلى قليلاً ليكون فوق زر العودة */
+    left: 30px;
+    width: 52px;
+    height: 52px;
+    background: #DC2626;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
+    z-index: 1000;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: pulse-fab 2s infinite;
+}
+
+.emergency-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.7);
+}
+
+/* الدائرة المتوهجة حول الزر */
+.fab-ping {
+    position: absolute;
+    top: -2px; left: -2px;
+    width: 56px; height: 56px;
+    background: #DC2626;
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.6;
+    animation: ping-animation 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping-animation {
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+@keyframes pulse-fab {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* تعديل بسيط لزر العودة للأعلى ليتناسب مع المكان */
+.back-to-top {
+    bottom: 30px !important; 
+    left: 30px !important;
+}
