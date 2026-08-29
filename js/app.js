@@ -290,7 +290,8 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchBookings();
     fetchBloodRequests();
     fetchMedicineDonations();
-
+    fetchEmergencyContacts();
+    
     document.getElementById('lightbox').addEventListener('click', () => { document.getElementById('lightbox').classList.remove('active'); unlockScroll(); });
     document.getElementById('darkModeToggle').addEventListener('click', () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark')); });
     if (localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark');
@@ -325,6 +326,56 @@ async function fetchListings() {
             localStorage.setItem('cached_listings', JSON.stringify(allData));
             localStorage.removeItem('force_listings_update');
         } catch (e) {}
+    }
+}
+let allEmergencyContacts = [];
+
+async function fetchEmergencyContacts() {
+    const { data, error } = await supabase.from('emergency_contacts').select('*').order('id', { ascending: true });
+    if (error) { console.error("Error fetching emergency contacts:", error); return; }
+    allEmergencyContacts = data || [];
+    renderEmergencyContacts();
+}
+
+function renderEmergencyContacts() {
+    const emergencyContainer = document.getElementById('emergencyListContainer');
+    const hospitalContainer = document.getElementById('hospitalListContainer');
+    if (!emergencyContainer || !hospitalContainer) return;
+
+    const emergencies = allEmergencyContacts.filter(c => c.category === 'emergency');
+    const hospitals = allEmergencyContacts.filter(c => c.category === 'hospital');
+
+    // 1. عرض بطاقات الطوارئ (حجم كبير وأيقونات متوهجة)
+    if (emergencies.length > 0) {
+        emergencyContainer.innerHTML = emergencies.map(c => `
+            <a href="tel:${escapeHtml(c.phone)}" class="group bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center hover:bg-${escapeHtml(c.color)}-500/10 hover:border-${escapeHtml(c.color)}-500/40 transition-all duration-300 shadow-lg">
+                <div class="w-16 h-16 rounded-full bg-${escapeHtml(c.color)}-500/20 flex items-center justify-center text-3xl text-${escapeHtml(c.color)}-400 mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas ${escapeHtml(c.icon)}"></i>
+                </div>
+                <div class="text-sm text-white/70 mb-1">${escapeHtml(c.name)}</div>
+                <div class="text-3xl sm:text-4xl font-black text-white" dir="ltr">${escapeHtml(c.phone)}</div>
+            </a>
+        `).join('');
+    } else {
+        emergencyContainer.innerHTML = '<div class="text-center text-white/40 col-span-full py-8">لا توجد أرقام طوارئ مضافة حالياً.</div>';
+    }
+
+    // 2. عرض بطاقات المشافي (تصميم أفقي عملي)
+    if (hospitals.length > 0) {
+        hospitalContainer.innerHTML = hospitals.map(c => `
+            <a href="tel:${escapeHtml(c.phone)}" class="group bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-4 flex items-center gap-4 transition-all text-right">
+                <div class="w-12 h-12 rounded-xl bg-${escapeHtml(c.color)}-500/20 flex items-center justify-center text-xl text-${escapeHtml(c.color)}-400 flex-shrink-0">
+                    <i class="fas ${escapeHtml(c.icon)}"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="font-bold text-white truncate">${escapeHtml(c.name)}</h4>
+                    <p class="text-sm text-white/60" dir="ltr">${escapeHtml(c.phone)}</p>
+                </div>
+                <i class="fas fa-phone text-white/30 group-hover:text-white/60 transition-colors"></i>
+            </a>
+        `).join('');
+    } else {
+        hospitalContainer.innerHTML = '<div class="text-center text-white/40 col-span-full py-8">لا توجد مستشفيات مضافة حالياً.</div>';
     }
 }
 async function fetchBookings() {
@@ -2011,7 +2062,31 @@ window.renderAdminDashboard = async () => {
     const radarAdminHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-satellite-dish text-indigo-600"></i> إدارة رادار الرحيبة الصحي</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="bg-gray-50 p-3 rounded-xl"><span class="text-xs text-gray-500 block mb-1">الفصل الافتراضي للزوار:</span><select id="adminRadarSeason" onchange="setRadarDefaultSeason()" class="ctrl-input text-sm"><option value="summer">☀️ صيف</option><option value="winter">❄️ شتاء</option></select></div><div class="bg-gray-50 p-3 rounded-xl flex flex-col justify-center"><span class="text-xs text-gray-500 block mb-1">تصفير العدادات الأسبوعي:</span><button onclick="resetRadarVotes()" class="bg-red-500 text-white py-2 rounded-lg text-sm font-bold hover:bg-red-600 transition-all">تصفير العدادات</button></div></div></div>`;
     const homeAdsHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-photo-video text-purple-600"></i> إعلانات الصفحة الرئيسية (صور/فيديو)</h4><form onsubmit="saveHomeAd(event)" class="grid grid-cols-1 gap-3 mb-4"><select id="adType" class="ctrl-input text-sm"><option value="image">صورة (رابط مباشر ينتهي بـ .jpg أو .png)</option><option value="video">فيديو (رابط مباشر ينتهي بـ .mp4 فقط)</option></select><input type="text" id="adContent" class="ctrl-input text-sm" placeholder="الصق الرابط هنا..." required><input type="text" id="adLink" class="ctrl-input text-sm" placeholder="رابط التحويل عند الضغط (اختياري للصور)"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="adActiveCheck" class="w-5 h-5 accent-purple-600" checked> تفعيل وعرض الإعلان فوراً</label><button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #8B5CF6"><i class="fas fa-plus ml-1"></i> إضافة إعلان</button></form><div id="adminHomeAdsList" class="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1"><p class="text-center text-gray-400 text-sm py-2">جاري تحميل الإعلانات...</p></div></div>`;
     const announcementsHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-bullhorn text-blue-600"></i> إدارة الشريط الإعلاني العلوي</h4><form onsubmit="saveAnnouncement(event)" class="grid grid-cols-1 gap-3 mb-4"><textarea id="annText" class="ctrl-input text-sm" rows="2" placeholder="نص الإعلان (مثال: افتتاحية قسم الطوارئ الجديد...)" required></textarea><input type="text" id="annLink" class="ctrl-input text-sm" placeholder="رابط التفاصيل (اتركه فارغاً لإخفاء الزر تماماً)"><input type="text" id="annLinkText" class="ctrl-input text-sm" placeholder="نص الزر (اختياري - افتراضي: اضغط هنا)"><button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #2563EB"><i class="fas fa-paper-plane ml-1"></i> نشر الإعلان</button></form><div id="adminAnnouncementList" class="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1"><p class="text-center text-gray-400 text-sm py-2">جاري تحميل الإعلانات...</p></div></div>`;
-    
+    const emergencyAdminHtml = `
+<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+    <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-phone-alt text-red-600"></i> إدارة أرقام الطوارئ والمشافي</h4>
+    <form onsubmit="saveEmergencyContact(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <input type="text" id="emName" class="ctrl-input text-sm" placeholder="اسم الجهة (مثال: الإسعاف)" required>
+        <input type="text" id="emPhone" class="ctrl-input text-sm" placeholder="الرقم (مثال: 110)" required>
+        <input type="text" id="emIcon" class="ctrl-input text-sm" placeholder="أيقونة فونت أوسم (مثال: fa-ambulance)" required>
+        <select id="emColor" class="ctrl-input text-sm">
+            <option value="red">أحمر</option>
+            <option value="blue">أزرق</option>
+            <option value="orange">برتقالي</option>
+            <option value="green">أخضر</option>
+            <option value="purple">بنفسجي</option>
+            <option value="yellow">أصفر</option>
+        </select>
+        <select id="emCategory" class="ctrl-input text-sm sm:col-span-2">
+            <option value="emergency">طوارئ سريع</option>
+            <option value="hospital">مستشفى / جهة</option>
+        </select>
+        <button type="submit" class="sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #DC2626">إضافة الرقم</button>
+    </form>
+    <div id="adminEmergencyList" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1"></div>
+</div>`;
+
+// ضع emergencyAdminHtml داخل القائمة الكبيرة للوحة الإدارة
     let listHtml = allData.map(item => `<div class="flex items-center justify-between p-3 rounded-xl border bg-white" style="border-color: var(--border)"><div class="flex flex-col gap-1"><div class="flex items-center gap-3"><span class="badge badge-${item.type}">${item.type}</span><span class="font-semibold text-sm">${escapeHtml(item.name)}</span></div></div><div class="flex gap-2 items-center"> ${['doctor', 'pharmacy'].includes(item.type) ? `
 <div class="flex flex-col gap-1">
     <div class="flex gap-1 bg-gray-50 p-1 rounded-lg border" style="border-color: var(--border)">
@@ -2031,7 +2106,7 @@ window.renderAdminDashboard = async () => {
     let medDonHtml = medicineDonations.length === 0 ? '<p class="text-center py-4 text-gray-400 text-sm">لا توجد مستلزمات طبية مُتبرع او طلب حالياً.</p>' : medicineDonations.map(m => `<div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)"><div class="flex items-center gap-3"><i class="fas fa-pills text-green-600"></i><div><div class="text-sm font-semibold">${escapeHtml(m.medicine_name)} (${escapeHtml(m.quantity)})</div><div class="text-xs text-gray-500">ينتهي: ${escapeHtml(m.expiry_date)} | المتبرع: ${escapeHtml(m.donor_name)}</div></div></div><button onclick="resolveMedicineDonation('${m.id}')" class="text-xs text-white px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 transition-colors">حذف/إنهاء</button></div>`).join('');
 
     openCtrlPanel('لوحة الإدارة', `<div class="flex flex-col gap-6"> ${announcementsHtml} ${homeAdsHtml} ${radarAdminHtml} ${patientsAdminHtml} <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-tint text-red-600"></i> إدارة استغاثات الدم (${bloodRequests.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${bloodHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-hand-holding-medical text-green-600"></i>إدارة المستلزمات الطبية (${medicineDonations.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${medDonHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-plus-circle ml-2" style="color: var(--accent)"></i> <span id="formTitle">إضافة منشأة</span></h4><form onsubmit="saveFacility(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="hidden" id="edit_id"><select id="new_type" class="ctrl-input text-sm" required onchange="updateAdminFormFields(this.value)"><option value="hospital">مشفى</option><option value="center">مركز</option><option value="lab">مخبر</option><option value="doctor">طبيب</option><option value="pharmacy">صيدلية</option></select><input type="text" id="new_name" class="ctrl-input text-sm" placeholder="الاسم" required><input type="text" id="new_specialty" class="ctrl-input text-sm" placeholder="التخصص الأساسي" required><input type="text" id="new_address" class="ctrl-input text-sm" placeholder="العنوان / الموقع" required><input type="text" id="new_phone" class="ctrl-input text-sm" placeholder="رقم الهاتف (اختياري)"><input type="text" id="new_hours" class="ctrl-input text-sm" placeholder="أوقات العمل"><input type="text" id="new_image_url" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)"><textarea id="new_desc" class="ctrl-input text-sm col-span-2" placeholder="وصف عام (اختياري)" rows="2"></textarea><div id="adminExtraFields" class="contents"></div><button type="submit" class="col-span-1 sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--accent)"><i class="fas fa-save ml-1"></i> حفظ</button></form></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-list ml-2"></i> المنشآت (${allData.length})</h4><div class="flex flex-col gap-2 max-h-96 overflow-y-auto">${listHtml}</div></div> <button onclick="seedDatabase()" class="py-2.5 rounded-xl border border-dashed font-semibold text-sm" style="border-color: var(--gold); color: var(--gold)"><i class="fas fa-database ml-2"></i> ترحيل البيانات الافتراضية</button> <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl border font-semibold text-sm mt-2" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button> </div>`, '#073D2E'); 
-    
+    renderAdminEmergencyList();
     fetchAnnouncements();
     fetchHomeAdsForAdmin();
     updateAdminFormFields('doctor');
@@ -3854,5 +3929,49 @@ function detectUserLocation() {
             // في حال رفض المستخدم إعطاء إذن الموقع، يبقى مخفياً
         }
     );
+}
+window.saveEmergencyContact = async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('emName').value.trim();
+    const phone = document.getElementById('emPhone').value.trim();
+    const icon = document.getElementById('emIcon').value.trim();
+    const color = document.getElementById('emColor').value;
+    const category = document.getElementById('emCategory').value;
+
+    try {
+        await supabase.from('emergency_contacts').insert([{ name, phone, icon, color, category }]);
+        showToast('تمت الإضافة بنجاح!');
+        e.target.reset();
+        fetchEmergencyContacts();
+        renderAdminEmergencyList();
+    } catch (err) { showToast('خطأ في الإضافة'); }
+};
+
+window.deleteEmergencyContact = async (id) => {
+    try {
+        await supabase.from('emergency_contacts').delete().eq('id', id);
+        showToast('تم حذف الرقم');
+        fetchEmergencyContacts();
+        renderAdminEmergencyList();
+    } catch (err) { showToast('خطأ في الحذف'); }
+};
+
+function renderAdminEmergencyList() {
+    const list = document.getElementById('adminEmergencyList');
+    if (!list) return;
+    if (allEmergencyContacts.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">لا توجد أرقام مضافة.</p>';
+        return;
+    }
+    list.innerHTML = allEmergencyContacts.map(c => `
+        <div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)">
+            <div class="flex items-center gap-2">
+                <i class="fas ${escapeHtml(c.icon)} text-${escapeHtml(c.color)}-500"></i>
+                <span class="text-sm font-semibold">${escapeHtml(c.name)}</span>
+                <span class="text-xs text-gray-500" dir="ltr">${escapeHtml(c.phone)}</span>
+            </div>
+            <button onclick="deleteEmergencyContact('${c.id}')" class="text-xs text-white px-2 py-1 rounded bg-red-500 hover:bg-red-600">حذف</button>
+        </div>
+    `).join('');
 }
 // نهاية ملف app.js
