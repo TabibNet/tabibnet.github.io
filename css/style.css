@@ -887,3 +887,34 @@ html.dark .lomedx-brand {
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
     /* تم إزالة الظلال القديمة لأن التدرج لا يدعم text-shadow مباشرة */
 }
+/* === تحسينات حقول البحث والاستعلام === */
+.search-container, .quick-lookup-box {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* تحسين مظهر حقل الإدخال عند التفاعل معه */
+.search-input:focus {
+    outline: none;
+}
+
+/* إضافة لمسة ذهبية خفيفة أسفل حقل البحث عند النقر عليه */
+.search-container:focus-within {
+    border-color: rgba(196,150,44,0.5) !important;
+    box-shadow: 0 0 0 2px rgba(196, 150, 44, 0.1), 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* الوضع المظلم: إضافة خلفية خفيفة للحقل ليظهر بوضوح */
+html.dark .search-input {
+    color: var(--fg) !important;
+}
+html.dark .search-input::placeholder {
+    color: var(--muted) !important;
+}
+
+/* زر المدينة: إضافة حدود ذهبية خفيفة جداً لتجانسه مع التصميم */
+.city-pill-btn {
+    border: 1px solid rgba(255,255,255,0.15) !important;
+}
+.city-pill-btn:hover {
+    border-color: rgba(196,150,44,0.5) !important;
+}
