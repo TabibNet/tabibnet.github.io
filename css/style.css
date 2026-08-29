@@ -153,10 +153,20 @@ h1, h2, h3, h4, h5 { font-family: 'Noto Kufi Arabic', sans-serif; }
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; } 
 }
-        .search-container { backdrop-filter: blur(10px); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); transition: all 0.4s ease; }
-        .search-container:focus-within { background: rgba(255,255,255,0.2); border-color: rgba(196,150,44,0.5); box-shadow: 0 0 40px rgba(196,150,44,0.15); }
-        .search-input { background: transparent; color: white; outline: none; font-family: 'IBM Plex Sans Arabic', sans-serif; }
-        .search-input::placeholder { color: rgba(255,255,255,0.5); }
+.search-container { 
+    backdrop-filter: blur(16px); 
+    background: rgba(255,255,255,0.08); 
+    border: 1px solid rgba(255,255,255,0.15); 
+    transition: all 0.4s ease; 
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+} 
+.search-container:focus-within { 
+    background: rgba(255,255,255,0.15); 
+    border-color: rgba(196,150,44,0.6); 
+    box-shadow: 0 0 40px rgba(196,150,44,0.2); 
+}
+.search-input { background: transparent; color: white; outline: none; font-family: 'IBM Plex Sans Arabic', sans-serif; }
+.search-input::placeholder { color: rgba(255,255,255,0.5); }
 
         .filter-btn { 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
@@ -200,9 +210,19 @@ h1, h2, h3, h4, h5 { font-family: 'Noto Kufi Arabic', sans-serif; }
         .call-btn { transition: all 0.3s ease; position: relative; overflow: hidden; }
         .call-btn::before { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; background: rgba(255,255,255,0.2); border-radius: 50%; transition: all 0.5s ease; transform: translate(-50%, -50%); }
         .call-btn:hover::before { width: 200%; height: 200%; } .call-btn:hover { transform: scale(1.05); }
-        
-        .stat-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; transition: all 0.3s ease; }
-        .stat-card:hover { background: rgba(255,255,255,0.14); transform: translateY(-5px); }
+
+.stat-card { 
+    background: rgba(255,255,255,0.08); 
+    backdrop-filter: blur(5px); 
+    border: 1px solid rgba(255,255,255,0.12); 
+    border-radius: 16px; 
+    transition: all 0.3s ease; 
+} 
+.stat-card:hover { 
+    background: rgba(255,255,255,0.14); 
+    transform: translateY(-5px); 
+    box-shadow: 0 0 20px rgba(14, 124, 95, 0.3); /* توهج زمردي */
+}
         .ornament-line { display: flex; align-items: center; gap: 12px; justify-content: center; }
         .ornament-line::before, .ornament-line::after { content: ''; width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
         html { scroll-behavior: smooth; }
@@ -305,7 +325,17 @@ html.dark .filter-btn { background: var(--card) !important; border-color: var(--
         .ui-btn.dark-btn { background: #1e293b; } .ui-btn.lang-btn { background: var(--gold); }
         
         .alixjori-dev { margin-top: 15px; text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.4); }
-        .alixjori-dev strong { background: linear-gradient(45deg, var(--gold), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+        .alixjori-dev strong { 
+    background: linear-gradient(45deg, var(--gold), #fff, var(--gold)); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    font-weight: 800; 
+    background-size: 200% auto;
+    transition: background-position 0.5s;
+}
+.alixjori-dev strong:hover {
+    background-position: right center;
+}
         .input-invalid { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important; }
 
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
