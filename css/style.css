@@ -966,3 +966,94 @@ html.dark .search-input::placeholder {
     bottom: auto;
     left: auto;
 }
+/* === النافذة المنبثقة للطوارئ === */
+.emergency-popup {
+    position: fixed;
+    bottom: 155px; /* يظهر فوق زر الطوارئ العائم */
+    left: 20px;
+    width: 280px;
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    z-index: 1005; /* ليكون فوق كل شيء */
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #052E22;
+    color: white;
+}
+
+.popup-header h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* زر الإغلاق X */
+.popup-close-btn {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: 0.2s;
+    border: none;
+    cursor: pointer;
+}
+.popup-close-btn:hover {
+    background: #DC2626;
+    transform: rotate(90deg);
+}
+
+.popup-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.popup-call-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--bg-deep);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--fg);
+    transition: 0.2s;
+    text-decoration: none;
+}
+
+.popup-call-btn i { width: 24px; text-align: center; font-size: 1rem; }
+.popup-call-btn span { margin-right: auto; font-weight: 800; font-family: sans-serif; }
+
+.popup-call-btn.red:hover { background: #FEE2E2; color: #DC2626; }
+.popup-call-btn.blue:hover { background: #DBEAFE; color: #2563EB; }
+.popup-call-btn.orange:hover { background: #FFEDD5; color: #EA580C; }
+.popup-call-btn.rose:hover { background: #FCE7F3; color: #DB2777; }
+
+.popup-view-all {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    margin-top: 4px;
+    text-decoration: none;
+    transition: 0.2s;
+}
+.popup-view-all:hover { color: var(--accent); }
