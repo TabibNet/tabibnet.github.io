@@ -766,7 +766,7 @@ window.openModal = (id) => {
         bookingBtnModal = `<button onclick="openBookingModal('${escapeHtml(item.id)}')" class="flex-1 py-3.5 rounded-xl text-white text-sm font-bold text-center flex items-center justify-center gap-2" style="background: var(--accent)"><i class="fas fa-calendar-check"></i> طلب موعد</button>`;
     }
     
-    const mapQuery = item.latlng || ((item.address || item.clinic) + ' الرحيبة سوريا');
+    const mapQuery = item.latlng || ((item.address || item.clinic) + ' سوريا ');
     const mapEmbed = (mapQuery) ? `
     <div class="mt-5 rounded-2xl overflow-hidden border-2" style="border-color: var(--border)">
         <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-b" style="border-color: var(--border)">
@@ -1971,7 +1971,7 @@ window.logoutAdmin = async () => {
     showToast('تم تسجيل الخروج بنجاح');
 }
 window.updateAdminFormFields = (type) => {
-        // إخفاء حقل الهاتف للمشافي والمراكز فقط
+    // إخفاء حقل الهاتف العام للمشافي والمراكز فقط
     const phoneInput = document.getElementById('new_phone');
     if (phoneInput) {
         if (type === 'hospital' || type === 'center') {
@@ -1980,9 +1980,16 @@ window.updateAdminFormFields = (type) => {
             phoneInput.classList.remove('hidden');
         }
     }
+
     let html = '';
     if (type === 'hospital' || type === 'center') {
         html = `
+            <!-- حقل رقم الهاتف الاحترافي للمشفى -->
+            <div class="col-span-1 sm:col-span-2 p-4 bg-teal-50 rounded-xl border border-teal-200 mb-2">
+                <label class="block text-sm font-bold text-teal-800 mb-2"><i class="fas fa-phone-volume ml-1"></i> رقم هاتف المنشأة (للاستقبال والاستفسار)</label>
+                <input type="text" id="new_facility_phone" class="ctrl-input text-sm bg-white border-teal-300 focus:border-teal-500 focus:ring-teal-200" placeholder="مثال: 0111234567 أو 0991234567">
+            </div>
+
             <input type="text" id="new_capacity_info" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="معلومات السعة الاستيعابية (اختياري)">
             
             <div class="col-span-1 sm:col-span-2 p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -2168,8 +2175,9 @@ window.editFacility = (id) => {
         document.getElementById('new_phone').value = item.phone; 
         document.getElementById('new_hours').value = item.hours; 
         document.getElementById('new_desc').value = item.description; 
-
-            if (item.type === 'hospital' || item.type === 'center') { 
+       
+        if(document.getElementById('new_facility_phone')) document.getElementById('new_facility_phone').value = item.phone || '';
+        if (item.type === 'hospital' || item.type === 'center') { 
         if(document.getElementById('new_capacity_info')) document.getElementById('new_capacity_info').value = item.capacity_info || '';
         
         if (item.facility_details) {
@@ -2247,7 +2255,7 @@ window.saveFacility = async (e) => {
         data.specialty = specialty; 
         data.address = address; 
         data.capacity_info = document.getElementById('new_capacity_info')?.value || '';
-        
+        data.phone = document.getElementById('new_facility_phone')?.value || ''; // حفظ رقم هاتف المشفى
         // جمع البيانات المركبة (facility_details)
         let facilityData = { stats: [], departments: [], clinics: [], units: [], services: [] };
         
