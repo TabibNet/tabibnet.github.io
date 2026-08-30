@@ -3995,5 +3995,5 @@ window.toggleEmergencyPopup = () => {
     if (popup) {
         popup.classList.toggle('show');
     }
-}
+};
 // نهاية ملف app.js
