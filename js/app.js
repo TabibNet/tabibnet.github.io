@@ -3989,4 +3989,11 @@ window.hideEmergencyFab = () => {
         wrapper.classList.add('hidden-fab');
     }
 }
+// دالة فتح وإغلاق نافذة الطوارئ المنبثقة
+window.toggleEmergencyPopup = () => {
+    const popup = document.getElementById('emergencyPopup');
+    if (popup) {
+        popup.classList.toggle('show');
+    }
+}
 // نهاية ملف app.js
