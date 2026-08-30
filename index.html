@@ -743,11 +743,17 @@
          </div>
     </footer>
 
-    <!-- زر الطوارئ العائم -->
-<a href="#emergencies" id="emergencyFab" class="emergency-fab">
-    <i class="fas fa-ambulance"></i>
-    <span class="fab-ping"></span>
-</a>
+    <!-- حاوية زر الطوارئ العائم -->
+<div id="emergencyFabWrapper" class="emergency-fab-wrapper">
+    <button onclick="toggleEmergencyPopup()" id="emergencyFab" class="emergency-fab">
+        <i class="fas fa-ambulance"></i>
+        <span class="fab-ping"></span>
+    </button>
+    <!-- زر الإغلاق X -->
+    <button onclick="hideEmergencyFab()" class="emergency-fab-close" aria-label="إخفاء">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
 
 <!-- ( زر العودة للأعلى ) -->
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
