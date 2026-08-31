@@ -4493,18 +4493,18 @@ async function fetchAdminArticles() {
 
     // إضافة مستمعي الأحداث (Event Listeners) للأزرار بعد رسمها
     list.querySelectorAll('.edit-art-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            const id = e.target.getAttribute('data-id');
-            editArticle(id);
+            const id = this.getAttribute('data-id');
+            window.editArticle(id); // تم التصحيح هنا
         });
     });
 
     list.querySelectorAll('.delete-art-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            const id = e.target.getAttribute('data-id');
-            deleteArticle(id);
+            const id = this.getAttribute('data-id');
+            window.deleteArticle(id); // تم التصحيح هنا
         });
     });
 }
