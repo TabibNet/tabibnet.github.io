@@ -4098,25 +4098,33 @@ window.hideEmergencyFab = function() {
         wrapper.style.display = 'none'; // إخفاء الزر نهائياً
     }
 }
-// === نظام المدونة الطبية ===
+
+// === نظام المدونة الطبية المتطور ===
 let allArticles = [];
+let currentBlogCategory = 'all';
 
 // 1. فتح لوحة المدونة
 window.openMedicalBlog = () => {
     openCtrlPanel('المدونة والمقالات الطبية', `
-        <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-4">
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 text-sm flex items-center gap-3">
                 <i class="fas fa-book-medical text-xl"></i>
                 <span>مكتبة طبية شاملة. اقرأ أحدث المقالات المكتوبة بمراجعة طبية.</span>
             </div>
             
-            <!-- حقل البحث السريع -->
-            <div class="relative">
-                <input type="text" id="blogSearchInput" class="ctrl-input pr-10" placeholder="ابحث في المقالات (مثال: سكري، ضغط، أطفال)..." oninput="searchArticles()">
-                <i class="fas fa-search absolute top-4 left-4 text-gray-400"></i>
+            <!-- حقل البحث وزر التصنيات -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="openBlogCategory()" class="city-pill-btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-all whitespace-nowrap w-full sm:w-auto">
+                    <i class="fas fa-filter text-blue-500"></i>
+                    <span id="currentBlogCategoryText">كل التصنيفات</span>
+                    <i class="fas fa-chevron-down text-xs opacity-70"></i>
+                </button>
+                <div class="relative flex-1">
+                    <input type="text" id="blogSearchInput" class="ctrl-input pr-10" placeholder="ابحث في المقالات..." oninput="searchArticles()">
+                    <i class="fas fa-search absolute top-4 left-4 text-gray-400"></i>
+                </div>
             </div>
 
-            <!-- حاوية المقالات -->
             <div id="blogArticlesList" class="flex flex-col gap-4">
                 <p class="text-center py-10 text-gray-400 text-sm">جاري تحميل المقالات...</p>
             </div>
@@ -4125,131 +4133,135 @@ window.openMedicalBlog = () => {
     fetchArticles();
 }
 
-// 2. جلب المقالات من Supabase
+// 2. دوال تصنيفات المدونة
+window.openBlogCategory = () => {
+    const overlay = document.getElementById('blogCategoryOverlay');
+    const list = document.getElementById('blogCategoryList');
+    
+    // استخراج التصنيفات من المقالات الموجودة
+    const cats = new Set(['كل التصنيفات']);
+    allArticles.forEach(a => { if(a.category) cats.add(a.category); });
+
+    list.innerHTML = Array.from(cats).map(cat => `
+        <div class="city-option ${currentBlogCategory === cat ? 'selected' : ''}" onclick="selectBlogCategory('${escapeHtml(cat)}')">
+            <div class="flex items-center gap-3">
+                <i class="fas ${cat === 'كل التصنيفات' ? 'fa-list' : 'fa-tag'}" style="color: var(--accent)"></i>
+                <span class="font-bold text-sm">${escapeHtml(cat)}</span>
+            </div>
+            ${currentBlogCategory === cat ? '<i class="fas fa-check-circle text-white"></i>' : ''}
+        </div>
+    `).join('');
+    overlay.classList.add('active');
+}
+window.closeBlogCategory = () => document.getElementById('blogCategoryOverlay').classList.remove('active');
+window.selectBlogCategory = (cat) => {
+    currentBlogCategory = cat;
+    document.getElementById('currentBlogCategoryText').innerText = cat;
+    closeBlogCategory();
+    fetchArticles(document.getElementById('blogSearchInput')?.value.trim() || '');
+}
+
+// 3. جلب المقالات
 async function fetchArticles(searchQuery = '') {
     const listContainer = document.getElementById('blogArticlesList');
     if (!listContainer) return;
 
     let query = supabase.from('medical_articles').select('*').order('created_at', { ascending: false });
-    
-    if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
-    }
+    if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+    if (currentBlogCategory !== 'all') query = query.eq('category', currentBlogCategory);
 
-    const { data, error } = await query.limit(20);
-    if (error) { 
-        listContainer.innerHTML = '<p class="text-center text-red-500 text-sm py-4">خطأ في تحميل المقالات.</p>'; 
-        return; 
-    }
-    
+    const { data, error } = await query.limit(30);
+    if (error) { listContainer.innerHTML = '<p class="text-center text-red-500 text-sm py-4">خطأ في تحميل المقالات.</p>'; return; }
     allArticles = data || [];
     renderArticlesList(allArticles);
 }
 
-
-// 3. عرض المقالات كبطاقات أنيقة (صورة يسار، نص يمين)
+// 4. عرض بطاقات المقالات
 function renderArticlesList(articles) {
     const listContainer = document.getElementById('blogArticlesList');
     if (!listContainer) return;
-
-    if (articles.length === 0) {
-        listContainer.innerHTML = '<p class="text-center py-10 text-gray-400 text-sm">لا توجد مقالات مطابقة حالياً.</p>';
-        return;
-    }
+    if (articles.length === 0) { listContainer.innerHTML = '<p class="text-center py-10 text-gray-400 text-sm">لا توجد مقالات مطابقة حالياً.</p>'; return; }
 
     listContainer.innerHTML = articles.map(art => {
         const dateStr = new Date(art.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
         return `
-        <!-- بطاقة المقال -->
         <div onclick="openArticleReader('${art.id}')" class="flex flex-col sm:flex-row-reverse bg-white border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group" style="border-color: var(--border);">
-            
-            <!-- قسم الصورة (يسار في الكمبيوتر، أعلى في الجوال) -->
             <div class="w-full sm:w-44 h-40 sm:h-auto flex-shrink-0 overflow-hidden bg-gray-100 relative">
-                ${art.image_url ? 
-                    `<img src="${escapeHtml(art.image_url)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">` : 
-                    `<div class="w-full h-full flex items-center justify-center"><i class="fas fa-notes-medical text-5xl text-gray-200"></i></div>`
-                }
-                <!-- شارة التصنيف فوق الصورة -->
+                ${art.image_url ? `<img src="${escapeHtml(art.image_url)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center"><i class="fas fa-notes-medical text-5xl text-gray-200"></i></div>`}
                 <span class="absolute top-2 right-2 text-[10px] bg-emerald-600 text-white px-2 py-1 rounded-full font-bold shadow-md">${escapeHtml(art.category || 'طب عام')}</span>
             </div>
-
-            <!-- قسم النص (يمين في الكمبيوتر، أسفل في الجوال) -->
             <div class="p-4 flex flex-col flex-1 justify-center">
-                <h4 class="font-bold text-base text-gray-800 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors" style="font-family: 'Noto Kufi Arabic';">
-                    ${escapeHtml(art.title)}
-                </h4>
-                <p class="text-xs text-gray-500 leading-relaxed line-clamp-3 mb-3">
-                    ${escapeHtml(art.excerpt || art.content.substring(0, 120))}...
-                </p>
-                <!-- أسفل النص: التاريخ والمشاهدات وزر اقرأ المزيد -->
+                <h4 class="font-bold text-base text-gray-800 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(art.title)}</h4>
+                <p class="text-xs text-gray-500 leading-relaxed line-clamp-3 mb-3">${escapeHtml(art.excerpt || art.content.substring(0, 120))}...</p>
                 <div class="flex items-center justify-between text-[10px] text-gray-400 mt-auto border-t pt-2" style="border-color: var(--border);">
                     <div class="flex items-center gap-3">
                         <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
                         <span><i class="fas fa-eye ml-1"></i> ${art.views || 0}</span>
                     </div>
-                    <span class="text-emerald-600 font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
-                        اقرأ المزيد <i class="fas fa-chevron-left text-[8px]"></i>
-                    </span>
+                    <span class="text-emerald-600 font-bold flex items-center gap-1 group-hover:gap-2 transition-all">اقرأ المزيد <i class="fas fa-chevron-left text-[8px]"></i></span>
                 </div>
             </div>
         </div>`;
     }).join('');
 }
 
-// 4. البحث المباشر
-window.searchArticles = () => {
-    const q = document.getElementById('blogSearchInput').value.trim();
-    fetchArticles(q);
+// 5. دالة لمعالجة النص (الخط العريض وصناديق التنبيه)
+function parseArticleContent(text) {
+    let html = escapeHtml(text);
+    // 1. صندوق التنبيه الطبي: إذا بدأ السطر بـ >
+    html = html.replace(/^&gt;\s?(.*)$/gm, '<div class="my-4 p-4 bg-red-50 border-r-4 border-red-500 rounded-xl flex items-start gap-3"><i class="fas fa-exclamation-triangle text-red-500 mt-1"></i><div class="text-sm text-red-800 font-semibold">$1</div></div>');
+    // 2. نص عريض: الكلمات بين ** **
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+    // 3. نص عريض تلقائي بعد النقطتين (مثال: ملاحظة: هذا النص)
+    html = html.replace(/^([^\n]+?):/gm, '<strong class="font-bold text-gray-900">$1:</strong>');
+    return html;
 }
 
-// 5. فتح مقال للقراءة (تصميم احترافي)
+// 6. فتح مقال للقراءة
 window.openArticleReader = async (id) => {
     const article = allArticles.find(a => a.id == id);
     if (!article) return;
 
-    // تعديل الرابط والعنوان لـ SEO
     window.location.hash = `article=${id}`;
     document.title = `${article.title} | Lomedx`;
-
-    // زيادة المشاهدات
     supabase.from('medical_articles').update({ views: (article.views || 0) + 1 }).eq('id', id).then();
 
     const dateStr = new Date(article.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
     
+    // حساب وقت القراءة (200 كلمة في الدقيقة)
+    const wordCount = article.content.split(/\s+/).length;
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+    
+    // معالجة المحتوى لتفعيل الأكواد
+    const processedContent = parseArticleContent(article.content);
+
     document.getElementById('modalContent').innerHTML = `
         <div class="relative">
-            <!-- صورة الغلاف -->
             ${article.image_url ? `
             <div class="relative h-56 sm:h-64 overflow-hidden rounded-t-2xl">
                 <img src="${escapeHtml(article.image_url)}" class="w-full h-full object-cover">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
                 <button onclick="closeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-all"><i class="fas fa-times text-sm"></i></button>
                 <div class="absolute bottom-4 right-5 left-5">
                     <span class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
                     <h2 class="text-white font-black text-xl sm:text-2xl mt-2" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
                 </div>
-            </div>
-            ` : `
+            </div>` : `
             <div class="p-5 flex justify-between items-center border-b" style="border-color: var(--border);">
                 <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
                 <button onclick="closeModal()" class="text-2xl hover:text-gray-400">&times;</button>
-            </div>
-            `}
+            </div>`}
             
-            <!-- محتوى المقال -->
             <div class="p-6 sm:p-8">
                 ${!article.image_url ? `<h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>` : ''}
                 
-                <div class="flex items-center gap-4 text-xs text-gray-400 mb-6 border-b pb-4" style="border-color: var(--border);">
+                <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400 mb-6 border-b pb-4" style="border-color: var(--border);">
                     <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
                     <span><i class="fas fa-eye ml-1"></i> ${(article.views || 0) + 1} قراءة</span>
+                    <span><i class="fas fa-clock ml-1"></i> ${readingTime} دقيقة قراءة</span>
                 </div>
 
-                <div class="prose max-w-none text-sm sm:text-base text-gray-700 leading-loose whitespace-pre-line" style="font-family: 'IBM Plex Sans Arabic';">${escapeHtml(article.content)}</div>
-                
-                <div class="mt-8 p-4 bg-blue-50 rounded-xl text-center text-sm text-blue-800 flex items-center justify-center gap-2">
-                    <i class="fas fa-info-circle"></i> هذه المعلومات استرشادية ولا تغني عن استشارة الطبيب المختص.
-                </div>
+                <div class="prose max-w-none text-sm sm:text-base text-gray-700 leading-loose space-y-4" style="font-family: 'IBM Plex Sans Arabic';">${processedContent}</div>
             </div>
         </div>
     `;
