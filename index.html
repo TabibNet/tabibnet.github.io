@@ -262,23 +262,24 @@
         </div>
     </nav>
 
-            <!-- قائمة الجوال - تصميم فاخر مطابق للطلب -->
+                   <!-- قائمة الجوال - تصميم فاخر مطابق للطلب مع المحتوى الكامل -->
     <div class="mobile-menu-premium fixed top-0 right-0 w-[300px] sm:w-[340px] h-full z-50 overflow-y-auto" id="mobileMenu">
         <div class="p-6 pt-8 relative">
 
-            <!-- الهيدر العلوي -->
-            <div class="flex flex-col items-center mb-8 relative">
-                <div class="flex items-center gap-3 mb-2">
-                    <i class="fas fa-staff-snake text-2xl icon-gold-gradient glow-gold"></i>
-                    <h1 class="text-2xl font-black lomedx-brand">LomedX</h1>
-                    <button onclick="toggleMobileMenu()" class="text-white/70 hover:text-[var(--gold)] text-xl w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:border-[var(--gold)] transition-all absolute -left-2">
-                        <i class="fas fa-times"></i>
-                    </button>
+            <!-- الهيدر العلوي (تم إعادة الشعار) -->
+            <div class="flex items-center justify-between mb-8 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-[var(--gold)]" style="box-shadow: 0 0 20px rgba(196, 150, 44, 0.3);">
+                        <img src="https://z-cdn-media.chatglm.cn/files/981068e8-ce01-48cb-baf4-b93e843f3df9.jpg" alt="LomedX" class="w-full h-full object-cover">
+                    </div>
+                    <span class="lomedx-brand text-2xl font-black">LomedX</span>
                 </div>
-                <div class="w-20 h-1 bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent"></div>
+                <button onclick="toggleMobileMenu()" class="text-white/70 hover:text-[var(--gold)] text-xl w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:border-[var(--gold)] transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
 
-            <!-- صندوق تعرف على المنصة -->
+            <!-- صندوق تعرف على المنصة (تمت استعادة المحتوى الكامل) -->
             <div class="premium-card rounded-2xl p-4 mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-1.5 h-full bg-gradient-to-b from-[var(--gold)] to-transparent"></div>
                 <button onclick="togglePlatformInfo()" class="w-full flex items-center justify-center gap-2 text-sm font-bold text-gold-gradient py-1">
@@ -286,25 +287,41 @@
                     تعرّف على المنصة الطبية
                     <i class="fas fa-chevron-down text-xs mr-auto transition-transform chevron-icon" id="platformInfoIcon"></i>
                 </button>
-                <div id="platformInfo" class="hidden text-right mt-3 space-y-2">
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20">
-                        <i class="fas fa-hospital-user text-[var(--accent)] mt-1"></i>
+                <div id="platformInfo" class="hidden text-right mt-3 space-y-3">
+                    <!-- بطاقة 1 -->
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(14, 124, 95, 0.2);">
+                            <i class="fas fa-hospital-user icon-gold-gradient text-base mt-1"></i>
+                        </div>
                         <div>
-                            <h3 class="font-bold text-sm text-white">دليل المنشآت وحجز المواعيد</h3>
-                            <p class="text-[10px] text-white/50">بحث دقيق عن المنشآت والأطباء وحجز إلكتروني.</p>
+                            <h3 class="font-bold text-sm text-white mb-1">دليل المنشآت وحجز المواعيد</h3>
+                            <p class="text-[10px] leading-relaxed text-white/50">بحث دقيق عن المنشآت الطبية والأطباء، مع إمكانية حجز الموعد إلكترونياً ومتابعته والتواصل المباشر.</p>
                         </div>
                     </div>
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20">
-                        <i class="fas fa-id-card text-pink-400 mt-1"></i>
+                    <!-- بطاقة 2 -->
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(236, 72, 153, 0.15);">
+                            <i class="fas fa-id-card text-base mt-1" style="color: #EC4899;"></i>
+                        </div>
                         <div>
-                            <h3 class="font-bold text-sm text-white">الملف الصحي الذكي</h3>
-                            <p class="text-[10px] text-white/50">احفظ سجلك الطبي واستخرج رمز QR.</p>
+                            <h3 class="font-bold text-sm text-white mb-1">الملف الصحي الذكي</h3>
+                            <p class="text-[10px] leading-relaxed text-white/50">احفظ سجلك الطبي والروشتات بآمان، واستخرج رمز QR يتيح للطبيب قراءة ملفك بسرعة في الطوارئ.</p>
+                        </div>
+                    </div>
+                    <!-- بطاقة 3 -->
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(196, 150, 44, 0.15);">
+                            <i class="fas fa-laptop-medical text-base mt-1 icon-gold-gradient"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-white mb-1">الأدوات والمبادرات التكافلية</h3>
+                            <p class="text-[10px] leading-relaxed text-white/50">الحاسبات الطبية، إسعافات أولية، إرشادات التحاليل، بالإضافة لبنك الدم والمستلزمات الطبية.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 1. الخدمات الأساسية -->
+            <!-- 1. الخدمات الأساسية (تمت استعادة كل الروابط) -->
             <div class="premium-card rounded-3xl p-4 mb-6">
                 <h2 class="text-sm font-bold text-gold-gradient mb-4 px-2 flex items-center gap-2">
                     <i class="fas fa-stethoscope text-xs"></i> الخدمات الأساسية
@@ -316,7 +333,15 @@
                     </a>
                     <a href="#hospitals" onclick="toggleMobileMenu()" class="menu-item-premium flex items-center gap-4 px-2 py-3 rounded-lg">
                         <i class="fas fa-hospital w-6 text-center text-lg icon-gold-gradient"></i>
-                        <span class="text-white/90 text-sm font-semibold">المشافي والمراكز</span>
+                        <span class="text-white/90 text-sm font-semibold">المشافي</span>
+                    </a>
+                    <a href="#centers" onclick="toggleMobileMenu()" class="menu-item-premium flex items-center gap-4 px-2 py-3 rounded-lg">
+                        <i class="fas fa-clinic-medical w-6 text-center text-lg icon-gold-gradient"></i>
+                        <span class="text-white/90 text-sm font-semibold">المراكز الطبية</span>
+                    </a>
+                    <a href="#labs" onclick="toggleMobileMenu()" class="menu-item-premium flex items-center gap-4 px-2 py-3 rounded-lg">
+                        <i class="fas fa-flask w-6 text-center text-lg icon-gold-gradient"></i>
+                        <span class="text-white/90 text-sm font-semibold">المخابر</span>
                     </a>
                     <a href="#doctors" onclick="toggleMobileMenu()" class="menu-item-premium flex items-center gap-4 px-2 py-3 rounded-lg">
                         <i class="fas fa-user-doctor w-6 text-center text-lg icon-gold-gradient"></i>
@@ -336,7 +361,7 @@
                 <i class="fas fa-arrow-left text-white/70 text-xs mr-auto absolute left-4"></i>
             </button>
 
-            <!-- 3. حاسبات وأدوات تفاعلية (أكورديون) -->
+            <!-- 3. حاسبات وأدوات تفاعلية (أكورديون يحتوي على كل الأدوات) -->
             <div class="premium-card rounded-3xl p-4 mb-6" id="toolsAccordion">
                 <button onclick="toggleAccordion()" class="w-full flex items-center justify-between text-right">
                     <div class="flex items-center gap-3">
@@ -498,8 +523,7 @@
 
         </div>
     </div>
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden" id="menuOverlay" onclick="toggleMobileMenu()"></div>
-                            
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden" id="menuOverlay" onclick="toggleMobileMenu()"></div>                         
 
     <div id="ctrlOverlay" class="ctrl-overlay" onclick="closeCtrlPanel(event)">
         <div class="ctrl-content" onclick="event.stopPropagation()">
