@@ -4107,7 +4107,7 @@ window.hideEmergencyFab = function() {
 let allArticles = [];
 let currentBlogCategory = 'all';
 let savedArticleIds = JSON.parse(localStorage.getItem('lomedx_saved_articles') || '[]');
-
+let ratedArticleIds = JSON.parse(localStorage.getItem('lomedx_rated_articles') || '[]');
 // 1. فتح لوحة المدونة
 window.openMedicalBlog = () => {
     openCtrlPanel('المدونة والمقالات الطبية', `
@@ -4369,12 +4369,12 @@ window.openArticleReader = async (id) => {
 
 
 
-                <!-- نظام التقييم (Helpful) -->
+                                <!-- نظام التقييم (Helpful) ومنع التكرار -->
                 <div id="ratingBox" class="mt-8 p-4 bg-gray-50 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <span class="text-sm font-semibold text-gray-600">هل كان هذا المقال مفيداً؟</span>
+                    <span class="text-sm font-semibold text-gray-600">${ratedArticleIds.includes(String(id)) ? 'شكراً لتقييمك!' : 'هل كان هذا المقال مفيداً؟'}</span>
                     <div class="flex gap-2">
-                        <button onclick="rateArticle('${id}', true)" class="rate-btn px-4 py-2 rounded-lg bg-emerald-100 text-emerald-700 font-bold text-sm hover:bg-emerald-200 transition-colors flex items-center gap-1"><i class="fas fa-thumbs-up"></i> نعم</button>
-                        <button onclick="rateArticle('${id}', false)" class="rate-btn px-4 py-2 rounded-lg bg-red-100 text-red-700 font-bold text-sm hover:bg-red-200 transition-colors flex items-center gap-1"><i class="fas fa-thumbs-down"></i> لا</button>
+                        <button onclick="rateArticle('${id}', true)" class="rate-btn px-4 py-2 rounded-lg bg-emerald-100 text-emerald-700 font-bold text-sm hover:bg-emerald-200 transition-colors flex items-center gap-1 ${ratedArticleIds.includes(String(id)) ? 'opacity-50 cursor-not-allowed' : ''}" ${ratedArticleIds.includes(String(id)) ? 'disabled' : ''}><i class="fas fa-thumbs-up"></i> نعم</button>
+                        <button onclick="rateArticle('${id}', false)" class="rate-btn px-4 py-2 rounded-lg bg-red-100 text-red-700 font-bold text-sm hover:bg-red-200 transition-colors flex items-center gap-1 ${ratedArticleIds.includes(String(id)) ? 'opacity-50 cursor-not-allowed' : ''}" ${ratedArticleIds.includes(String(id)) ? 'disabled' : ''}><i class="fas fa-thumbs-down"></i> لا</button>
                     </div>
                 </div>
 
@@ -4398,9 +4398,35 @@ window.openArticleReader = async (id) => {
     });
 }
 
-// دالة التقييم
+// دالة التقييم مع منع التكرار
 window.rateArticle = async (id, isHelpful) => {
+    id = String(id);
+    
+    // التحقق مما إذا كان المستخدم قد قيم هذا المقال سابقاً
+    if (ratedArticleIds.includes(id)) {
+        showToast('لقد قمت بتقييم هذا المقال مسبقاً');
+        return;
+    }
+
     showToast('شكراً لتقييمك!');
+    
+    // حفظ معرف المقال في قائمة المُقيّمة لمنع التكرار
+    ratedArticleIds.push(id);
+    localStorage.setItem('lomedx_rated_articles', JSON.stringify(ratedArticleIds));
+    
+    // تعطيل الأزرار وتغيير النص فوراً في الواجهة
+    document.querySelectorAll('.rate-btn').forEach(b => {
+        b.disabled = true;
+        b.classList.add('opacity-50', 'cursor-not-allowed');
+    });
+    const ratingBox = document.getElementById('ratingBox');
+    if(ratingBox) {
+        ratingBox.style.opacity = '0.5';
+        const span = ratingBox.querySelector('span');
+        if(span) span.innerText = 'شكراً لتقييمك!';
+    }
+
+    // تحديث قاعدة البيانات
     const { data } = await supabase.from('medical_articles').select('likes, dislikes').eq('id', id).single();
     if (!data) return;
     
@@ -4409,10 +4435,6 @@ window.rateArticle = async (id, isHelpful) => {
     else update.dislikes = (data.dislikes || 0) + 1;
     
     await supabase.from('medical_articles').update(update).eq('id', id);
-    
-    // تعطيل الأزرار بعد التقييم
-    document.querySelectorAll('.rate-btn').forEach(b => b.disabled = true);
-    document.getElementById('ratingBox').style.opacity = '0.5';
 };
 
 // دوال الأدوات الذكية (الخط والاستماع والمشاركة)
