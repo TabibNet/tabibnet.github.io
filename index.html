@@ -262,170 +262,149 @@
         </div>
     </nav>
 
-    <div class="mobile-menu fixed top-0 right-0 w-80 h-full z-50 bg-[#073D2E] shadow-2xl overflow-y-auto" id="mobileMenu">
-    <div class="p-6 pt-12"> <!-- تم إضافة pt-12 لدفع المحتوى للأسفل -->
-            <div class="flex items-center justify-between mb-8">
-                <div class="flex items-center gap-3 text-white">
-    <div class="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center" style="box-shadow: 0 0 10px rgba(196, 150, 44, 0.3);">
-        <img src="https://z-cdn-media.chatglm.cn/files/981068e8-ce01-48cb-baf4-b93e843f3df9.jpg?auth_key=1885239914-cbdf24db3e384494b76a36d7b2c9a35a-0-3aee9630f51ea0cb177c216a24d9f061" alt="شعار المنصة LomedXالطبية" class="w-full h-full object-cover" loading="lazy">
-    </div>
-    <span class="lomedx-brand text-xl">LomedX</span>
-</div>
-                <button onclick="toggleMobileMenu()" class="text-white/60 hover:text-white text-xl" aria-label="إغلاق"><i class="fas fa-times"></i></button>
-            </div>
-                <!-- صندوق منصة طبية متكاملة (مصمم للخلفية الداكنة) -->
-            <div class="bg-white/5 border border-[var(--gold)]/20 rounded-2xl p-4 mb-6 relative overflow-hidden">
-                <!-- شريط ذهبي جانبي للزينة -->
-                <div class="absolute top-0 right-0 w-1.5 h-full bg-[var(--gold)]/70"></div>
-                                <div class="mb-4">
-                    <button onclick="togglePlatformInfo()" class="w-full flex items-center justify-center gap-2 text-sm font-bold text-[var(--gold)] py-2.5 px-4 rounded-xl bg-white/5 border border-[var(--gold)]/20 transition-all hover:bg-white/10" style="font-family: 'Noto Kufi Arabic'">
-                        <i class="fas fa-circle-info"></i>
-                        تعرّف على المنصة الطبية
-                        <i class="fas fa-chevron-down text-xs transition-transform mr-auto" id="platformInfoIcon"></i>
-                    </button>
-                </div>
-                <div id="platformInfo" class="hidden text-right">
-                    <div class="flex justify-center items-center gap-3 mb-4 pt-2">
-                        <span class="h-px w-8 bg-white/20"></span>
-                        <i class="fas fa-quote-right text-sm" style="color: var(--gold)"></i>
-                        <span class="h-px w-8 bg-white/20"></span>
-                    </div>
-
-                    <!-- بطاقة البحث والحجز -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: var(--accent-light);">
-                            <i class="fas fa-hospital-user text-base" style="color: var(--accent)"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-sm text-white mb-1" style="font-family: 'Noto Kufi Arabic'">دليل المنشآت وحجز المواعيد</h3>
-                            <p class="text-[10px] leading-relaxed text-white/50">بحث دقيق عن المنشآت الطبية والأطباء، مع إمكانية حجز الموعد إلكترونياً ومتابعته والتواصل المباشر.</p>
-                        </div>
-                    </div>
-                    
-                    <!-- بطاقة الملف الصحي الرقمي -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #FCE7F3;">
-                            <i class="fas fa-id-card text-base" style="color: #EC4899"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-sm text-white mb-1" style="font-family: 'Noto Kufi Arabic'">الملف الصحي الذكي</h3>
-                            <p class="text-[10px] leading-relaxed text-white/50">احفظ سجلك الطبي والروشتات بآمان، واستخرج رمز QR يتيح للطبيب قراءة ملفك بسرعة في الطوارئ.</p>
-                        </div>
-                    </div>
-                    
-                    <!-- بطاقة الأدوات والمبادرات -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: var(--gold-light);">
-                            <i class="fas fa-laptop-medical text-base" style="color: var(--gold)"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-sm text-white mb-1" style="font-family: 'Noto Kufi Arabic'">الأدوات والمبادرات التكافلية</h3>
-                            <p class="text-[10px] leading-relaxed text-white/50">الحاسبات الطبية، إسعافات أولية، إرشادات التحاليل، بالإضافة لبنك الدم والمستلزمات الطبية.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex flex-col gap-1">
-                <a href="#home" onclick="toggleMobileMenu()" class="text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-home w-5"></i> الرئيسية</a>
-                <a href="#hospitals" onclick="toggleMobileMenu()" class="text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-hospital-symbol w-5"></i> المشافي</a>
-                <a href="#centers" onclick="toggleMobileMenu()" class="text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-clinic-medical w-5"></i> المراكز الطبية</a>
-                <a href="#labs" onclick="toggleMobileMenu()" class="text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-flask w-5"></i> المخابر</a>
-                <a href="#doctors" onclick="toggleMobileMenu()" class="text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-user-md w-5"></i> الأطباء</a>
-                <a href="#pharmacies" onclick="toggleMobileMenu()" class="text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-pills w-5"></i> الصيدليات</a>
-
-<!-- زر المدونة الطبية الاحترافي -->
-<button onclick="toggleMobileMenu(); openMedicalBlog()" class="w-full mt-3 text-right text-white bg-gradient-to-l from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 rounded-xl px-4 py-3 text-sm font-bold transition-all flex items-center gap-3 shadow-lg">
-    <i class="fas fa-book-medical w-5 text-yellow-300"></i> 
-    <span>المدونة الطبية الذكية</span>
-    <i class="fas fa-arrow-left text-xs mr-auto opacity-70"></i>
-</button>
-
-<div class="border-t border-white/10 my-3"></div>
-                
+        <!-- قائمة الجوال المطورة حسب التصميم -->
+    <div class="mobile-menu-modern fixed top-0 right-0 h-full z-50 overflow-y-auto translate-x-full transition-transform duration-300" id="mobileMenu">
+        <div class="p-5 pt-8 relative">
             
-                
-                <div class="px-4 pt-2 text-yellow-400 text-xs font-bold">أدوات طبية تفاعلية</div>
-                <button onclick="toggleMobileMenu(); openMedicineDonation()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-laptop-medical w-5" style="color:#0D9488"></i> الأجهزة والمستلزمات الطبية</button>
-                <button onclick="toggleMobileMenu(); openBloodBank()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-tint w-5" style="color:#DC2626"></i> بنك التبرع بالدم الرقمي</button>
-                <button onclick="toggleMobileMenu(); openMedicalMap()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-map-marked-alt w-5" style="color:#10B981"></i> الخريطة الطبية التفاعلية</button>
-                <button onclick="toggleMobileMenu(); openAskDoctor()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-comments w-5" style="color:#0EA5E9"></i> اسأل طبيب </button>
-                <button onclick="toggleMobileMenu(); openBurnCalculator()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-fire-extinguisher w-5" style="color:#F97316"></i> مُسعف الحروق الذكي</button>
-                <button onclick="toggleMobileMenu(); openSeasonalDiseases()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-virus-covid w-5" style="color:#8B5CF6"></i> أمراض الرحيبة الموسمية</button>
-                <button onclick="toggleMobileMenu(); openRahebaRadar()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-satellite-dish w-5" style="color:#4F46E5"></i> رادار الصحي</button>
-                <button onclick="toggleMobileMenu(); openPregnancyCalc()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-baby w-5" style="color:#EC4899"></i> حاسبة الحمل والولادة</button>
-                <button onclick="toggleMobileMenu(); openDoseCalc()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-syringe w-5" style="color:#2563EB"></i> حاسبة جرعات الأطفال</button>
-                <button onclick="toggleMobileMenu(); openVaccineScheduler()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-syringe w-5" style="color:#F97316"></i> جدول لقاحات الطفل</button>
-                <button onclick="toggleMobileMenu(); openHealthCalc()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-weight-scale w-5" style="color:#4F46E5"></i> حاسبة الصحة (BMI والسعرات)</button>
-                <button onclick="toggleMobileMenu(); openWaterCalc()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-glass-water w-5" style="color:#0891B2"></i> حاسبة الماء اليومية</button>
-                <button onclick="toggleMobileMenu(); openFirstAid()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-kit-medical w-5" style="color:#DC2626"></i> الدليل الإسعافات الأولية</button>
-                <button onclick="toggleMobileMenu(); openMedSymbols()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-file-medical w-5" style="color:#0D9488"></i> رموز التحاليل والروشتات</button>
-                <button onclick="toggleMobileMenu(); openPreTestGuide()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-vial w-5" style="color:#0EA5E9"></i> التعليمات قبل التحاليل</button>
-                <button onclick="toggleMobileMenu(); openEventsFirstAid()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-people-group w-5" style="color:#B91C1C"></i> إسعافات المناسبات والتجمعات</button>
-                <!-- New Tools Added Here -->
-                <button onclick="toggleMobileMenu(); openChronicNutrition()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-bowl-food w-5" style="color:#10B981"></i> تغذية الأمراض المزمنة</button>
-                <button onclick="toggleMobileMenu(); openPreVisitGuide()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-clipboard-list w-5" style="color:#3B82F6"></i> إرشادات قبل زيارة الطبيب</button>
-                <button onclick="toggleMobileMenu(); openFoodInteractions()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-utensils w-5" style="color:#D97706"></i> تعارضات الأدوية مع الطعام</button>
-                <button onclick="toggleMobileMenu(); openPatientReminder()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-bell w-5" style="color:#6366F1"></i> دفتر التذكير الذاتي</button>
-                <button onclick="toggleMobileMenu(); openMedRenewalCalc()" class="text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-calendar-check w-5" style="color:#06B6D4"></i> حاسبة تجديد الدواء</button>
-
-                <div class="border-t border-white/10 my-3"></div>
-
-                <div class="space-y-2 mt-2">
-    <button onclick="toggleMobileMenu(); openHealthFile()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(236, 72, 153, 0.15);">
-            <i class="fas fa-id-card text-pink-400"></i>
-        </div>
-        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">ملفي الصحي الذكي</span>
-    </button>
-    <button onclick="toggleMobileMenu(); openMedicineFinder()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(245, 158, 11, 0.15);">
-            <i class="fas fa-pills text-yellow-400"></i>
-        </div>
-        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">ابحث عن دوائك</span>
-    </button>
-    <button onclick="toggleMobileMenu(); toggleEmergencyPopup()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(220, 38, 38, 0.15);">
-            <i class="fas fa-ambulance text-red-400"></i>
-        </div>
-        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">الطوارئ</span>
-    </button>
-</div>
-
-<!-- بوابات النظام -->
-<div class="mt-6 pt-4 border-t border-white/10">
-    <div class="px-2 mb-3 text-yellow-400 text-xs font-bold flex items-center gap-2">
-        <i class="fas fa-shield-halved"></i> بوابات النظام
-    </div>
-    <div class="grid grid-cols-3 gap-2">
-        <!-- بوابة الطبيب -->
-        <button onclick="toggleMobileMenu(); openDoctorLogin()" class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-all group border border-blue-500/20">
-            <i class="fas fa-user-md text-blue-400 text-lg"></i>
-            <span class="text-[11px] font-bold text-gray-300 group-hover:text-white">الطبيب</span>
-        </button>
-        <!-- بوابة الصيدلية -->
-        <button onclick="toggleMobileMenu(); openPharmacyLogin()" class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group border border-emerald-500/20">
-            <i class="fas fa-prescription-bottle-medical text-emerald-400 text-lg"></i>
-            <span class="text-[11px] font-bold text-gray-300 group-hover:text-white">الصيدلية</span>
-        </button>
-        <!-- بوابة الإدارة -->
-        <button onclick="toggleMobileMenu(); openAdminLogin()" class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-all group border border-amber-500/20">
-            <i class="fas fa-cogs text-amber-400 text-lg"></i>
-            <span class="text-[11px] font-bold text-gray-300 group-hover:text-white">الإدارة</span>
-        </button>
-    </div>
-</div>
-
-<!-- زر الإشعارات (مستقل تماماً) -->
-<div class="mt-4">
-    <button onclick="toggleMobileMenu(); setupOneSignal()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 transition-all border border-yellow-500/20">
-        <i class="fas fa-bell text-yellow-400"></i>
-        <span class="text-sm font-bold text-yellow-300">تفعيل الإشعارات</span>
-    </button>
-</div>
+            <!-- الخلفية الزخرفية -->
+            <div class="absolute top-0 right-0 w-full h-64 bg-gradient-to-b from-[#0E7C5F]/20 to-transparent pointer-events-none"></div>
+            
+            <!-- الهيدر: الشعار وزر الإغلاق -->
+            <div class="flex items-center justify-between mb-8 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-[var(--gold)]/30" style="box-shadow: 0 4px 15px rgba(196, 150, 44, 0.2);">
+                        <img src="https://z-cdn-media.chatglm.cn/files/981068e8-ce01-48cb-baf4-b93e843f3df9.jpg" alt="LomedX" class="w-full h-full object-cover">
+                    </div>
+                    <span class="lomedx-brand text-2xl font-black">LomedX</span>
+                </div>
+                <button onclick="toggleMobileMenu()" class="text-white/60 hover:text-white text-xl w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all" aria-label="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+
+            <!-- صندوق تعرف على المنصة -->
+            <div class="bg-white/5 backdrop-blur-sm border border-[var(--gold)]/20 rounded-2xl p-4 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-1.5 h-full bg-gradient-to-b from-[var(--gold)] to-transparent"></div>
+                <button onclick="togglePlatformInfo()" class="w-full flex items-center justify-center gap-2 text-sm font-bold text-[var(--gold)] py-2 transition-all">
+                    <i class="fas fa-circle-info"></i>
+                    تعرّف على المنصة الطبية
+                    <i class="fas fa-chevron-down text-xs transition-transform mr-auto" id="platformInfoIcon"></i>
+                </button>
+                <div id="platformInfo" class="hidden text-right mt-3">
+                    <!-- يمكن لصق محتوى المنصة القديم هنا -->
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 mb-2">
+                        <i class="fas fa-hospital-user text-[var(--accent)] mt-1"></i>
+                        <div>
+                            <h3 class="font-bold text-sm text-white">دليل المنشآت وحجز المواعيد</h3>
+                            <p class="text-[10px] text-white/50">بحث دقيق عن المنشآت والأطباء وحجز إلكتروني.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 mb-2">
+                        <i class="fas fa-id-card text-pink-400 mt-1"></i>
+                        <div>
+                            <h3 class="font-bold text-sm text-white">الملف الصحي الذكي</h3>
+                            <p class="text-[10px] text-white/50">احفظ سجلك الطبي واستخرج رمز QR.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20">
+                        <i class="fas fa-laptop-medical text-[var(--gold)] mt-1"></i>
+                        <div>
+                            <h3 class="font-bold text-sm text-white">الأدوات والمبادرات التكافلية</h3>
+                            <p class="text-[10px] text-white/50">حاسبات طبية، إسعافات، بنك دم ومستلزمات.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الروابط الرئيسية -->
+            <div class="flex flex-col gap-1 mb-6">
+                <a href="#home" onclick="toggleMobileMenu()" class="mobile-menu-item"><i class="fas fa-home text-[var(--gold)]"></i> الرئيسية</a>
+                <a href="#hospitals" onclick="toggleMobileMenu()" class="mobile-menu-item"><i class="fas fa-hospital-symbol text-[var(--gold)]"></i> المشافي</a>
+                <a href="#centers" onclick="toggleMobileMenu()" class="mobile-menu-item"><i class="fas fa-clinic-medical text-[var(--gold)]"></i> المراكز الطبية</a>
+                <a href="#labs" onclick="toggleMobileMenu()" class="mobile-menu-item"><i class="fas fa-flask text-[var(--gold)]"></i> المخابر</a>
+                <a href="#doctors" onclick="toggleMobileMenu()" class="mobile-menu-item"><i class="fas fa-user-md text-[var(--gold)]"></i> الأطباء</a>
+                <a href="#pharmacies" onclick="toggleMobileMenu()" class="mobile-menu-item"><i class="fas fa-pills text-[var(--gold)]"></i> الصيدليات</a>
+            </div>
+
+            <!-- زر المدونة -->
+            <button onclick="toggleMobileMenu(); openMedicalBlog()" class="w-full mb-6 text-white bg-gradient-to-l from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 rounded-xl px-4 py-3 text-sm font-bold transition-all flex items-center gap-3 shadow-lg">
+                <i class="fas fa-book-medical w-5 text-yellow-300"></i> 
+                <span>المدونة الطبية الذكية</span>
+                <i class="fas fa-arrow-left text-xs mr-auto opacity-70"></i>
+            </button>
+
+            <!-- أدوات طبية تفاعلية -->
+            <div class="section-title"><i class="fas fa-toolbox"></i> أدوات طبية تفاعلية</div>
+            <div class="flex flex-col gap-1 mb-6">
+                <button onclick="toggleMobileMenu(); openMedicineDonation()" class="mobile-menu-item"><i class="fas fa-laptop-medical text-teal-400"></i> الأجهزة والمستلزمات الطبية</button>
+                <button onclick="toggleMobileMenu(); openBloodBank()" class="mobile-menu-item"><i class="fas fa-tint text-red-400"></i> بنك التبرع بالدم الرقمي</button>
+                <button onclick="toggleMobileMenu(); openMedicalMap()" class="mobile-menu-item"><i class="fas fa-map-marked-alt text-green-400"></i> الخريطة الطبية التفاعلية</button>
+                <button onclick="toggleMobileMenu(); openAskDoctor()" class="mobile-menu-item"><i class="fas fa-comments text-blue-400"></i> اسأل طبيب</button>
+                <button onclick="toggleMobileMenu(); openBurnCalculator()" class="mobile-menu-item"><i class="fas fa-fire-extinguisher text-orange-400"></i> مُسعف الحروق الذكي</button>
+                <button onclick="toggleMobileMenu(); openSeasonalDiseases()" class="mobile-menu-item"><i class="fas fa-virus-covid text-purple-400"></i> أمراض الرحيبة الموسمية</button>
+                <button onclick="toggleMobileMenu(); openRahebaRadar()" class="mobile-menu-item"><i class="fas fa-satellite-dish text-indigo-400"></i> رادار الصحي</button>
+                <button onclick="toggleMobileMenu(); openPregnancyCalc()" class="mobile-menu-item"><i class="fas fa-baby text-pink-400"></i> حاسبة الحمل والولادة</button>
+                <button onclick="toggleMobileMenu(); openDoseCalc()" class="mobile-menu-item"><i class="fas fa-syringe text-blue-600"></i> حاسبة جرعات الأطفال</button>
+                <button onclick="toggleMobileMenu(); openVaccineScheduler()" class="mobile-menu-item"><i class="fas fa-syringe text-orange-600"></i> جدول لقاحات الطفل</button>
+                <button onclick="toggleMobileMenu(); openHealthCalc()" class="mobile-menu-item"><i class="fas fa-weight-scale text-indigo-500"></i> حاسبة الصحة (BMI والسعرات)</button>
+                <button onclick="toggleMobileMenu(); openWaterCalc()" class="mobile-menu-item"><i class="fas fa-glass-water text-cyan-600"></i> حاسبة الماء اليومية</button>
+                <button onclick="toggleMobileMenu(); openFirstAid()" class="mobile-menu-item"><i class="fas fa-kit-medical text-red-500"></i> الدليل الإسعافات الأولية</button>
+                <button onclick="toggleMobileMenu(); openMedSymbols()" class="mobile-menu-item"><i class="fas fa-file-medical text-teal-500"></i> رموز التحاليل والروشتات</button>
+                <button onclick="toggleMobileMenu(); openPreTestGuide()" class="mobile-menu-item"><i class="fas fa-vial text-blue-500"></i> التعليمات قبل التحاليل</button>
+                <button onclick="toggleMobileMenu(); openEventsFirstAid()" class="mobile-menu-item"><i class="fas fa-people-group text-red-700"></i> إسعافات المناسبات والتجمعات</button>
+                <button onclick="toggleMobileMenu(); openChronicNutrition()" class="mobile-menu-item"><i class="fas fa-bowl-food text-green-500"></i> تغذية الأمراض المزمنة</button>
+                <button onclick="toggleMobileMenu(); openPreVisitGuide()" class="mobile-menu-item"><i class="fas fa-clipboard-list text-blue-500"></i> إرشادات قبل زيارة الطبيب</button>
+                <button onclick="toggleMobileMenu(); openFoodInteractions()" class="mobile-menu-item"><i class="fas fa-utensils text-amber-600"></i> تعارضات الأدوية مع الطعام</button>
+                <button onclick="toggleMobileMenu(); openPatientReminder()" class="mobile-menu-item"><i class="fas fa-bell text-indigo-400"></i> دفتر التذكير الذاتي</button>
+                <button onclick="toggleMobileMenu(); openMedRenewalCalc()" class="mobile-menu-item"><i class="fas fa-calendar-check text-cyan-500"></i> حاسبة تجديد الدواء</button>
+            </div>
+
+            <div class="border-t border-white/10 my-4"></div>
+
+            <!-- اختصارات سريعة -->
+            <div class="section-title"><i class="fas fa-bolt"></i> اختصارات سريعة</div>
+            <div class="grid grid-cols-3 gap-2 mb-6">
+                <button onclick="toggleMobileMenu(); openHealthFile()" class="mobile-grid-btn">
+                    <i class="fas fa-id-card text-pink-400"></i>
+                    <span>ملفي الصحي</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openMedicineFinder()" class="mobile-grid-btn">
+                    <i class="fas fa-pills text-yellow-400"></i>
+                    <span>ابحث عن دوائك</span>
+                </button>
+                <button onclick="toggleMobileMenu(); toggleEmergencyPopup()" class="mobile-grid-btn">
+                    <i class="fas fa-ambulance text-red-400"></i>
+                    <span>الطوارئ</span>
+                </button>
+            </div>
+
+            <!-- بوابات النظام -->
+            <div class="section-title"><i class="fas fa-shield-halved"></i> بوابات النظام</div>
+            <div class="grid grid-cols-3 gap-2 mb-6">
+                <button onclick="toggleMobileMenu(); openDoctorLogin()" class="mobile-grid-btn">
+                    <i class="fas fa-user-md text-blue-400"></i>
+                    <span>الطبيب</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openPharmacyLogin()" class="mobile-grid-btn">
+                    <i class="fas fa-prescription-bottle-medical text-emerald-400"></i>
+                    <span>الصيدلية</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openAdminLogin()" class="mobile-grid-btn">
+                    <i class="fas fa-cogs text-amber-400"></i>
+                    <span>الإدارة</span>
+                </button>
+            </div>
+
+            <!-- زر الإشعارات -->
+            <button onclick="toggleMobileMenu(); setupOneSignal()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 transition-all border border-yellow-500/20 mb-8">
+                <i class="fas fa-bell text-yellow-400"></i>
+                <span class="text-sm font-bold text-yellow-300">تفعيل الإشعارات</span>
+            </button>
+
         </div>
     </div>
     <div class="fixed inset-0 bg-black/50 z-40 hidden" id="menuOverlay" onclick="toggleMobileMenu()"></div>
+                            
 
     <div id="ctrlOverlay" class="ctrl-overlay" onclick="closeCtrlPanel(event)">
         <div class="ctrl-content" onclick="event.stopPropagation()">
