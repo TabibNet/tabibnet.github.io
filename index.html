@@ -370,16 +370,53 @@
 
                 <div class="border-t border-white/10 my-3"></div>
 
-                <button onclick="toggleMobileMenu(); openHealthFile()" class="text-right text-pink-300 hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-id-card w-5"></i> ملفي الصحي الذكي</button>
-                <button onclick="toggleMobileMenu(); openMedicineFinder()" class="text-right text-yellow-300 hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-pills w-5"></i> ابحث عن دوائك</button>
-                <a href="#emergencies" onclick="toggleMobileMenu()" class="text-red-300 hover:text-red-200 hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-ambulance w-5"></i> الطوارئ</a>
-                
-                <div class="border-t border-white/10 my-4 pt-4 flex flex-col gap-2">
-                    <button onclick="toggleMobileMenu(); openDoctorLogin()" class="w-full text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-user-md w-5" style="color:var(--gold)"></i> لوحة الطبيب</button>
-                    <button onclick="toggleMobileMenu(); openAdminLogin()" class="w-full text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-cogs w-5 text-gray-300"></i> لوحة الإدارة</button>
-                    <button onclick="toggleMobileMenu(); openPharmacyLogin()" class="w-full text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-prescription-bottle-medical w-5 text-green-300"></i> لوحة الصيدلية</button>
-                    <button onclick="toggleMobileMenu(); setupOneSignal()" class="w-full text-right text-white/70 hover:text-white hover:bg-white/10 rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-3"><i class="fas fa-bell w-5" style="color:#F59E0B"></i>تفعيل إشعارات </button>
-                </div>
+                <div class="space-y-2 mt-2">
+    <button onclick="toggleMobileMenu(); openHealthFile()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(236, 72, 153, 0.15);">
+            <i class="fas fa-id-card text-pink-400"></i>
+        </div>
+        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">ملفي الصحي الذكي</span>
+    </button>
+    <button onclick="toggleMobileMenu(); openMedicineFinder()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(245, 158, 11, 0.15);">
+            <i class="fas fa-pills text-yellow-400"></i>
+        </div>
+        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">ابحث عن دوائك</span>
+    </button>
+    <button onclick="toggleMobileMenu(); toggleEmergencyPopup()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(220, 38, 38, 0.15);">
+            <i class="fas fa-ambulance text-red-400"></i>
+        </div>
+        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">الطوارئ</span>
+    </button>
+</div>
+
+<div class="border-t border-white/10 my-4 pt-4 space-y-2">
+    <button onclick="toggleMobileMenu(); openDoctorLogin()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(37, 99, 235, 0.15);">
+            <i class="fas fa-user-md text-blue-400"></i>
+        </div>
+        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">لوحة الطبيب</span>
+    </button>
+    <button onclick="toggleMobileMenu(); openAdminLogin()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(115, 115, 115, 0.2);">
+            <i class="fas fa-cogs text-gray-300"></i>
+        </div>
+        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">لوحة الإدارة</span>
+    </button>
+    <button onclick="toggleMobileMenu(); openPharmacyLogin()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(16, 185, 129, 0.15);">
+            <i class="fas fa-prescription-bottle-medical text-green-400"></i>
+        </div>
+        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">لوحة الصيدلية</span>
+    </button>
+    <button onclick="toggleMobileMenu(); setupOneSignal()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(245, 158, 11, 0.15);">
+            <i class="fas fa-bell text-yellow-400"></i>
+        </div>
+        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">تفعيل إشعارات</span>
+    </button>
+</div>
             </div>
         </div>
     </div>
