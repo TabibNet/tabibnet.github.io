@@ -744,7 +744,16 @@
         <div id="cityListContainer"></div>
     </div>
 </div>
-
+<!-- لوحة تصنيفات المدونة المنزلقة -->
+<div id="blogCategoryOverlay" class="city-selector-overlay" onclick="closeBlogCategory()">
+    <div class="city-selector-panel" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-lg" style="font-family: 'Noto Kufi Arabic';">اختر التصنيف الطبي</h3>
+            <button onclick="closeBlogCategory()" class="text-2xl hover:text-gray-400">&times;</button>
+        </div>
+        <div id="blogCategoryList"></div>
+    </div>
+</div>
     <!-- زر الطوارئ العائم الجديد -->
 <div id="emergencyFabWrapper" style="position: fixed; bottom: 90px; left: 30px; z-index: 1001;">
     <button onclick="toggleEmergencyPopup()" id="emergencyFabBtn" style="width: 52px; height: 52px; background: #DC2626; color: white; border-radius: 50%; border: none; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; justify-content: center;">
