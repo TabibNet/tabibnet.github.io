@@ -4106,6 +4106,7 @@ window.hideEmergencyFab = function() {
 // === نظام المدونة الطبية المتطور ===
 let allArticles = [];
 let currentBlogCategory = 'all';
+let savedArticleIds = JSON.parse(localStorage.getItem('lomedx_saved_articles') || '[]');
 
 // 1. فتح لوحة المدونة
 window.openMedicalBlog = () => {
@@ -4116,12 +4117,24 @@ window.openMedicalBlog = () => {
                 <span>مكتبة طبية شاملة. اقرأ أحدث المقالات المكتوبة بمراجعة طبية.</span>
             </div>
             
-            <!-- حقل البحث وزر التصنيات -->
+            <!-- قسم الأكثر قراءة (Trending) -->
+            <div class="bg-gradient-to-l from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-200">
+                <h4 class="font-bold text-sm text-amber-800 mb-3 flex items-center gap-2"><i class="fas fa-fire"></i> الأكثر قراءةً</h4>
+                <div id="trendingArticlesList" class="flex gap-3 overflow-x-auto pb-2">
+                    <p class="text-center text-gray-400 text-sm py-4 w-full">جاري التحميل...</p>
+                </div>
+            </div>
+
+            <!-- حقل البحث والأزرار -->
             <div class="flex flex-col sm:flex-row gap-3">
                 <button onclick="openBlogCategory()" class="city-pill-btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-all whitespace-nowrap w-full sm:w-auto">
                     <i class="fas fa-filter text-blue-500"></i>
                     <span id="currentBlogCategoryText">كل التصنيفات</span>
                     <i class="fas fa-chevron-down text-xs opacity-70"></i>
+                </button>
+                <button onclick="showSavedArticles()" class="city-pill-btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-sm font-semibold transition-all whitespace-nowrap w-full sm:w-auto">
+                    <i class="fas fa-bookmark"></i>
+                    <span>المحفوظة</span>
                 </button>
                 <div class="relative flex-1">
                     <input type="text" id="blogSearchInput" class="ctrl-input pr-10" placeholder="ابحث في المقالات..." oninput="searchArticles()">
@@ -4134,36 +4147,65 @@ window.openMedicalBlog = () => {
             </div>
         </div>
     `, '#0E7C5F');
+    fetchTrendingArticles();
     fetchArticles();
 }
 
-// 2. دوال تصنيفات المدونة
-window.openBlogCategory = () => {
-    const overlay = document.getElementById('blogCategoryOverlay');
-    const list = document.getElementById('blogCategoryList');
+// جلب مقالات الأكثر قراءة
+async function fetchTrendingArticles() {
+    const container = document.getElementById('trendingArticlesList');
+    if (!container) return;
+    const { data, error } = await supabase.from('medical_articles').select('*').order('views', { ascending: false }).limit(5);
+    if (error || !data || data.length === 0) { container.innerHTML = '<p class="text-center text-gray-400 text-sm w-full">لا توجد مقالات رائجة بعد.</p>'; return; }
     
-    // استخراج التصنيفات من المقالات الموجودة
-    const cats = new Set(['كل التصنيفات']);
-    allArticles.forEach(a => { if(a.category) cats.add(a.category); });
-
-    list.innerHTML = Array.from(cats).map(cat => `
-        <div class="city-option ${currentBlogCategory === cat ? 'selected' : ''}" onclick="selectBlogCategory('${escapeHtml(cat)}')">
-            <div class="flex items-center gap-3">
-                <i class="fas ${cat === 'كل التصنيفات' ? 'fa-list' : 'fa-tag'}" style="color: var(--accent)"></i>
-                <span class="font-bold text-sm">${escapeHtml(cat)}</span>
+    container.innerHTML = data.map(art => `
+        <div onclick="openArticleReader('${art.id}')" class="flex-shrink-0 w-40 cursor-pointer group">
+            <div class="w-full h-24 rounded-xl overflow-hidden bg-gray-100 mb-2">
+                ${art.image_url ? `<img src="${escapeHtml(art.image_url)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">` : `<div class="w-full h-full flex items-center justify-center"><i class="fas fa-notes-medical text-2xl text-gray-200"></i></div>`}
             </div>
-            ${currentBlogCategory === cat ? '<i class="fas fa-check-circle text-white"></i>' : ''}
+            <h5 class="text-xs font-bold text-gray-700 line-clamp-2 group-hover:text-amber-600">${escapeHtml(art.title)}</h5>
         </div>
     `).join('');
-    overlay.classList.add('active');
 }
-window.closeBlogCategory = () => document.getElementById('blogCategoryOverlay').classList.remove('active');
-window.selectBlogCategory = (cat) => {
-    currentBlogCategory = cat;
-    document.getElementById('currentBlogCategoryText').innerText = cat;
-    closeBlogCategory();
-    fetchArticles(document.getElementById('blogSearchInput')?.value.trim() || '');
-}
+
+// 2. دوال الحفظ (Bookmarks)
+window.toggleSaveArticle = (id) => {
+    id = String(id);
+    const index = savedArticleIds.indexOf(id);
+    if (index > -1) {
+        savedArticleIds.splice(index, 1);
+        showToast('تم إزالة المقال من المحفوظات');
+    } else {
+        savedArticleIds.push(id);
+        showToast('تم حفظ المقال!');
+    }
+    localStorage.setItem('lomedx_saved_articles', JSON.stringify(savedArticleIds));
+    
+    // تحديث زر الحفظ في الواجهة الحالية
+    const btn = document.querySelector(`.save-art-btn[data-id="${id}"]`);
+    if (btn) {
+        const isSaved = savedArticleIds.includes(id);
+        btn.innerHTML = isSaved ? '<i class="fas fa-bookmark text-yellow-500"></i>' : '<i class="far fa-bookmark"></i>';
+    }
+};
+
+window.showSavedArticles = async () => {
+    currentBlogCategory = 'all';
+    document.getElementById('currentBlogCategoryText').innerText = 'كل التصنيفات';
+    document.getElementById('blogSearchInput').value = '';
+    
+    const listContainer = document.getElementById('blogArticlesList');
+    if (savedArticleIds.length === 0) {
+        listContainer.innerHTML = '<p class="text-center py-10 text-gray-400 text-sm">لا توجد مقالات محفوظة بعد.</p>';
+        return;
+    }
+    
+    listContainer.innerHTML = '<p class="text-center py-10 text-gray-400 text-sm">جاري تحميل المحفوظات...</p>';
+    const { data, error } = await supabase.from('medical_articles').select('*').in('id', savedArticleIds).order('created_at', { ascending: false });
+    if (error || !data) { listContainer.innerHTML = '<p class="text-center text-red-500 text-sm py-4">خطأ في التحميل.</p>'; return; }
+    allArticles = data || [];
+    renderArticlesList(allArticles);
+};
 
 // 3. جلب المقالات
 async function fetchArticles(searchQuery = '') {
@@ -4180,7 +4222,7 @@ async function fetchArticles(searchQuery = '') {
     renderArticlesList(allArticles);
 }
 
-// 4. عرض بطاقات المقالات
+// 4. عرض بطاقات المقالات (مع زر الحفظ)
 function renderArticlesList(articles) {
     const listContainer = document.getElementById('blogArticlesList');
     if (!listContainer) return;
@@ -4188,6 +4230,7 @@ function renderArticlesList(articles) {
 
     listContainer.innerHTML = articles.map(art => {
         const dateStr = new Date(art.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+        const isSaved = savedArticleIds.includes(String(art.id));
         return `
         <div onclick="openArticleReader('${art.id}')" class="flex flex-col sm:flex-row-reverse bg-white border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group" style="border-color: var(--border);">
             <div class="w-full sm:w-44 h-40 sm:h-auto flex-shrink-0 overflow-hidden bg-gray-100 relative">
@@ -4202,7 +4245,9 @@ function renderArticlesList(articles) {
                         <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
                         <span><i class="fas fa-eye ml-1"></i> ${art.views || 0}</span>
                     </div>
-                    <span class="text-emerald-600 font-bold flex items-center gap-1 group-hover:gap-2 transition-all">اقرأ المزيد <i class="fas fa-chevron-left text-[8px]"></i></span>
+                    <button onclick="event.stopPropagation(); toggleSaveArticle('${art.id}')" class="save-art-btn text-gray-300 hover:text-yellow-500 transition-colors" data-id="${art.id}">
+                        <i class="${isSaved ? 'fas text-yellow-500' : 'far'} fa-bookmark"></i>
+                    </button>
                 </div>
             </div>
         </div>`;
@@ -4212,18 +4257,14 @@ function renderArticlesList(articles) {
 // 5. دالة لمعالجة النص (الخط العريض وصناديق التنبيه)
 function parseArticleContent(text) {
     let html = escapeHtml(text);
-    // 1. صندوق التنبيه الطبي: إذا بدأ السطر بـ >
     html = html.replace(/^&gt;\s?(.*)$/gm, '<div class="my-4 p-4 bg-red-50 border-r-4 border-red-500 rounded-xl flex items-start gap-3"><i class="fas fa-exclamation-triangle text-red-500 mt-1"></i><div class="text-sm text-red-800 font-semibold">$1</div></div>');
-    // 2. نص عريض: الكلمات بين ** **
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
-    // 3. نص عريض تلقائي بعد النقطتين (مثال: ملاحظة: هذا النص)
     html = html.replace(/^([^\n]+?):/gm, '<strong class="font-bold text-gray-900">$1:</strong>');
     return html;
 }
 
-// 6. فتح مقال للقراءة
-// 6. فتح مقال للقراءة (تصميم احترافي متطور)
-let currentFontSize = 1; // حجم الخط الافتراضي (rem)
+// 6. فتح مقال للقراءة (مع المقالات ذات الصلة والتقييم وزر اسأل طبيب)
+let currentFontSize = 1;
 let isSpeaking = false;
 
 window.openArticleReader = async (id) => {
@@ -4238,8 +4279,28 @@ window.openArticleReader = async (id) => {
     const wordCount = article.content.split(/\s+/).length;
     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
     const processedContent = parseArticleContent(article.content);
-    currentFontSize = 1; // إعادة حجم الخط للافتراضي
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel(); // إيقاف أي قراءة سابقة
+    currentFontSize = 1;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+    // جلب المقالات ذات الصلة
+    const { data: related } = await supabase.from('medical_articles').select('*').eq('category', article.category).neq('id', id).limit(3);
+    let relatedHtml = '';
+    if (related && related.length > 0) {
+        relatedHtml = `
+        <div class="mt-8 border-t pt-6">
+            <h4 class="font-bold text-base mb-4 flex items-center gap-2"><i class="fas fa-link text-emerald-500"></i> مقالات ذات صلة</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                ${related.map(r => `
+                    <div onclick="closeModal(); setTimeout(() => openArticleReader('${r.id}'), 300)" class="bg-gray-50 rounded-xl p-3 cursor-pointer hover:shadow-md transition-all group">
+                        <div class="w-full h-20 rounded-lg overflow-hidden bg-gray-200 mb-2">
+                            ${r.image_url ? `<img src="${r.image_url}" class="w-full h-full object-cover">` : ''}
+                        </div>
+                        <h5 class="text-xs font-bold text-gray-700 line-clamp-2 group-hover:text-emerald-600">${escapeHtml(r.title)}</h5>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
 
     document.getElementById('modalContent').innerHTML = `
         <div class="relative">
@@ -4271,12 +4332,9 @@ window.openArticleReader = async (id) => {
                     <span><i class="fas fa-clock"></i> ${readingTime} دقيقة</span>
                 </div>
                 <div class="flex items-center gap-1">
-                    <!-- تكبير وتصغير الخط -->
                     <button onclick="changeFontSize(-0.1)" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-600 flex items-center justify-center"><i class="fas fa-minus text-xs"></i></button>
                     <button onclick="changeFontSize(0.1)" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-600 flex items-center justify-center"><i class="fas fa-plus text-xs"></i></button>
-                    <!-- استماع للمقال -->
                     <button id="ttsBtn" onclick="toggleSpeech()" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-blue-600 flex items-center justify-center" title="استمع للمقال"><i class="fas fa-headphones text-sm"></i></button>
-                    <!-- مشاركة -->
                     <button onclick="shareArticle('${escapeHtml(article.title)}')" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-emerald-600 flex items-center justify-center" title="مشاركة"><i class="fas fa-share-alt text-sm"></i></button>
                 </div>
             </div>
@@ -4286,11 +4344,28 @@ window.openArticleReader = async (id) => {
                 
                 <div id="articleContentText" class="prose max-w-none text-gray-700 leading-loose space-y-4 transition-all" style="font-family: 'IBM Plex Sans Arabic'; font-size: ${currentFontSize}rem;">${processedContent}</div>
                 
-                <!-- صندوق توجيه للطبيب -->
-                <div class="mt-8 p-4 bg-blue-50 rounded-xl text-center text-sm text-blue-800 flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <span><i class="fas fa-question-circle ml-1"></i> هل لديك سؤال حول هذا الموضوع؟</span>
-                    <button onclick="closeModal(); openAskDoctor()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors">اسأل طبيباً الآن</button>
+                <!-- صندوق توجيه للطبيب (احترافي ودقيق) -->
+                <div class="mt-8 p-6 bg-gradient-to-l from-blue-50 to-sky-50 rounded-2xl border border-blue-200 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                        <i class="fas fa-user-md text-2xl text-blue-600"></i>
+                    </div>
+                    <h4 class="font-bold text-base text-blue-900 mb-2">هل تحتاج إلى استشارة طبية؟</h4>
+                    <p class="text-xs text-blue-700 mb-4 max-w-md mx-auto">لا تعتمد على المقالات فقط. تواصل مباشرةً مع أطباء متخصصين عبر منصة لوميديكس للحصول على تشخيص دقيق.</p>
+                    <button onclick="closeModal(); openAskDoctor()" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-md">
+                        <i class="fas fa-comments ml-1"></i> اسأل طبيباً الآن
+                    </button>
                 </div>
+
+                <!-- نظام التقييم (Helpful) -->
+                <div id="ratingBox" class="mt-8 p-4 bg-gray-50 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <span class="text-sm font-semibold text-gray-600">هل كان هذا المقال مفيداً؟</span>
+                    <div class="flex gap-2">
+                        <button onclick="rateArticle('${id}', true)" class="rate-btn px-4 py-2 rounded-lg bg-emerald-100 text-emerald-700 font-bold text-sm hover:bg-emerald-200 transition-colors flex items-center gap-1"><i class="fas fa-thumbs-up"></i> نعم</button>
+                        <button onclick="rateArticle('${id}', false)" class="rate-btn px-4 py-2 rounded-lg bg-red-100 text-red-700 font-bold text-sm hover:bg-red-200 transition-colors flex items-center gap-1"><i class="fas fa-thumbs-down"></i> لا</button>
+                    </div>
+                </div>
+
+                ${relatedHtml}
             </div>
         </div>
     `;
@@ -4310,16 +4385,30 @@ window.openArticleReader = async (id) => {
     });
 }
 
-// === دوال الأدوات الذكية ===
+// دالة التقييم
+window.rateArticle = async (id, isHelpful) => {
+    showToast('شكراً لتقييمك!');
+    const { data } = await supabase.from('medical_articles').select('likes, dislikes').eq('id', id).single();
+    if (!data) return;
+    
+    const update = {};
+    if (isHelpful) update.likes = (data.likes || 0) + 1;
+    else update.dislikes = (data.dislikes || 0) + 1;
+    
+    await supabase.from('medical_articles').update(update).eq('id', id);
+    
+    // تعطيل الأزرار بعد التقييم
+    document.querySelectorAll('.rate-btn').forEach(b => b.disabled = true);
+    document.getElementById('ratingBox').style.opacity = '0.5';
+};
 
-// 1. تغيير حجم الخط
+// دوال الأدوات الذكية (الخط والاستماع والمشاركة)
 window.changeFontSize = (delta) => {
     currentFontSize = Math.max(0.8, Math.min(1.8, currentFontSize + delta));
     const contentDiv = document.getElementById('articleContentText');
     if (contentDiv) contentDiv.style.fontSize = `${currentFontSize}rem`;
 }
 
-// 2. الاستماع للمقال (Text-to-Speech)
 window.toggleSpeech = () => {
     const btn = document.getElementById('ttsBtn');
     const contentDiv = document.getElementById('articleContentText');
@@ -4332,13 +4421,12 @@ window.toggleSpeech = () => {
             btn.innerHTML = '<i class="fas fa-headphones text-sm"></i>';
             btn.classList.remove('text-red-600');
         } else {
-            // أخذ النص فقط بدون وسوم HTML
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = contentDiv.innerHTML;
             const textToRead = tempDiv.textContent || tempDiv.innerText;
             
             const utterance = new SpeechSynthesisUtterance(textToRead);
-            utterance.lang = 'ar-SA'; // اللغة العربية
+            utterance.lang = 'ar-SA';
             utterance.onend = () => {
                 isSpeaking = false;
                 btn.innerHTML = '<i class="fas fa-headphones text-sm"></i>';
@@ -4354,7 +4442,6 @@ window.toggleSpeech = () => {
     }
 }
 
-// 3. مشاركة المقال
 window.shareArticle = (title) => {
     const url = window.location.href;
     const text = `مقال طبي مفيد من منصة Lomedx:\n\n${title}\n\nاقرأ المقال كاملاً من هنا:\n${url}`;
@@ -4362,7 +4449,6 @@ window.shareArticle = (title) => {
     if (navigator.share) {
         navigator.share({ title: 'Lomedx', text: text, url: url }).catch(err => console.log('Error sharing:', err));
     } else {
-        // فتح واتساب كحل بديل
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 }
