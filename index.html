@@ -737,7 +737,7 @@
 
     <!-- زر الطوارئ العائم الجديد -->
 <div id="emergencyFabWrapper" style="position: fixed; bottom: 90px; left: 30px; z-index: 1001;">
-    <button onclick="toggleEmergencyPopup()" style="width: 52px; height: 52px; background: #DC2626; color: white; border-radius: 50%; border: none; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; justify-content: center;">
+    <button onclick="toggleEmergencyPopup()" id="emergencyFabBtn" style="width: 52px; height: 52px; background: #DC2626; color: white; border-radius: 50%; border: none; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; justify-content: center;">
         <i class="fas fa-ambulance"></i>
     </button>
     <button onclick="hideEmergencyFab()" style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; background: white; border: 2px solid #DC2626; color: #DC2626; border-radius: 50%; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center;">
@@ -759,22 +759,5 @@
         <p style="text-align: center; color: gray; font-size: 0.875rem; padding: 16px 0;">جاري تحميل الأرقام...</p>
     </div>
 </div>
-
-<!-- سكريبت مخصص للطوارئ -->
-<script>
-    function toggleEmergencyPopup() {
-        var popup = document.getElementById('emergencyPopup');
-        if (popup) {
-            popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
-        }
-    }
-
-    function hideEmergencyFab() {
-        var wrapper = document.getElementById('emergencyFabWrapper');
-        if (wrapper) {
-            wrapper.style.display = 'none';
-        }
-    }
-</script>
 </body>
 </html>
