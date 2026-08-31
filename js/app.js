@@ -4362,39 +4362,7 @@ window.shareArticle = (title) => {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 }
-    document.getElementById('modalContent').innerHTML = `
-        <div class="relative">
-            ${article.image_url ? `
-            <div class="relative h-56 sm:h-64 overflow-hidden rounded-t-2xl">
-                <img src="${escapeHtml(article.image_url)}" class="w-full h-full object-cover">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
-                <button onclick="closeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-all"><i class="fas fa-times text-sm"></i></button>
-                <div class="absolute bottom-4 right-5 left-5">
-                    <span class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
-                    <h2 class="text-white font-black text-xl sm:text-2xl mt-2" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
-                </div>
-            </div>` : `
-            <div class="p-5 flex justify-between items-center border-b" style="border-color: var(--border);">
-                <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
-                <button onclick="closeModal()" class="text-2xl hover:text-gray-400">&times;</button>
-            </div>`}
-            
-            <div class="p-6 sm:p-8">
-                ${!article.image_url ? `<h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>` : ''}
-                
-                <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400 mb-6 border-b pb-4" style="border-color: var(--border);">
-                    <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
-                    <span><i class="fas fa-eye ml-1"></i> ${(article.views || 0) + 1} قراءة</span>
-                    <span><i class="fas fa-clock ml-1"></i> ${readingTime} دقيقة قراءة</span>
-                </div>
-
-                <div class="prose max-w-none text-sm sm:text-base text-gray-700 leading-loose space-y-4" style="font-family: 'IBM Plex Sans Arabic';">${processedContent}</div>
-            </div>
-        </div>
-    `;
-    document.getElementById('modalOverlay').classList.add('active');
-    lockScroll();
-}
+    
 // === دوال إدارة المدونة ===
 let adminArticlesCache = [];
 
