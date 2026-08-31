@@ -742,7 +742,28 @@ window.openModal = (id) => {
                 </div>
             `;
         }
-
+        // 7. قسم أرقام هواتف المنشأة
+        let phonesHtml = '';
+        if (cData.phones && cData.phones.length > 0) {
+            phonesHtml = `
+                <div class="bg-teal-50 border border-teal-200 rounded-2xl p-4 mb-4">
+                    <h4 class="font-bold text-sm text-teal-800 mb-3 flex items-center gap-2"><i class="fas fa-phone-volume"></i> أرقام هواتف المنشأة</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        ${cData.phones.map(p => `
+                            <a href="tel:${escapeHtml(p.phone)}" class="flex items-center gap-2 p-2 bg-white rounded-lg border border-teal-100 hover:bg-teal-50 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-phone text-teal-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500 block">${escapeHtml(p.label || 'هاتف')}</span>
+                                    <span class="font-bold text-sm text-gray-800" dir="ltr">${escapeHtml(p.phone)}</span>
+                                </div>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
         // دمج العناصر داخل extraHTML (بدون الأطباء)
         extraHTML = `
             ${statsHtml}
@@ -1981,14 +2002,8 @@ window.updateAdminFormFields = (type) => {
     }
 
     let html = '';
-    if (type === 'hospital' || type === 'center') {
+        if (type === 'hospital' || type === 'center') {
         html = `
-            <!-- حقل رقم الهاتف الاحترافي للمشفى -->
-            <div class="col-span-1 sm:col-span-2 p-4 bg-teal-50 rounded-xl border border-teal-200 mb-2">
-                <label class="block text-sm font-bold text-teal-800 mb-2"><i class="fas fa-phone-volume ml-1"></i> رقم هاتف المنشأة (للاستقبال والاستفسار)</label>
-                <input type="text" id="new_facility_phone" class="ctrl-input text-sm bg-white border-teal-300 focus:border-teal-500 focus:ring-teal-200" placeholder="مثال: 0111234567 أو 0991234567">
-            </div>
-
             <input type="text" id="new_capacity_info" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="معلومات السعة الاستيعابية (اختياري)">
             
             <div class="col-span-1 sm:col-span-2 p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -2014,7 +2029,15 @@ window.updateAdminFormFields = (type) => {
                 <div id="servContainer" class="flex flex-col gap-2"></div>
                 <button type="button" onclick="addAdminRow('servContainer', ['title', 'desc'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-green-600 border-green-500 hover:bg-green-50">+ إضافة خدمة</button>
             </div>
+
+            <!-- قسم أرقام الهواتف المتعددة (أسفل الخدمات المساندة) -->
+            <div class="col-span-1 sm:col-span-2 p-4 border-t border-dashed" style="border-color: var(--border);">
+                <h4 class="font-bold text-sm mb-2 text-gray-700"><i class="fas fa-phone-volume text-teal-600 ml-1"></i> أرقام هواتف المنشأة (متعدد)</h4>
+                <div id="phoneContainer" class="flex flex-col gap-2"></div>
+                <button type="button" onclick="addAdminRow('phoneContainer', ['label', 'phone'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-teal-600 border-teal-500 hover:bg-teal-50">+ إضافة رقم هاتف</button>
+            </div>
         `;
+        }
     } else if (type === 'doctor') {
         html = `<input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة"><input type="text" id="new_parent_id" class="ctrl-input text-sm" placeholder="ID المشفى التابع له (اختياري)"><input type="text" id="new_extra" class="ctrl-input text-sm" placeholder="تفاصيل إضافية">`;
     } else if (type === 'lab') {
@@ -2038,7 +2061,8 @@ window.addAdminRow = (containerId, fields) => {
     fields.forEach(field => {
         if (field === 'icon') innerHtml += `<input type="text" class="row-icon ctrl-input text-xs w-24" placeholder="أيقونة (fa-bolt)">`;
         if (field === 'value') innerHtml += `<input type="text" class="row-value ctrl-input text-xs w-24" placeholder="القيمة (93)">`;
-        if (field === 'label') innerHtml += `<input type="text" class="row-label ctrl-input text-xs flex-1" placeholder="الوصف (سرير)">`;
+        if (field === 'label') innerHtml += `<input type="text" class="row-label ctrl-input text-xs w-32" placeholder="الوصف (استقبال)">`;
+        if (field === 'phone') innerHtml += `<input type="text" class="row-phone ctrl-input text-xs flex-1" placeholder="رقم الهاتف" dir="ltr">`;
         if (field === 'title') innerHtml += `<input type="text" class="row-title ctrl-input text-xs flex-1" placeholder="العنوان">`;
         if (field === 'desc') innerHtml += `<input type="text" class="row-desc ctrl-input text-xs flex-1" placeholder="الوصف">`;
     });
@@ -2176,18 +2200,29 @@ window.editFacility = (id) => {
         document.getElementById('new_desc').value = item.description; 
        
         if(document.getElementById('new_facility_phone')) document.getElementById('new_facility_phone').value = item.phone || '';
-        if (item.type === 'hospital' || item.type === 'center') { 
+                if (item.type === 'hospital' || item.type === 'center') { 
         if(document.getElementById('new_capacity_info')) document.getElementById('new_capacity_info').value = item.capacity_info || '';
         
         if (item.facility_details) {
             const cData = item.facility_details;
             if (cData.stats) cData.stats.forEach(s => { addAdminRow('statsContainer', ['icon', 'value', 'label']); const lastRow = document.querySelector('#statsContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-icon').value = s.icon || ''; lastRow.querySelector('.row-value').value = s.value || ''; lastRow.querySelector('.row-label').value = s.label || ''; } });
             if (cData.departments) cData.departments.forEach(d => { addAdminRow('deptContainer', ['icon', 'title', 'desc']); const lastRow = document.querySelector('#deptContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-icon').value = d.icon || ''; lastRow.querySelector('.row-title').value = d.title || ''; lastRow.querySelector('.row-desc').value = d.desc || ''; } });
-            if (cData.clinics) cData.clinics.forEach(c => { addAdminRow('clinicContainer', ['title', 'desc']); const lastRow = document.querySelector('#clinicContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-title').value = c.title || ''; lastRow.querySelector('.row-desc').value = c.desc || ''; } });
             if (cData.units) cData.units.forEach(u => { addAdminRow('unitContainer', ['title', 'desc']); const lastRow = document.querySelector('#unitContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-title').value = u.title || ''; lastRow.querySelector('.row-desc').value = u.desc || ''; } });
             if (cData.services) cData.services.forEach(s => { addAdminRow('servContainer', ['title', 'desc']); const lastRow = document.querySelector('#servContainer > div:last-child'); if(lastRow){ lastRow.querySelector('.row-title').value = s.title || ''; lastRow.querySelector('.row-desc').value = s.desc || ''; } });
+            
+            // جلب أرقام الهواتف المتعددة عند التعديل
+            if (cData.phones && cData.phones.length > 0) {
+                cData.phones.forEach(p => {
+                    addAdminRow('phoneContainer', ['label', 'phone']);
+                    const lastRow = document.querySelector('#phoneContainer > div:last-child');
+                    if(lastRow){
+                        lastRow.querySelector('.row-label').value = p.label || '';
+                        lastRow.querySelector('.row-phone').value = p.phone || '';
+                    }
+                });
+            }
         }
-    } 
+    }
     else if (item.type === 'doctor') { 
         document.getElementById('new_consult_hours').value = item.consulthours || ''; 
         document.getElementById('new_extra').value = item.bookingnotes || ''; 
@@ -2250,13 +2285,13 @@ window.saveFacility = async (e) => {
         if (authError) { showToast('خطأ في إنشاء حساب الصيدلية: ' + authError.message); return; }
     } 
     
-         if (type === 'hospital' || type === 'center') { 
+              if (type === 'hospital' || type === 'center') { 
         data.specialty = specialty; 
         data.address = address; 
         data.capacity_info = document.getElementById('new_capacity_info')?.value || '';
-        data.phone = document.getElementById('new_facility_phone')?.value || ''; // حفظ رقم هاتف المشفى
+        
         // جمع البيانات المركبة (facility_details)
-        let facilityData = { stats: [], departments: [], clinics: [], units: [], services: [] };
+        let facilityData = { stats: [], departments: [], clinics: [], units: [], services: [], phones: [] };
         
         document.querySelectorAll('#statsContainer > div').forEach(row => {
             facilityData.stats.push({ icon: row.querySelector('.row-icon')?.value, value: row.querySelector('.row-value')?.value, label: row.querySelector('.row-label')?.value });
@@ -2264,15 +2299,22 @@ window.saveFacility = async (e) => {
         document.querySelectorAll('#deptContainer > div').forEach(row => {
             facilityData.departments.push({ icon: row.querySelector('.row-icon')?.value, title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
         });
-        document.querySelectorAll('#clinicContainer > div').forEach(row => {
-            facilityData.clinics.push({ title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
-        });
         document.querySelectorAll('#unitContainer > div').forEach(row => {
             facilityData.units.push({ title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
         });
         document.querySelectorAll('#servContainer > div').forEach(row => {
             facilityData.services.push({ title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
         });
+        
+        // جمع أرقام الهواتف المتعددة
+        document.querySelectorAll('#phoneContainer > div').forEach(row => {
+            const pLabel = row.querySelector('.row-label')?.value || '';
+            const pPhone = row.querySelector('.row-phone')?.value || '';
+            if (pPhone) facilityData.phones.push({ label: pLabel, phone: pPhone });
+        });
+
+        // حفظ أول رقم كرقم رئيسي للمشفى (ليظهر في بطاقة البحث)
+        data.phone = facilityData.phones[0]?.phone || ''; 
         
         data.facility_details = facilityData;
     } 
