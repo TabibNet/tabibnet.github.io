@@ -4146,7 +4146,8 @@ async function fetchArticles(searchQuery = '') {
     renderArticlesList(allArticles);
 }
 
-// 3. عرض المقالات كبطاقات أنيقة
+
+// 3. عرض المقالات كبطاقات أنيقة (صورة يسار، نص يمين)
 function renderArticlesList(articles) {
     const listContainer = document.getElementById('blogArticlesList');
     if (!listContainer) return;
@@ -4159,17 +4160,37 @@ function renderArticlesList(articles) {
     listContainer.innerHTML = articles.map(art => {
         const dateStr = new Date(art.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
         return `
-        <div onclick="openArticleReader('${art.id}')" class="border rounded-xl p-4 flex flex-col sm:flex-row gap-4 cursor-pointer hover:shadow-lg transition-all group" style="border-color: var(--border); background: var(--card);">
-            <div class="w-full sm:w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
-                ${art.image_url ? `<img src="${escapeHtml(art.image_url)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">` : `<i class="fas fa-notes-medical text-4xl text-gray-300"></i>`}
+        <!-- بطاقة المقال -->
+        <div onclick="openArticleReader('${art.id}')" class="flex flex-col sm:flex-row-reverse bg-white border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group" style="border-color: var(--border);">
+            
+            <!-- قسم الصورة (يسار في الكمبيوتر، أعلى في الجوال) -->
+            <div class="w-full sm:w-44 h-40 sm:h-auto flex-shrink-0 overflow-hidden bg-gray-100 relative">
+                ${art.image_url ? 
+                    `<img src="${escapeHtml(art.image_url)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">` : 
+                    `<div class="w-full h-full flex items-center justify-center"><i class="fas fa-notes-medical text-5xl text-gray-200"></i></div>`
+                }
+                <!-- شارة التصنيف فوق الصورة -->
+                <span class="absolute top-2 right-2 text-[10px] bg-emerald-600 text-white px-2 py-1 rounded-full font-bold shadow-md">${escapeHtml(art.category || 'طب عام')}</span>
             </div>
-            <div class="flex-1 flex flex-col justify-center">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">${escapeHtml(art.category || 'طب عام')}</span>
-                    <span class="text-[10px] text-gray-400"><i class="fas fa-calendar-day ml-1"></i>${dateStr}</span>
+
+            <!-- قسم النص (يمين في الكمبيوتر، أسفل في الجوال) -->
+            <div class="p-4 flex flex-col flex-1 justify-center">
+                <h4 class="font-bold text-base text-gray-800 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors" style="font-family: 'Noto Kufi Arabic';">
+                    ${escapeHtml(art.title)}
+                </h4>
+                <p class="text-xs text-gray-500 leading-relaxed line-clamp-3 mb-3">
+                    ${escapeHtml(art.excerpt || art.content.substring(0, 120))}...
+                </p>
+                <!-- أسفل النص: التاريخ والمشاهدات وزر اقرأ المزيد -->
+                <div class="flex items-center justify-between text-[10px] text-gray-400 mt-auto border-t pt-2" style="border-color: var(--border);">
+                    <div class="flex items-center gap-3">
+                        <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
+                        <span><i class="fas fa-eye ml-1"></i> ${art.views || 0}</span>
+                    </div>
+                    <span class="text-emerald-600 font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                        اقرأ المزيد <i class="fas fa-chevron-left text-[8px]"></i>
+                    </span>
                 </div>
-                <h4 class="font-bold text-base text-gray-800 mb-1" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(art.title)}</h4>
-                <p class="text-xs text-gray-500 leading-relaxed line-clamp-2">${escapeHtml(art.excerpt || art.content.substring(0, 120))}...</p>
             </div>
         </div>`;
     }).join('');
@@ -4181,37 +4202,54 @@ window.searchArticles = () => {
     fetchArticles(q);
 }
 
-// 5. فتح مقال للقراءة (مع تعديل الرابط والعنوان لـ SEO)
+// 5. فتح مقال للقراءة (تصميم احترافي)
 window.openArticleReader = async (id) => {
     const article = allArticles.find(a => a.id == id);
     if (!article) return;
 
-    // 1. تعديل رابط المتصفح ليكون مستقلاً (SEO)
+    // تعديل الرابط والعنوان لـ SEO
     window.location.hash = `article=${id}`;
-    
-    // 2. تعديل عنوان التبويب (Tab Title) ليتوافق مع جوجل
     document.title = `${article.title} | Lomedx`;
 
-    // زيادة عدد المشاهدات في الخلفية
+    // زيادة المشاهدات
     supabase.from('medical_articles').update({ views: (article.views || 0) + 1 }).eq('id', id).then();
 
     const dateStr = new Date(article.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
     
     document.getElementById('modalContent').innerHTML = `
-        <div class="p-6 sm:p-8">
-            <div class="flex justify-between items-center mb-6">
+        <div class="relative">
+            <!-- صورة الغلاف -->
+            ${article.image_url ? `
+            <div class="relative h-56 sm:h-64 overflow-hidden rounded-t-2xl">
+                <img src="${escapeHtml(article.image_url)}" class="w-full h-full object-cover">
+                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                <button onclick="closeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-all"><i class="fas fa-times text-sm"></i></button>
+                <div class="absolute bottom-4 right-5 left-5">
+                    <span class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
+                    <h2 class="text-white font-black text-xl sm:text-2xl mt-2" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
+                </div>
+            </div>
+            ` : `
+            <div class="p-5 flex justify-between items-center border-b" style="border-color: var(--border);">
                 <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
                 <button onclick="closeModal()" class="text-2xl hover:text-gray-400">&times;</button>
             </div>
-            <h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
-            <div class="flex items-center gap-4 text-xs text-gray-400 mb-6 border-b pb-4">
-                <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
-                <span><i class="fas fa-eye ml-1"></i> ${(article.views || 0) + 1} قراءة</span>
-            </div>
-            ${article.image_url ? `<img src="${escapeHtml(article.image_url)}" class="w-full h-56 object-cover rounded-xl mb-6 shadow-sm">` : ''}
-            <div class="prose max-w-none text-sm sm:text-base text-gray-600 leading-loose whitespace-pre-line" style="font-family: 'IBM Plex Sans Arabic';">${escapeHtml(article.content)}</div>
-            <div class="mt-8 p-4 bg-blue-50 rounded-xl text-center text-sm text-blue-800">
-                <i class="fas fa-info-circle ml-1"></i> هذه المعلومات استرشادية ولا تغني عن استشارة الطبيب المختص.
+            `}
+            
+            <!-- محتوى المقال -->
+            <div class="p-6 sm:p-8">
+                ${!article.image_url ? `<h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>` : ''}
+                
+                <div class="flex items-center gap-4 text-xs text-gray-400 mb-6 border-b pb-4" style="border-color: var(--border);">
+                    <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
+                    <span><i class="fas fa-eye ml-1"></i> ${(article.views || 0) + 1} قراءة</span>
+                </div>
+
+                <div class="prose max-w-none text-sm sm:text-base text-gray-700 leading-loose whitespace-pre-line" style="font-family: 'IBM Plex Sans Arabic';">${escapeHtml(article.content)}</div>
+                
+                <div class="mt-8 p-4 bg-blue-50 rounded-xl text-center text-sm text-blue-800 flex items-center justify-center gap-2">
+                    <i class="fas fa-info-circle"></i> هذه المعلومات استرشادية ولا تغني عن استشارة الطبيب المختص.
+                </div>
             </div>
         </div>
     `;
