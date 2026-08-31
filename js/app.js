@@ -4218,6 +4218,10 @@ function parseArticleContent(text) {
 }
 
 // 6. فتح مقال للقراءة
+// 6. فتح مقال للقراءة (تصميم احترافي متطور)
+let currentFontSize = 1; // حجم الخط الافتراضي (rem)
+let isSpeaking = false;
+
 window.openArticleReader = async (id) => {
     const article = allArticles.find(a => a.id == id);
     if (!article) return;
@@ -4227,14 +4231,137 @@ window.openArticleReader = async (id) => {
     supabase.from('medical_articles').update({ views: (article.views || 0) + 1 }).eq('id', id).then();
 
     const dateStr = new Date(article.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
-    
-    // حساب وقت القراءة (200 كلمة في الدقيقة)
     const wordCount = article.content.split(/\s+/).length;
     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-    
-    // معالجة المحتوى لتفعيل الأكواد
     const processedContent = parseArticleContent(article.content);
+    currentFontSize = 1; // إعادة حجم الخط للافتراضي
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel(); // إيقاف أي قراءة سابقة
 
+    document.getElementById('modalContent').innerHTML = `
+        <div class="relative">
+            <!-- شريط تقدم القراءة -->
+            <div class="absolute top-0 right-0 left-0 h-1 bg-gray-200 z-10 rounded-t-2xl overflow-hidden">
+                <div id="readingProgressBar" class="h-full bg-emerald-500" style="width: 0%; transition: width 0.2s;"></div>
+            </div>
+
+            ${article.image_url ? `
+            <div class="relative h-56 sm:h-64 overflow-hidden rounded-t-2xl">
+                <img src="${escapeHtml(article.image_url)}" class="w-full h-full object-cover">
+                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                <button onclick="closeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-all"><i class="fas fa-times text-sm"></i></button>
+                <div class="absolute bottom-4 right-5 left-5">
+                    <span class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
+                    <h2 class="text-white font-black text-xl sm:text-2xl mt-2" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
+                </div>
+            </div>` : `
+            <div class="p-5 flex justify-between items-center border-b" style="border-color: var(--border);">
+                <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
+                <button onclick="closeModal()" class="text-2xl hover:text-gray-400">&times;</button>
+            </div>`}
+            
+            <!-- شريط أدوات القراءة الذكي -->
+            <div class="sticky top-0 bg-white/90 backdrop-blur-md z-10 p-3 border-b flex flex-wrap items-center justify-between gap-2" style="border-color: var(--border);">
+                <div class="flex items-center gap-3 text-[11px] text-gray-500">
+                    <span><i class="fas fa-calendar-day"></i> ${dateStr}</span>
+                    <span><i class="fas fa-eye"></i> ${art.views || 0}</span>
+                    <span><i class="fas fa-clock"></i> ${readingTime} دقيقة</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <!-- تكبير وتصغير الخط -->
+                    <button onclick="changeFontSize(-0.1)" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-600 flex items-center justify-center"><i class="fas fa-minus text-xs"></i></button>
+                    <button onclick="changeFontSize(0.1)" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-600 flex items-center justify-center"><i class="fas fa-plus text-xs"></i></button>
+                    <!-- استماع للمقال -->
+                    <button id="ttsBtn" onclick="toggleSpeech()" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-blue-600 flex items-center justify-center" title="استمع للمقال"><i class="fas fa-headphones text-sm"></i></button>
+                    <!-- مشاركة -->
+                    <button onclick="shareArticle('${escapeHtml(article.title)}')" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-emerald-600 flex items-center justify-center" title="مشاركة"><i class="fas fa-share-alt text-sm"></i></button>
+                </div>
+            </div>
+
+            <div class="p-6 sm:p-8" id="modalScrollArea">
+                ${!article.image_url ? `<h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>` : ''}
+                
+                <div id="articleContentText" class="prose max-w-none text-gray-700 leading-loose space-y-4 transition-all" style="font-family: 'IBM Plex Sans Arabic'; font-size: ${currentFontSize}rem;">${processedContent}</div>
+                
+                <!-- صندوق توجيه للطبيب -->
+                <div class="mt-8 p-4 bg-blue-50 rounded-xl text-center text-sm text-blue-800 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <span><i class="fas fa-question-circle ml-1"></i> هل لديك سؤال حول هذا الموضوع؟</span>
+                    <button onclick="closeModal(); openAskDoctor()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors">اسأل طبيباً الآن</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+    lockScroll();
+    
+    // تفعيل مستمع التمرير لشريط التقدم
+    const modalContent = document.getElementById('modalContent');
+    modalContent.addEventListener('scroll', () => {
+        const scrollBar = document.getElementById('readingProgressBar');
+        if (scrollBar) {
+            const scrollTop = modalContent.scrollTop;
+            const scrollHeight = modalContent.scrollHeight - modalContent.clientHeight;
+            const progress = (scrollTop / scrollHeight) * 100;
+            scrollBar.style.width = `${progress}%`;
+        }
+    });
+}
+
+// === دوال الأدوات الذكية ===
+
+// 1. تغيير حجم الخط
+window.changeFontSize = (delta) => {
+    currentFontSize = Math.max(0.8, Math.min(1.8, currentFontSize + delta));
+    const contentDiv = document.getElementById('articleContentText');
+    if (contentDiv) contentDiv.style.fontSize = `${currentFontSize}rem`;
+}
+
+// 2. الاستماع للمقال (Text-to-Speech)
+window.toggleSpeech = () => {
+    const btn = document.getElementById('ttsBtn');
+    const contentDiv = document.getElementById('articleContentText');
+    if (!contentDiv || !btn) return;
+
+    if ('speechSynthesis' in window) {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            btn.innerHTML = '<i class="fas fa-headphones text-sm"></i>';
+            btn.classList.remove('text-red-600');
+        } else {
+            // أخذ النص فقط بدون وسوم HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = contentDiv.innerHTML;
+            const textToRead = tempDiv.textContent || tempDiv.innerText;
+            
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'ar-SA'; // اللغة العربية
+            utterance.onend = () => {
+                isSpeaking = false;
+                btn.innerHTML = '<i class="fas fa-headphones text-sm"></i>';
+                btn.classList.remove('text-red-600');
+            };
+            window.speechSynthesis.speak(utterance);
+            isSpeaking = true;
+            btn.innerHTML = '<i class="fas fa-stop text-sm"></i>';
+            btn.classList.add('text-red-600');
+        }
+    } else {
+        showToast("متصفحك لا يدعم ميزة الاستماع الصوتي.");
+    }
+}
+
+// 3. مشاركة المقال
+window.shareArticle = (title) => {
+    const url = window.location.href;
+    const text = `مقال طبي مفيد من منصة Lomedx:\n\n${title}\n\nاقرأ المقال كاملاً من هنا:\n${url}`;
+    
+    if (navigator.share) {
+        navigator.share({ title: 'Lomedx', text: text, url: url }).catch(err => console.log('Error sharing:', err));
+    } else {
+        // فتح واتساب كحل بديل
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+}
     document.getElementById('modalContent').innerHTML = `
         <div class="relative">
             ${article.image_url ? `
