@@ -4358,10 +4358,27 @@ async function fetchAdminArticles() {
                 <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">${escapeHtml(art.category || 'عام')}</span>
             </div>
             <div class="flex gap-1 flex-shrink-0">
-                <button onclick="editArticle('${art.id}')" class="text-xs text-white px-2 py-1 rounded bg-blue-500 hover:bg-blue-600">تعديل</button>
-                <button onclick="deleteArticle('${art.id}')" class="text-xs text-white px-2 py-1 rounded bg-red-500 hover:bg-red-600">حذف</button>
+                <button class="edit-art-btn text-xs text-white px-2 py-1 rounded bg-blue-500 hover:bg-blue-600" data-id="${art.id}">تعديل</button>
+                <button class="delete-art-btn text-xs text-white px-2 py-1 rounded bg-red-500 hover:bg-red-600" data-id="${art.id}">حذف</button>
             </div>
         </div>
     `).join('');
+
+    // إضافة مستمعي الأحداث (Event Listeners) للأزرار بعد رسمها
+    list.querySelectorAll('.edit-art-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = e.target.getAttribute('data-id');
+            editArticle(id);
+        });
+    });
+
+    list.querySelectorAll('.delete-art-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = e.target.getAttribute('data-id');
+            deleteArticle(id);
+        });
+    });
 }
 // نهاية ملف app.js
