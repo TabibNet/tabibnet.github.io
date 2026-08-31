@@ -328,94 +328,55 @@ async function fetchListings() {
         } catch (e) {}
     }
 }
+// === نظام الطوارئ الجديد المعتمد على النافذة المنبثقة ===
 let allEmergencyContacts = [];
 
 async function fetchEmergencyContacts() {
     const { data, error } = await supabase.from('emergency_contacts').select('*').order('id', { ascending: true });
     if (error) { console.error("Error fetching emergency contacts:", error); return; }
     allEmergencyContacts = data || [];
-    renderEmergencyContacts();
+    renderEmergencyPopup();
 }
 
-function renderEmergencyContacts() {
-    // ملء النافذة المنبثقة العائمة بالأرقام (طوارئ + مشافي)
+function renderEmergencyPopup() {
     const popupBody = document.getElementById('popupBodyContainer');
-    if (popupBody) {
-        const emergencies = allEmergencyContacts.filter(c => c.category === 'emergency');
-        const hospitals = allEmergencyContacts.filter(c => c.category === 'hospital');
-        
-        let popupHtml = '';
+    if (!popupBody) return;
 
-        // 1. عرض أرقام الطوارئ السريعة
-        if (emergencies.length > 0) {
-            popupHtml += emergencies.map(c => `
-                <a href="tel:${escapeHtml(c.phone)}" class="popup-call-btn ${escapeHtml(c.color)}">
-                    <i class="fas ${escapeHtml(c.icon)}"></i> ${escapeHtml(c.name)} <span>${escapeHtml(c.phone)}</span>
-                </a>
-            `).join('');
-        }
+    const emergencies = allEmergencyContacts.filter(c => c.category === 'emergency');
+    const hospitals = allEmergencyContacts.filter(c => c.category === 'hospital');
+    
+    let html = '';
 
-        // 2. فاصل بين القسمين إذا كان كلاهما موجوداً
-        if (emergencies.length > 0 && hospitals.length > 0) {
-            popupHtml += '<div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>';
-        }
-
-        // 3. عرض أرقام المستشفيات والجهات
-        if (hospitals.length > 0) {
-            popupHtml += hospitals.map(c => `
-                <a href="tel:${escapeHtml(c.phone)}" class="popup-call-btn ${escapeHtml(c.color)}">
-                    <i class="fas ${escapeHtml(c.icon)}"></i> ${escapeHtml(c.name)} <span>${escapeHtml(c.phone)}</span>
-                </a>
-            `).join('');
-        }
-
-        // إذا لم يكن هناك أي أرقام مضافة
-        if (emergencies.length === 0 && hospitals.length === 0) {
-            popupHtml = '<p class="text-center text-gray-400 text-sm py-4">لا توجد أرقام مضافة حالياً.</p>';
-        }
-
-        popupBody.innerHTML = popupHtml;
-    }
-
-    // (حماية برمجية) ملء قسم الصفحة الرئيسية إذا كان موجوداً
-    const emergencyContainer = document.getElementById('emergencyListContainer');
-    const hospitalContainer = document.getElementById('hospitalListContainer');
-    if (!emergencyContainer || !hospitalContainer) return;
-
-    const allEmergencies = allEmergencyContacts.filter(c => c.category === 'emergency');
-    const allHospitals = allEmergencyContacts.filter(c => c.category === 'hospital');
-
-    if (allEmergencies.length > 0) {
-        emergencyContainer.innerHTML = allEmergencies.map(c => `
-            <a href="tel:${escapeHtml(c.phone)}" class="group bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center hover:bg-${escapeHtml(c.color)}-500/10 hover:border-${escapeHtml(c.color)}-500/40 transition-all duration-300 shadow-lg h-full">
-                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-${escapeHtml(c.color)}-500/20 flex items-center justify-center text-2xl sm:text-3xl text-${escapeHtml(c.color)}-400 mb-3 group-hover:scale-110 transition-transform">
-                    <i class="fas ${escapeHtml(c.icon)}"></i>
-                </div>
-                <div class="text-xs sm:text-sm text-white/70 mb-1 text-center">${escapeHtml(c.name)}</div>
-                <div class="text-lg sm:text-xl lg:text-2xl font-black text-${escapeHtml(c.color)}-300 break-all w-full text-center leading-tight" dir="ltr">${escapeHtml(c.phone)}</div>
+    if (emergencies.length > 0) {
+        html += emergencies.map(c => `
+            <a href="tel:${escapeHtml(c.phone)}" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; background: var(--bg-deep); text-decoration: none; color: var(--fg); font-weight: 600; font-size: 0.85rem;">
+                <i class="fas ${escapeHtml(c.icon)}" style="color: ${escapeHtml(c.color == 'red' ? '#DC2626' : c.color == 'blue' ? '#2563EB' : c.color == 'orange' ? '#EA580C' : '#10B981')}; width: 20px; text-align: center;"></i>
+                <span>${escapeHtml(c.name)}</span>
+                <span style="margin-right: auto; font-family: sans-serif; font-weight: 800;">${escapeHtml(c.phone)}</span>
             </a>
         `).join('');
-    } else {
-        emergencyContainer.innerHTML = '<div class="text-center text-white/40 col-span-full py-8">لا توجد أرقام طوارئ مضافة حالياً.</div>';
     }
 
-    if (allHospitals.length > 0) {
-        hospitalContainer.innerHTML = allHospitals.map(c => `
-            <a href="tel:${escapeHtml(c.phone)}" class="group bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-4 flex items-center gap-4 transition-all text-right">
-                <div class="w-12 h-12 rounded-xl bg-${escapeHtml(c.color)}-500/20 flex items-center justify-center text-xl text-${escapeHtml(c.color)}-400 flex-shrink-0">
-                    <i class="fas ${escapeHtml(c.icon)}"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-white truncate">${escapeHtml(c.name)}</h4>
-                    <p class="text-sm font-bold text-${escapeHtml(c.color)}-300 break-all" dir="ltr">${escapeHtml(c.phone)}</p>
-                </div>
-                <i class="fas fa-phone text-white/30 group-hover:text-white/60 transition-colors"></i>
+    if (hospitals.length > 0) {
+        html += '<div style="border-top: 1px dashed var(--border); margin: 8px 0;"></div>';
+        html += hospitals.map(c => `
+            <a href="tel:${escapeHtml(c.phone)}" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; background: var(--bg-deep); text-decoration: none; color: var(--fg); font-weight: 600; font-size: 0.85rem;">
+                <i class="fas ${escapeHtml(c.icon)}" style="color: ${escapeHtml(c.color == 'red' ? '#DC2626' : c.color == 'blue' ? '#2563EB' : c.color == 'orange' ? '#EA580C' : '#10B981')}; width: 20px; text-align: center;"></i>
+                <span>${escapeHtml(c.name)}</span>
+                <span style="margin-right: auto; font-family: sans-serif; font-weight: 800;">${escapeHtml(c.phone)}</span>
             </a>
         `).join('');
-    } else {
-        hospitalContainer.innerHTML = '<div class="text-center text-white/40 col-span-full py-8">لا توجد مستشفيات مضافة حالياً.</div>';
     }
+
+    if (html === '') {
+        html = '<p style="text-align: center; color: gray; font-size: 0.875rem; padding: 16px 0;">لا توجد أرقام مضافة حالياً.</p>';
+    }
+
+    popupBody.innerHTML = html;
 }
+
+// استدعاء الدالة عند تحميل الصفحة (أضف هذا السطر داخل DOMContentLoaded في الأعلى)
+// fetchEmergencyContacts();
 async function fetchBookings() {
     const { data, error } = await supabase.from('bookings').select('*');
     if (error) { console.error("Error fetching bookings:", error); return; }
