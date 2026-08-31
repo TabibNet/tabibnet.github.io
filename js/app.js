@@ -245,7 +245,19 @@ window.addEventListener('DOMContentLoaded', () => {
             }, 1200);
         }
     }
-
+    // فتح المقال تلقائياً إذا تم الدخول عبر رابط مباشر (من بحث جوجل)
+    if (window.location.hash.includes('article=')) {
+        const artId = window.location.hash.split('=')[1];
+        // تأخير بسيط لانتظار تحميل المكتبات
+        setTimeout(async () => {
+            const { data, error } = await supabase.from('medical_articles').select('*').eq('id', artId).single();
+            if (data) {
+                allArticles = [data]; // وضع المقال في المصفوفة ليتمكن الكود من إيجاده
+                openArticleReader(artId);
+            }
+        }, 1000);
+    }
+    
     const langToggle = document.getElementById('langToggle');
        let isEnglish = document.cookie.includes('googtrans=/ar/en');
     function applyLangLayout() {
@@ -810,7 +822,17 @@ window.openModal = (id) => {
 }
 
 window.openLightbox = (src) => { const lightbox = document.getElementById('lightbox'); lightbox.querySelector('img').src = src.includes('picsum.photos') ? src.replace('/400/250', '/1200/800') : src; lightbox.classList.add('active'); lockScroll(); }
-window.closeModal = (event) => { if (event && event.target !== document.getElementById('modalOverlay')) return; document.getElementById('modalOverlay').classList.remove('active'); unlockScroll(); }
+window.closeModal = (event) => { 
+    if (event && event.target !== document.getElementById('modalOverlay')) return; 
+    document.getElementById('modalOverlay').classList.remove('active'); 
+    unlockScroll(); 
+    
+    // إعادة رابط الموقع وعنوان التبويب لوضعهما الطبيعي (SEO)
+    if (window.location.hash.includes('article=')) {
+        history.replaceState(null, '', window.location.pathname); // مسح #article=5 من الرابط
+        document.title = 'Lomedx | منصة طبية شاملة'; // إعادة اسم الموقع الأساسي
+    }
+}
 window.copyNumber = (phone) => { navigator.clipboard.writeText(phone).then(() => showToast('تم نسخ رقم الهاتف بنجاح')).catch(() => showToast('تعذر النسخ')); }
 window.trackPhoneClick = (id) => {
     const item = allData.find(d => d.id === id);
@@ -2135,12 +2157,29 @@ window.renderAdminDashboard = async () => {
     const activeBloodRequests = bloodRequests.filter(b => b.created_at > twentyHoursAgo);
     let bloodHtml = activeBloodRequests.length === 0 ? '<p class="text-center py-4 text-gray-400 text-sm">لا توجد استغاثات حالياً.</p>' : activeBloodRequests.map(b => `<div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)"><div class="flex items-center gap-3"><span class="blood-type-badge text-sm py-1 px-3">${escapeHtml(b.blood_type)}</span><div><div class="text-sm font-semibold">${escapeHtml(b.patient_name)} ${b.responses_count > 0 ? '<span class="text-xs text-green-500">(مستجيب: '+escapeHtml(b.responses_count)+')</span>' : ''}</div><div class="text-xs text-gray-500">${escapeHtml(b.hospital)}</div></div></div><button onclick="resolveBloodRequest('${b.id}')" class="text-xs text-white px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 transition-colors">إنهاء الطلب</button></div>`).join('');
     let medDonHtml = medicineDonations.length === 0 ? '<p class="text-center py-4 text-gray-400 text-sm">لا توجد مستلزمات طبية مُتبرع او طلب حالياً.</p>' : medicineDonations.map(m => `<div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)"><div class="flex items-center gap-3"><i class="fas fa-pills text-green-600"></i><div><div class="text-sm font-semibold">${escapeHtml(m.medicine_name)} (${escapeHtml(m.quantity)})</div><div class="text-xs text-gray-500">ينتهي: ${escapeHtml(m.expiry_date)} | المتبرع: ${escapeHtml(m.donor_name)}</div></div></div><button onclick="resolveMedicineDonation('${m.id}')" class="text-xs text-white px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 transition-colors">حذف/إنهاء</button></div>`).join('');
-
-    openCtrlPanel('لوحة الإدارة', `<div class="flex flex-col gap-6"> ${announcementsHtml} ${homeAdsHtml} ${radarAdminHtml} ${patientsAdminHtml} ${emergencyAdminHtml} <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-tint text-red-600"></i> إدارة استغاثات الدم (${bloodRequests.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${bloodHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-hand-holding-medical text-green-600"></i>إدارة المستلزمات الطبية (${medicineDonations.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${medDonHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-plus-circle ml-2" style="color: var(--accent)"></i> <span id="formTitle">إضافة منشأة</span></h4><form onsubmit="saveFacility(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="hidden" id="edit_id"><select id="new_type" class="ctrl-input text-sm" required onchange="updateAdminFormFields(this.value)"><option value="hospital">مشفى</option><option value="center">مركز</option><option value="lab">مخبر</option><option value="doctor">طبيب</option><option value="pharmacy">صيدلية</option></select><input type="text" id="new_name" class="ctrl-input text-sm" placeholder="الاسم" required><input type="text" id="new_specialty" class="ctrl-input text-sm" placeholder="التخصص الأساسي" required><input type="text" id="new_address" class="ctrl-input text-sm" placeholder="العنوان / الموقع" required><input type="text" id="new_phone" class="ctrl-input text-sm" placeholder="رقم الهاتف (اختياري)"><input type="text" id="new_hours" class="ctrl-input text-sm" placeholder="أوقات العمل"><input type="text" id="new_image_url" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)"><textarea id="new_desc" class="ctrl-input text-sm col-span-2" placeholder="وصف عام (اختياري)" rows="2"></textarea><div id="adminExtraFields" class="contents"></div><button type="submit" class="col-span-1 sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--accent)"><i class="fas fa-save ml-1"></i> حفظ</button></form></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-list ml-2"></i> المنشآت (${allData.length})</h4><div class="flex flex-col gap-2 max-h-96 overflow-y-auto">${listHtml}</div></div> <button onclick="seedDatabase()" class="py-2.5 rounded-xl border border-dashed font-semibold text-sm" style="border-color: var(--gold); color: var(--gold)"><i class="fas fa-database ml-2"></i> ترحيل البيانات الافتراضية</button> <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl border font-semibold text-sm mt-2" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button> </div>`, '#073D2E'); 
+    const blogAdminHtml = `
+<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+    <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-newspaper text-blue-600"></i> إدارة المدونة والمقالات</h4>
+    <form onsubmit="saveArticle(event)" class="grid grid-cols-1 gap-3 mb-4">
+        <input type="text" id="artTitle" class="ctrl-input text-sm" placeholder="عنوان المقال" required>
+        <div class="grid grid-cols-2 gap-3">
+            <input type="text" id="artCategory" class="ctrl-input text-sm" placeholder="التصنيف (مثال: أطفال، باطنة)">
+            <input type="text" id="artImage" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)">
+        </div>
+        <textarea id="artExcerpt" class="ctrl-input text-sm" rows="2" placeholder="ملخص قصير يظهر في بطاقة المقال (اختياري)"></textarea>
+        <textarea id="artContent" class="ctrl-input text-sm" rows="6" placeholder="محتوى المقال (يمكن لصق محتوى مولد بـ AI هنا)" required></textarea>
+        <button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #2563EB">نشر المقال</button>
+    </form>
+    <div id="adminArticlesList" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+        <p class="text-center text-gray-400 text-sm py-2">جاري تحميل المقالات...</p>
+    </div>
+</div>`;
+    openCtrlPanel('لوحة الإدارة', `<div class="flex flex-col gap-6"> ${announcementsHtml} ${homeAdsHtml} ${radarAdminHtml} ${blogAdminHtml} ${patientsAdminHtml} ${emergencyAdminHtml} <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-tint text-red-600"></i> إدارة استغاثات الدم (${bloodRequests.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${bloodHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-hand-holding-medical text-green-600"></i>إدارة المستلزمات الطبية (${medicineDonations.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${medDonHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-plus-circle ml-2" style="color: var(--accent)"></i> <span id="formTitle">إضافة منشأة</span></h4><form onsubmit="saveFacility(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="hidden" id="edit_id"><select id="new_type" class="ctrl-input text-sm" required onchange="updateAdminFormFields(this.value)"><option value="hospital">مشفى</option><option value="center">مركز</option><option value="lab">مخبر</option><option value="doctor">طبيب</option><option value="pharmacy">صيدلية</option></select><input type="text" id="new_name" class="ctrl-input text-sm" placeholder="الاسم" required><input type="text" id="new_specialty" class="ctrl-input text-sm" placeholder="التخصص الأساسي" required><input type="text" id="new_address" class="ctrl-input text-sm" placeholder="العنوان / الموقع" required><input type="text" id="new_phone" class="ctrl-input text-sm" placeholder="رقم الهاتف (اختياري)"><input type="text" id="new_hours" class="ctrl-input text-sm" placeholder="أوقات العمل"><input type="text" id="new_image_url" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)"><textarea id="new_desc" class="ctrl-input text-sm col-span-2" placeholder="وصف عام (اختياري)" rows="2"></textarea><div id="adminExtraFields" class="contents"></div><button type="submit" class="col-span-1 sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--accent)"><i class="fas fa-save ml-1"></i> حفظ</button></form></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-list ml-2"></i> المنشآت (${allData.length})</h4><div class="flex flex-col gap-2 max-h-96 overflow-y-auto">${listHtml}</div></div> <button onclick="seedDatabase()" class="py-2.5 rounded-xl border border-dashed font-semibold text-sm" style="border-color: var(--gold); color: var(--gold)"><i class="fas fa-database ml-2"></i> ترحيل البيانات الافتراضية</button> <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl border font-semibold text-sm mt-2" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button> </div>`, '#073D2E'); 
     renderAdminEmergencyList();
     fetchAnnouncements();
     fetchHomeAdsForAdmin();
     updateAdminFormFields('doctor');
+    fetchAdminArticles();
 }
 window.saveAnnouncement = async (e) => {
     e.preventDefault(); 
@@ -4058,5 +4097,172 @@ window.hideEmergencyFab = function() {
     if (wrapper) {
         wrapper.style.display = 'none'; // إخفاء الزر نهائياً
     }
+}
+// === نظام المدونة الطبية ===
+let allArticles = [];
+
+// 1. فتح لوحة المدونة
+window.openMedicalBlog = () => {
+    openCtrlPanel('المدونة والمقالات الطبية', `
+        <div class="flex flex-col gap-5">
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 text-sm flex items-center gap-3">
+                <i class="fas fa-book-medical text-xl"></i>
+                <span>مكتبة طبية شاملة. اقرأ أحدث المقالات المكتوبة بمراجعة طبية.</span>
+            </div>
+            
+            <!-- حقل البحث السريع -->
+            <div class="relative">
+                <input type="text" id="blogSearchInput" class="ctrl-input pr-10" placeholder="ابحث في المقالات (مثال: سكري، ضغط، أطفال)..." oninput="searchArticles()">
+                <i class="fas fa-search absolute top-4 left-4 text-gray-400"></i>
+            </div>
+
+            <!-- حاوية المقالات -->
+            <div id="blogArticlesList" class="flex flex-col gap-4">
+                <p class="text-center py-10 text-gray-400 text-sm">جاري تحميل المقالات...</p>
+            </div>
+        </div>
+    `, '#0E7C5F');
+    fetchArticles();
+}
+
+// 2. جلب المقالات من Supabase
+async function fetchArticles(searchQuery = '') {
+    const listContainer = document.getElementById('blogArticlesList');
+    if (!listContainer) return;
+
+    let query = supabase.from('medical_articles').select('*').order('created_at', { ascending: false });
+    
+    if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+    }
+
+    const { data, error } = await query.limit(20);
+    if (error) { 
+        listContainer.innerHTML = '<p class="text-center text-red-500 text-sm py-4">خطأ في تحميل المقالات.</p>'; 
+        return; 
+    }
+    
+    allArticles = data || [];
+    renderArticlesList(allArticles);
+}
+
+// 3. عرض المقالات كبطاقات أنيقة
+function renderArticlesList(articles) {
+    const listContainer = document.getElementById('blogArticlesList');
+    if (!listContainer) return;
+
+    if (articles.length === 0) {
+        listContainer.innerHTML = '<p class="text-center py-10 text-gray-400 text-sm">لا توجد مقالات مطابقة حالياً.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = articles.map(art => {
+        const dateStr = new Date(art.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+        return `
+        <div onclick="openArticleReader('${art.id}')" class="border rounded-xl p-4 flex flex-col sm:flex-row gap-4 cursor-pointer hover:shadow-lg transition-all group" style="border-color: var(--border); background: var(--card);">
+            <div class="w-full sm:w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                ${art.image_url ? `<img src="${escapeHtml(art.image_url)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">` : `<i class="fas fa-notes-medical text-4xl text-gray-300"></i>`}
+            </div>
+            <div class="flex-1 flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">${escapeHtml(art.category || 'طب عام')}</span>
+                    <span class="text-[10px] text-gray-400"><i class="fas fa-calendar-day ml-1"></i>${dateStr}</span>
+                </div>
+                <h4 class="font-bold text-base text-gray-800 mb-1" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(art.title)}</h4>
+                <p class="text-xs text-gray-500 leading-relaxed line-clamp-2">${escapeHtml(art.excerpt || art.content.substring(0, 120))}...</p>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// 4. البحث المباشر
+window.searchArticles = () => {
+    const q = document.getElementById('blogSearchInput').value.trim();
+    fetchArticles(q);
+}
+
+// 5. فتح مقال للقراءة (مع تعديل الرابط والعنوان لـ SEO)
+window.openArticleReader = async (id) => {
+    const article = allArticles.find(a => a.id == id);
+    if (!article) return;
+
+    // 1. تعديل رابط المتصفح ليكون مستقلاً (SEO)
+    window.location.hash = `article=${id}`;
+    
+    // 2. تعديل عنوان التبويب (Tab Title) ليتوافق مع جوجل
+    document.title = `${article.title} | Lomedx`;
+
+    // زيادة عدد المشاهدات في الخلفية
+    supabase.from('medical_articles').update({ views: (article.views || 0) + 1 }).eq('id', id).then();
+
+    const dateStr = new Date(article.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    document.getElementById('modalContent').innerHTML = `
+        <div class="p-6 sm:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
+                <button onclick="closeModal()" class="text-2xl hover:text-gray-400">&times;</button>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
+            <div class="flex items-center gap-4 text-xs text-gray-400 mb-6 border-b pb-4">
+                <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
+                <span><i class="fas fa-eye ml-1"></i> ${(article.views || 0) + 1} قراءة</span>
+            </div>
+            ${article.image_url ? `<img src="${escapeHtml(article.image_url)}" class="w-full h-56 object-cover rounded-xl mb-6 shadow-sm">` : ''}
+            <div class="prose max-w-none text-sm sm:text-base text-gray-600 leading-loose whitespace-pre-line" style="font-family: 'IBM Plex Sans Arabic';">${escapeHtml(article.content)}</div>
+            <div class="mt-8 p-4 bg-blue-50 rounded-xl text-center text-sm text-blue-800">
+                <i class="fas fa-info-circle ml-1"></i> هذه المعلومات استرشادية ولا تغني عن استشارة الطبيب المختص.
+            </div>
+        </div>
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+    lockScroll();
+}
+// دوال إدارة المدونة
+window.saveArticle = async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('artTitle').value.trim();
+    const category = document.getElementById('artCategory').value.trim();
+    const image = document.getElementById('artImage').value.trim();
+    const content = document.getElementById('artContent').value.trim();
+    const excerpt = document.getElementById('artExcerpt').value.trim() || content.substring(0, 150);
+
+    try {
+        await supabase.from('medical_articles').insert([{ title, category, image_url: image, content, excerpt }]);
+        showToast('تم نشر المقال بنجاح!');
+        e.target.reset();
+        fetchAdminArticles();
+    } catch (err) {
+        showToast('خطأ في النشر');
+    }
+};
+
+window.deleteArticle = async (id) => {
+    try {
+        await supabase.from('medical_articles').delete().eq('id', id);
+        showToast('تم حذف المقال');
+        fetchAdminArticles();
+    } catch (err) {
+        showToast('خطأ في الحذف');
+    }
+};
+
+async function fetchAdminArticles() {
+    const list = document.getElementById('adminArticlesList');
+    if (!list) return;
+    const { data, error } = await supabase.from('medical_articles').select('id, title, category, created_at').order('created_at', { ascending: false });
+    if (error || !data) { list.innerHTML = '<p class="text-center text-gray-400 text-sm py-2">لا توجد مقالات.</p>'; return; }
+    if (data.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-sm py-2">لا توجد مقالات منشورة بعد.</p>'; return; }
+    
+    list.innerHTML = data.map(art => `
+        <div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)">
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+                <i class="fas fa-file-lines text-blue-500"></i>
+                <span class="text-sm font-semibold truncate">${escapeHtml(art.title)}</span>
+                <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">${escapeHtml(art.category || 'عام')}</span>
+            </div>
+            <button onclick="deleteArticle('${art.id}')" class="text-xs text-white px-2 py-1 rounded bg-red-500 hover:bg-red-600 flex-shrink-0">حذف</button>
+        </div>
+    `).join('');
 }
 // نهاية ملف app.js
