@@ -4241,14 +4241,17 @@ function renderArticlesList(articles) {
                 <h4 class="font-bold text-base text-gray-800 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(art.title)}</h4>
                 <p class="text-xs text-gray-500 leading-relaxed line-clamp-3 mb-3">${escapeHtml(art.excerpt || art.content.substring(0, 120))}...</p>
                 <div class="flex items-center justify-between text-[10px] text-gray-400 mt-auto border-t pt-2" style="border-color: var(--border);">
-                    <div class="flex items-center gap-3">
-                        <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
-                        <span><i class="fas fa-eye ml-1"></i> ${art.views || 0}</span>
-                    </div>
-                    <button onclick="event.stopPropagation(); toggleSaveArticle('${art.id}')" class="save-art-btn text-gray-300 hover:text-yellow-500 transition-colors" data-id="${art.id}">
-                        <i class="${isSaved ? 'fas text-yellow-500' : 'far'} fa-bookmark"></i>
-                    </button>
-                </div>
+    <div class="flex items-center gap-3">
+        <span><i class="fas fa-calendar-day ml-1"></i> ${dateStr}</span>
+        <span><i class="fas fa-eye ml-1"></i> ${art.views || 0}</span>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="text-emerald-600 font-bold flex items-center gap-1 group-hover:gap-2 transition-all">اقرأ المزيد <i class="fas fa-chevron-left text-[8px]"></i></span>
+        <button onclick="event.stopPropagation(); toggleSaveArticle('${art.id}')" class="save-art-btn text-gray-300 hover:text-yellow-500 transition-colors" data-id="${art.id}">
+            <i class="${isSaved ? 'fas text-yellow-500' : 'far'} fa-bookmark"></i>
+        </button>
+    </div>
+</div>
             </div>
         </div>`;
     }).join('');
@@ -4344,17 +4347,27 @@ window.openArticleReader = async (id) => {
                 
                 <div id="articleContentText" class="prose max-w-none text-gray-700 leading-loose space-y-4 transition-all" style="font-family: 'IBM Plex Sans Arabic'; font-size: ${currentFontSize}rem;">${processedContent}</div>
                 
-                <!-- صندوق توجيه للطبيب (احترافي ودقيق) -->
+                                <!-- صندوق توجيه للطبيب (احترافي وربط ذكي) -->
                 <div class="mt-8 p-6 bg-gradient-to-l from-blue-50 to-sky-50 rounded-2xl border border-blue-200 text-center">
                     <div class="w-12 h-12 mx-auto rounded-full bg-blue-100 flex items-center justify-center mb-3">
                         <i class="fas fa-user-md text-2xl text-blue-600"></i>
                     </div>
                     <h4 class="font-bold text-base text-blue-900 mb-2">هل تحتاج إلى استشارة طبية؟</h4>
-                    <p class="text-xs text-blue-700 mb-4 max-w-md mx-auto">لا تعتمد على المقالات فقط. تواصل مباشرةً مع أطباء متخصصين عبر منصة لوميديكس للحصول على تشخيص دقيق.</p>
-                    <button onclick="closeModal(); openAskDoctor()" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-md">
-                        <i class="fas fa-comments ml-1"></i> اسأل طبيباً الآن
-                    </button>
+                    <p class="text-xs text-blue-700 mb-4 max-w-md mx-auto">لا تعتمد على المقالات فقط. تواصل مباشرةً مع أطباء متخصصين عبر منصة لوميديكس.</p>
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-md mx-auto">
+    <!-- الزر الأول -->
+    <button onclick="closeModal(); openAskDoctor()" class="flex-1 min-w-[160px] bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center gap-1">
+        <i class="fas fa-comments"></i> اسأل طبيباً الآن
+    </button>
+    <!-- الزر الثاني -->
+    <button onclick="closeModal(); redirectToDoctorsSearch('${escapeHtml(article.category || '')}')" class="flex-1 min-w-[160px] bg-white border border-blue-200 text-blue-700 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-sm flex items-center justify-center gap-1">
+        <i class="fas fa-search"></i> ابحث عن طبيب مختص
+    </button>
+</div>
+
                 </div>
+
+
 
                 <!-- نظام التقييم (Helpful) -->
                 <div id="ratingBox" class="mt-8 p-4 bg-gray-50 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
