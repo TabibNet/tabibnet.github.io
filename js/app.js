@@ -4601,4 +4601,10 @@ async function fetchAdminArticles() {
         });
     });
 }
+function toggleAccordion() {
+    const accordion = document.getElementById('toolsAccordion');
+    if (accordion) {
+        accordion.classList.toggle('accordion-active');
+    }
+}
 // نهاية ملف app.js
