@@ -2160,15 +2160,19 @@ window.renderAdminDashboard = async () => {
     const blogAdminHtml = `
 <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
     <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-newspaper text-blue-600"></i> إدارة المدونة والمقالات</h4>
-    <form onsubmit="saveArticle(event)" class="grid grid-cols-1 gap-3 mb-4">
+    <form id="articleForm" onsubmit="saveArticle(event)" class="grid grid-cols-1 gap-3 mb-4">
+        <input type="hidden" id="editArtId">
         <input type="text" id="artTitle" class="ctrl-input text-sm" placeholder="عنوان المقال" required>
         <div class="grid grid-cols-2 gap-3">
             <input type="text" id="artCategory" class="ctrl-input text-sm" placeholder="التصنيف (مثال: أطفال، باطنة)">
             <input type="text" id="artImage" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)">
         </div>
         <textarea id="artExcerpt" class="ctrl-input text-sm" rows="2" placeholder="ملخص قصير يظهر في بطاقة المقال (اختياري)"></textarea>
-        <textarea id="artContent" class="ctrl-input text-sm" rows="6" placeholder="محتوى المقال (يمكن لصق محتوى مولد بـ AI هنا)" required></textarea>
-        <button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #2563EB">نشر المقال</button>
+        <textarea id="artContent" class="ctrl-input text-sm" rows="6" placeholder="محتوى المقال..." required></textarea>
+        <div class="flex gap-2">
+            <button type="submit" id="artSubmitBtn" class="flex-1 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #2563EB">نشر المقال</button>
+            <button type="button" onclick="resetArticleForm()" id="artCancelBtn" class="hidden px-4 py-2.5 rounded-xl border font-semibold text-sm" style="border-color: var(--border); color: var(--muted);">إلغاء</button>
+        </div>
     </form>
     <div id="adminArticlesList" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
         <p class="text-center text-gray-400 text-sm py-2">جاري تحميل المقالات...</p>
@@ -4263,7 +4267,7 @@ window.openArticleReader = async (id) => {
             <div class="sticky top-0 bg-white/90 backdrop-blur-md z-10 p-3 border-b flex flex-wrap items-center justify-between gap-2" style="border-color: var(--border);">
                 <div class="flex items-center gap-3 text-[11px] text-gray-500">
                     <span><i class="fas fa-calendar-day"></i> ${dateStr}</span>
-                    <span><i class="fas fa-eye"></i> ${art.views || 0}</span>
+                    <span><i class="fas fa-eye"></i> ${article.views || 0}</span>
                     <span><i class="fas fa-clock"></i> ${readingTime} دقيقة</span>
                 </div>
                 <div class="flex items-center gap-1">
