@@ -4268,9 +4268,13 @@ window.openArticleReader = async (id) => {
     document.getElementById('modalOverlay').classList.add('active');
     lockScroll();
 }
-// دوال إدارة المدونة
+// === دوال إدارة المدونة ===
+let adminArticlesCache = [];
+
+// 1. حفظ أو تعديل المقال
 window.saveArticle = async (e) => {
     e.preventDefault();
+    const id = document.getElementById('editArtId').value;
     const title = document.getElementById('artTitle').value.trim();
     const category = document.getElementById('artCategory').value.trim();
     const image = document.getElementById('artImage').value.trim();
@@ -4278,16 +4282,55 @@ window.saveArticle = async (e) => {
     const excerpt = document.getElementById('artExcerpt').value.trim() || content.substring(0, 150);
 
     try {
-        await supabase.from('medical_articles').insert([{ title, category, image_url: image, content, excerpt }]);
-        showToast('تم نشر المقال بنجاح!');
-        e.target.reset();
+        if (id) {
+            // وضع التعديل
+            await supabase.from('medical_articles').update({ title, category, image_url: image, content, excerpt }).eq('id', id);
+            showToast('تم حفظ التعديلات بنجاح!');
+        } else {
+            // وضع الإضافة
+            await supabase.from('medical_articles').insert([{ title, category, image_url: image, content, excerpt }]);
+            showToast('تم نشر المقال بنجاح!');
+        }
+        resetArticleForm();
         fetchAdminArticles();
     } catch (err) {
-        showToast('خطأ في النشر');
+        showToast('خطأ في الحفظ');
     }
 };
 
+// 2. تعبئة النموذج ببيانات المقال للتعديل
+window.editArticle = (id) => {
+    const art = adminArticlesCache.find(a => a.id == id);
+    if (!art) return;
+    
+    document.getElementById('editArtId').value = art.id;
+    document.getElementById('artTitle').value = art.title;
+    document.getElementById('artCategory').value = art.category || '';
+    document.getElementById('artImage').value = art.image_url || '';
+    document.getElementById('artExcerpt').value = art.excerpt || '';
+    document.getElementById('artContent').value = art.content;
+    
+    // تغيير شكل الزر لوضع التعديل
+    document.getElementById('artSubmitBtn').innerText = 'حفظ التعديلات';
+    document.getElementById('artSubmitBtn').style.background = '#F59E0B'; // لون برتقالي للتعديل
+    document.getElementById('artCancelBtn').classList.remove('hidden');
+    
+    // تمرير الشاشة للأعلى لرؤية الحقول
+    document.getElementById('artTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+// 3. إلغاء وضع التعديل وإفراغ الحقول
+window.resetArticleForm = () => {
+    document.getElementById('articleForm').reset();
+    document.getElementById('editArtId').value = '';
+    document.getElementById('artSubmitBtn').innerText = 'نشر المقال';
+    document.getElementById('artSubmitBtn').style.background = '#2563EB';
+    document.getElementById('artCancelBtn').classList.add('hidden');
+};
+
+// 4. حذف المقال
 window.deleteArticle = async (id) => {
+    if (!confirm("هل أنت متأكد من حذف هذا المقال؟")) return;
     try {
         await supabase.from('medical_articles').delete().eq('id', id);
         showToast('تم حذف المقال');
@@ -4297,12 +4340,15 @@ window.deleteArticle = async (id) => {
     }
 };
 
+// 5. جلب المقالات وعرضها في لوحة الإدارة
 async function fetchAdminArticles() {
     const list = document.getElementById('adminArticlesList');
     if (!list) return;
-    const { data, error } = await supabase.from('medical_articles').select('id, title, category, created_at').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('medical_articles').select('*').order('created_at', { ascending: false });
     if (error || !data) { list.innerHTML = '<p class="text-center text-gray-400 text-sm py-2">لا توجد مقالات.</p>'; return; }
     if (data.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-sm py-2">لا توجد مقالات منشورة بعد.</p>'; return; }
+    
+    adminArticlesCache = data; // حفظ البيانات في الذاكرة لاستخدامها عند التعديل
     
     list.innerHTML = data.map(art => `
         <div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)">
@@ -4311,7 +4357,10 @@ async function fetchAdminArticles() {
                 <span class="text-sm font-semibold truncate">${escapeHtml(art.title)}</span>
                 <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">${escapeHtml(art.category || 'عام')}</span>
             </div>
-            <button onclick="deleteArticle('${art.id}')" class="text-xs text-white px-2 py-1 rounded bg-red-500 hover:bg-red-600 flex-shrink-0">حذف</button>
+            <div class="flex gap-1 flex-shrink-0">
+                <button onclick="editArticle('${art.id}')" class="text-xs text-white px-2 py-1 rounded bg-blue-500 hover:bg-blue-600">تعديل</button>
+                <button onclick="deleteArticle('${art.id}')" class="text-xs text-white px-2 py-1 rounded bg-red-500 hover:bg-red-600">حذف</button>
+            </div>
         </div>
     `).join('');
 }
