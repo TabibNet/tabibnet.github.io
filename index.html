@@ -391,30 +391,35 @@
     </button>
 </div>
 
-<div class="border-t border-white/10 my-4 pt-4 space-y-2">
-    <button onclick="toggleMobileMenu(); openDoctorLogin()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(37, 99, 235, 0.15);">
-            <i class="fas fa-user-md text-blue-400"></i>
-        </div>
-        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">لوحة الطبيب</span>
-    </button>
-    <button onclick="toggleMobileMenu(); openAdminLogin()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(115, 115, 115, 0.2);">
-            <i class="fas fa-cogs text-gray-300"></i>
-        </div>
-        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">لوحة الإدارة</span>
-    </button>
-    <button onclick="toggleMobileMenu(); openPharmacyLogin()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(16, 185, 129, 0.15);">
-            <i class="fas fa-prescription-bottle-medical text-green-400"></i>
-        </div>
-        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">لوحة الصيدلية</span>
-    </button>
-    <button onclick="toggleMobileMenu(); setupOneSignal()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(245, 158, 11, 0.15);">
-            <i class="fas fa-bell text-yellow-400"></i>
-        </div>
-        <span class="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors">تفعيل إشعارات</span>
+<!-- بوابات النظام -->
+<div class="mt-6 pt-4 border-t border-white/10">
+    <div class="px-2 mb-3 text-yellow-400 text-xs font-bold flex items-center gap-2">
+        <i class="fas fa-shield-halved"></i> بوابات النظام
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+        <!-- بوابة الطبيب -->
+        <button onclick="toggleMobileMenu(); openDoctorLogin()" class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-all group border border-blue-500/20">
+            <i class="fas fa-user-md text-blue-400 text-lg"></i>
+            <span class="text-[11px] font-bold text-gray-300 group-hover:text-white">الطبيب</span>
+        </button>
+        <!-- بوابة الصيدلية -->
+        <button onclick="toggleMobileMenu(); openPharmacyLogin()" class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group border border-emerald-500/20">
+            <i class="fas fa-prescription-bottle-medical text-emerald-400 text-lg"></i>
+            <span class="text-[11px] font-bold text-gray-300 group-hover:text-white">الصيدلية</span>
+        </button>
+        <!-- بوابة الإدارة -->
+        <button onclick="toggleMobileMenu(); openAdminLogin()" class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-all group border border-amber-500/20">
+            <i class="fas fa-cogs text-amber-400 text-lg"></i>
+            <span class="text-[11px] font-bold text-gray-300 group-hover:text-white">الإدارة</span>
+        </button>
+    </div>
+</div>
+
+<!-- زر الإشعارات (مستقل تماماً) -->
+<div class="mt-4">
+    <button onclick="toggleMobileMenu(); setupOneSignal()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 transition-all border border-yellow-500/20">
+        <i class="fas fa-bell text-yellow-400"></i>
+        <span class="text-sm font-bold text-yellow-300">تفعيل الإشعارات</span>
     </button>
 </div>
             </div>
