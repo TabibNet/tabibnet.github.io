@@ -2037,7 +2037,7 @@ window.updateAdminFormFields = (type) => {
                 <button type="button" onclick="addAdminRow('phoneContainer', ['label', 'phone'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-teal-600 border-teal-500 hover:bg-teal-50">+ إضافة رقم هاتف</button>
             </div>
         `;
-        }
+        
     } else if (type === 'doctor') {
         html = `<input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة"><input type="text" id="new_parent_id" class="ctrl-input text-sm" placeholder="ID المشفى التابع له (اختياري)"><input type="text" id="new_extra" class="ctrl-input text-sm" placeholder="تفاصيل إضافية">`;
     } else if (type === 'lab') {
