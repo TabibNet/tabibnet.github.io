@@ -1079,4 +1079,69 @@ html.dark .search-input::placeholder {
     pointer-events: none;
     z-index: 0;
 }
+/* === تنسيقات قائمة الجوال الفاخرة (Premium UI) === */
+.mobile-menu-premium {
+    background: radial-gradient(circle at top center, #0a4d3a 0%, #052E22 40%, #021410 100%);
+    box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mobile-menu-premium.open { transform: translateX(0); }
+.mobile-menu-premium::-webkit-scrollbar { width: 5px; }
+.mobile-menu-premium::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.mobile-menu-premium::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
 
+.text-gold-gradient {
+    background: linear-gradient(135deg, #F0D77B 0%, #C4962C 50%, #92610A 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(196, 150, 44, 0.3));
+}
+.icon-gold-gradient {
+    background: linear-gradient(135deg, #F0D77B 0%, #C4962C 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.lomedx-brand {
+    font-family: 'Outfit', sans-serif; font-weight: 800;
+    background: linear-gradient(135deg, #F0D77B 0%, #C4962C 50%, #0E7C5F 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.premium-card {
+    background: linear-gradient(180deg, rgba(14, 124, 95, 0.15) 0%, rgba(2, 20, 16, 0.4) 100%);
+    border: 1px solid rgba(196, 150, 44, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(196, 150, 44, 0.1);
+}
+.menu-item-premium {
+    border-bottom: 1px solid rgba(196, 150, 44, 0.1);
+    transition: all 0.3s ease;
+}
+.menu-item-premium:last-child { border-bottom: none; }
+.menu-item-premium:hover {
+    background: linear-gradient(90deg, rgba(196, 150, 44, 0.1) 0%, transparent 100%);
+    padding-right: 10px !important;
+}
+.btn-dark-gold {
+    background: linear-gradient(135deg, #92610A 0%, #C4962C 50%, #92610A 100%);
+    box-shadow: 0 10px 25px rgba(196, 150, 44, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+    border: 1px solid #F0D77B;
+}
+.portal-grid-btn {
+    background: linear-gradient(180deg, rgba(196, 150, 44, 0.05) 0%, rgba(196, 150, 44, 0.15) 100%);
+    border: 1px solid rgba(196, 150, 44, 0.5);
+    transition: all 0.3s ease;
+    box-shadow: inset 0 1px 0 rgba(240, 215, 123, 0.2);
+}
+.portal-grid-btn:hover {
+    background: linear-gradient(180deg, rgba(196, 150, 44, 0.15) 0%, rgba(196, 150, 44, 0.3) 100%);
+    border-color: #F0D77B;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(196, 150, 44, 0.2), inset 0 1px 0 rgba(240, 215, 123, 0.4);
+}
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
+.accordion-active .accordion-content { max-height: 1000px; } /* تم زيادة الحد ليتسع لكل الأدوات */
+.accordion-active .chevron-icon { transform: rotate(180deg); color: #F0D77B; }
+.chevron-icon { transition: all 0.3s ease; }
+.glow-gold { text-shadow: 0 0 10px rgba(240, 215, 123, 0.5); }
