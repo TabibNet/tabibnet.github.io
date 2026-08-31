@@ -3995,4 +3995,25 @@ window.toggleEmergencyPopup = () => {
         popup.classList.toggle('show');
     }
 };
+// === دوال التحكم في نافذة الطوارئ المنبثقة ===
+window.toggleEmergencyPopup = function() {
+    var popup = document.getElementById('emergencyPopup');
+    if (popup) {
+        // تبديل العرض بين block و none
+        if (popup.style.display === 'none' || popup.style.display === '') {
+            popup.style.display = 'block';
+        } else {
+            popup.style.display = 'none';
+        }
+    } else {
+        console.error("عنصر النافذة المنبثقة غير موجود!");
+    }
+}
+
+window.hideEmergencyFab = function() {
+    var wrapper = document.getElementById('emergencyFabWrapper');
+    if (wrapper) {
+        wrapper.style.display = 'none'; // إخفاء الزر نهائياً
+    }
+}
 // نهاية ملف app.js
