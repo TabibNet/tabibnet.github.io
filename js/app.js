@@ -863,8 +863,10 @@ window.handleContactSubmit = (e) => {
     e.preventDefault(); const phoneInput = document.getElementById('contactPhone'); const phone = phoneInput.value.trim(); 
     if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('رقم هاتف غير صحيح'); return; } phoneInput.classList.remove('input-invalid'); 
     const name = document.getElementById('contactName').value; const type = document.getElementById('contactType').value; const message = document.getElementById('contactMessage').value; 
-    const text = `*رسالة جديدة من منصة الدليل الطبي*%0A*الاسم:* ${name}%0A*الهاتف:* ${phone}%0A*النوع:* ${type}%0A*الرسالة:* ${message}`; 
-    const adminWhatsAppNumber = "963980390813"; window.open(`https://wa.me/${adminWhatsAppNumber}?text=${text}`, '_blank'); showToast('جاري تحويلك إلى واتساب لإرسال الرسالة...'); e.target.reset(); 
+    const text = `*رسالة جديدة من منصة LomedX الطبية*%0A*الاسم:* ${name}%0A*الهاتف:* ${phone}%0A*النوع:* ${type}%0A*الرسالة:* ${message}`; 
+    const adminWhatsAppNumber = "963980390813";
+    const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(text)}`;
+window.open(whatsappUrl, '_blank'); showToast('جاري تحويلك إلى واتساب لإرسال الرسالة...'); e.target.reset(); 
 }
 
 window.addEventListener('scroll', () => { document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 80); document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 500); });
@@ -939,7 +941,7 @@ window.confirmBooking = async () => {
     if (!name || !phone) { showToast('الرجاء إدخال الاسم والهاتف'); return; } 
     if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('رقم هاتف غير صحيح'); return; } 
     phoneInput.classList.remove('input-invalid'); 
-    const ref = `R-${Math.floor(Math.random() * 900) + 100}`; 
+    const ref = `R-${Math.floor(Math.random() * 900000) + 100000}`;
     tempBooking.ref = ref; 
     tempBooking.name = name; 
     tempBooking.phone = phone; 
@@ -1457,7 +1459,7 @@ window.fetchPatientHealthFile = async (userId, doctorData) => {
         };
 
         const prescriptionBtn = doctorData?.is_subscribed 
-            ? `<button onclick='openPrescriptionModal("${userId}", "${decryptedP.full_name}", ${JSON.stringify(docInfo)})' class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg"><i class="fas fa-file-prescription"></i> إنشاء روشتة</button>` 
+    ? `<button onclick='openPrescriptionModal("${escapeHtml(userId)}", "${escapeHtml(decryptedP.full_name)}", ${JSON.stringify(docInfo).replace(/'/g, "&#39;")})' class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg"><i class="fas fa-file-prescription"></i> إنشاء روشتة</button>` 
             : `<button onclick="openPaymentModal('طبيب', '${doctorData?.name || 'طبيب'}')" class="text-xs bg-gray-300 text-gray-600 px-3 py-1.5 rounded-lg line-through cursor-not-allowed"><i class="fas fa-lock"></i> إنشاء روشتة</button>`;
 
         document.getElementById('modalContent').innerHTML = `<div class="p-6"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-file-medical ml-2" style="color: var(--doctor)"></i> الملف الصحي للمريض</h3><button onclick="closeModal()" class="text-2xl">&times;</button>${prescriptionBtn}</div><div class="flex flex-col gap-3"><div class="flex items-center gap-4 p-3 rounded-xl" style="background: #DBEAFE"><i class="fas fa-user-circle text-3xl" style="color: var(--doctor)"></i><div><h4 class="font-bold text-lg">${escapeHtml(decryptedP.full_name)}</h4><p class="text-sm text-gray-600">${escapeHtml(decryptedP.age || '-')} سنة | ${escapeHtml(decryptedP.gender || '-')}</p></div></div><div class="grid grid-cols-2 gap-3 text-sm"><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">فصيلة الدم</div><div class="font-bold text-red-600">${escapeHtml(decryptedP.blood_type || 'غير محدد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">الوزن</div><div class="font-bold">${escapeHtml(decryptedP.weight || '-')} كغ</div></div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأمراض المزمنة</div><div class="font-semibold">${escapeHtml(decryptedP.diseases || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الحساسية</div><div class="font-semibold text-red-600">${escapeHtml(decryptedP.allergies || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأدوية الحالية</div><div class="font-semibold">${escapeHtml(decryptedP.medications || 'لا يوجد')}</div></div>${specializedRecordHtml}<div class="p-3 rounded-xl bg-green-50 border border-green-200"><div class="text-xs text-green-700 mb-1">جهة طوارئ</div><div class="font-semibold">${escapeHtml(decryptedP.emergency_name || '')} - <span dir="ltr">${escapeHtml(decryptedP.emergency_phone || '')}</span></div></div></div></div>`;
@@ -3149,7 +3151,7 @@ const firstAidData = [
 window.openFirstAid = () => {
     const accordionHtml = firstAidData.map((item, index) => `
         <div class="accordion-item ${index === 0 ? 'active' : ''}">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
+            <div class="accordion-header" onclick="toggleFirstAidAccordion(this)">
                 <div class="flex items-center gap-3"><i class="fas ${escapeHtml(item.icon)} text-red-600 text-lg w-8"></i><span>${escapeHtml(item.title)}</span></div>
                 <i class="fas fa-chevron-down transition-transform"></i>
             </div>
@@ -3158,8 +3160,8 @@ window.openFirstAid = () => {
     `).join('');
     openCtrlPanel('دليل الإسعافات الأولية الشامل', `<div class="flex flex-col gap-4"><div class="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800 text-sm flex items-center gap-3"><i class="fas fa-ambulance text-xl"></i><span>هذه الإرشادات أولية ولا تغني عن الاتصال بالإسعاف (110) فوراً في الحالات الخطيرة.</span></div><div>${accordionHtml}</div></div>`, '#DC2626');
 }
-window.toggleAccordion = (el) => { const item = el.parentElement; const isActive = item.classList.contains('active'); document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('active')); if (!isActive) item.classList.add('active'); }
 
+window.toggleFirstAidAccordion = (el) => { const item = el.parentElement; const isActive = item.classList.contains('active'); document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('active')); if (!isActive) item.classList.add('active'); }
 // 7. Medical Symbols Guide
 const medSymbolsData = [
     { symbol: "CBC", name: "صورة دم كاملة", desc: "تحليل يقيس مكونات الدم (كريات حمر، بيض، صفائح) للكشف عن فقر الدم أو الالتهابات." },
