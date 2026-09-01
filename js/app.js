@@ -1435,7 +1435,9 @@ window.openDoctorScanner = (docId) => {
 
 window.fetchPatientHealthFile = async (userId, doctorData) => {
     try {
-        const { data: p, error } = await supabase.from('health_files').select('*').eq('qr_token', userId).maybeSingle();
+        const { data: p, error } = await supabase
+  .rpc('get_patient_file_by_qr', { qr_token_param: userId })
+  .maybeSingle();
         
         // فك تشفير البيانات للطبيب باستخدام رمز QR
         const decryptedP = decryptHealthFile(p, userId);
