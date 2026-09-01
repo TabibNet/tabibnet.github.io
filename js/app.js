@@ -4641,7 +4641,7 @@ window.openBlogCategory = () => {
 
     // 3. رسم القائمة
     listContainer.innerHTML = cats.map(cat => `
-        <div class="city-option ${currentBlogCategory === cat ? 'selected' : ''}" onclick="selectBlogCategory('${escapeHtml(cat)}')">
+        <div class="city-option ${(currentBlogCategory === 'all' && cat === 'كل التصنيفات') || currentBlogCategory === cat ? 'selected' : ''}" onclick="selectBlogCategory('${escapeHtml(cat)}')">
             <div class="flex items-center gap-3">
                 <i class="fas ${cat === 'كل التصنيفات' ? 'fa-globe' : 'fa-tag'}" style="color: var(--accent)"></i>
                 <span class="font-bold text-sm">${escapeHtml(cat)}</span>
