@@ -457,6 +457,41 @@ function updateStats() {
     document.getElementById('stat-pharmacy').textContent = allData.filter(d => d.type === 'pharmacy').length;
 }
 
+// دالة للتحقق من معدل الطلبات (منع السبام)
+function checkRateLimit(actionKey, hoursCooldown = 1) {
+    const lastAction = localStorage.getItem(`ratelimit_${actionKey}`);
+    if (!lastAction) return true;
+    
+    const diffHours = (Date.now() - parseInt(lastAction)) / (1000 * 60 * 60);
+    if (diffHours < hoursCooldown) {
+        showToast(`يرجى الانتظار. يمكنك إرسال طلب جديد بعد ${Math.ceil(hoursCooldown - diffHours)} ساعة.`);
+        return false;
+    }
+    return true;
+}
+
+function setRateLimit(actionKey) {
+    localStorage.setItem(`ratelimit_${actionKey}`, Date.now().toString());
+}
+function updateMetaTags(title, description, image) {
+    document.title = title;
+    
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.name = "description";
+        document.head.appendChild(metaDesc);
+    }
+    metaDesc.content = description;
+
+    document.querySelector('meta[property="og:title"]').setAttribute('content', title);
+    document.querySelector('meta[property="og:description"]').setAttribute('content', description);
+    if (image) {
+        document.querySelector('meta[property="og:image"]').setAttribute('content', image);
+    }
+    
+    document.querySelector('link[rel="canonical"]').setAttribute('href', window.location.href);
+}
 function createCard(item) {
     const typeMap = { 
         hospital: { cardClass: 'hospital-card', badgeClass: 'badge-hospital', iconClass: 'cat-icon-hospital', icon: 'fa-hospital-symbol', label: 'مشفى', color: 'var(--hospital)' }, 
@@ -830,7 +865,11 @@ window.closeModal = (event) => {
     // إعادة رابط الموقع وعنوان التبويب لوضعهما الطبيعي (SEO)
     if (window.location.hash.includes('article=')) {
         history.replaceState(null, '', window.location.pathname); // مسح #article=5 من الرابط
-        document.title = 'Lomedx | منصة طبية شاملة'; // إعادة اسم الموقع الأساسي
+        updateMetaTags(
+    'LomedX | مشافي، أطباء، صيدليات، مراكز طبية، مخابر', 
+    'Lomedx منصة الطبية الشاملة في سوريا. ابحث عن أقرب المشفى، الطبيب، الصيدلية، المركز الطبي أو مخبر.',
+    'https://z-cdn-media.chatglm.cn/files/981068e8-ce01-48cb-baf4-b93e843f3df9.jpg'
+);
     }
 }
 window.copyNumber = (phone) => { navigator.clipboard.writeText(phone).then(() => showToast('تم نسخ رقم الهاتف بنجاح')).catch(() => showToast('تعذر النسخ')); }
@@ -1073,7 +1112,7 @@ window.handlePharmacyLogin = async (e) => {
     const dummyEmail = `pharm_${pass.toLowerCase()}@lomedx.app`;
 
     const { data, error } = await supabase.auth.signInWithPassword({ email: dummyEmail, password: pass });
-    if (error) { showToast('خطأ: ' + error.message); return; }
+    if (error) { showToast('بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى.'); return; }
 
     const pharmData = allData.find(d => d.user_id === data.user.id && d.type === 'pharmacy'); 
     if (pharmData) { 
@@ -1248,7 +1287,7 @@ window.handleDoctorLogin = async (e) => {
     const dummyEmail = `doc_${pass.toLowerCase()}@lomedx.app`;
     
     const { data, error } = await supabase.auth.signInWithPassword({ email: dummyEmail, password: pass });
-    if (error) { showToast('خطأ: ' + error.message); return; }
+    if (error) { showToast('بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى.'); return; }
 
     const docData = allData.find(d => d.user_id === data.user.id && d.type === 'doctor'); 
     if (docData) { 
@@ -1798,6 +1837,7 @@ function renderBloodBankUI() {
 
 window.submitBloodRequest = async (e) => {
     e.preventDefault();
+    if (!checkRateLimit('blood_request', 1)) return; 
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true; submitBtn.innerText = 'جاري النشر...';
     
@@ -1812,7 +1852,7 @@ window.submitBloodRequest = async (e) => {
     phoneInput.classList.remove('input-invalid');
     try {
         await supabase.from('blood_requests').insert([{ patient_name: name, blood_type: bloodType, hospital: hospital, phone: phone, notes: notes, status: 'active' }]);
-        
+        setRateLimit('blood_request');
         // === إشعار لجميع المستخدمين بوجود استغاثة دم ===
         await sendPushNotification(null, "استغاثة دم طارئة 🩸", `المريض ${name} يحتاج فصيلة ${bloodType} في ${hospital}`, 'all');
         showToast('تم نشر استغاثتك بنجاح! سيتم التواصل معك قريباً.');
@@ -1904,6 +1944,7 @@ window.previewMedicineImage = (event) => {
 
 window.submitMedicineRequest = async (e) => { 
     e.preventDefault(); 
+    if (!checkRateLimit('med_request', 1)) return;
     const medList = document.getElementById('medList').value.trim();
     const name = document.getElementById('medName').value.trim() || 'مريض'; 
     const phoneInput = document.getElementById('medPhone'); 
@@ -1928,13 +1969,15 @@ window.submitMedicineRequest = async (e) => {
             // استدعاء الدالة السرية في Supabase بدلاً من ImgBB مباشرة
             const { data: funcData, error: funcError } = await supabase.functions.invoke('upload-image', {
                 body: formData
+                
             });
             
             if (funcError) throw funcError;
             if (funcData && funcData.success) imageUrl = funcData.data.url;
         }
         const medRef = `MED-${Math.floor(Math.random() * 900) + 100}`; 
-                const { error } = await supabase.from('medicine_requests').insert([{ 
+        const { error } = await supabase.from('medicine_requests').insert([{ 
+           setRateLimit('med_request');
             med_ref: medRef, 
             med_list: medList,
             urgency: urgency,
@@ -2168,8 +2211,9 @@ window.renderAdminDashboard = async () => {
         <input type="hidden" id="editArtId">
         <input type="text" id="artTitle" class="ctrl-input text-sm" placeholder="عنوان المقال" required>
         <div class="grid grid-cols-2 gap-3">
-            <input type="text" id="artCategory" class="ctrl-input text-sm" placeholder="التصنيف (مثال: أطفال، باطنة)">
-            <input type="text" id="artImage" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)">
+           <input type="text" id="artCategory" class="ctrl-input text-sm" placeholder="التصنيف (مثال: أطفال، باطنة)">
+           <input type="text" id="artImage" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)">
+           <input type="text" id="new_custom_password" class="ctrl-input text-sm" placeholder="كلمة مرور الطبيب/الصيدلية (6 أحرف فأكثر)" required>
         </div>
         <textarea id="artExcerpt" class="ctrl-input text-sm" rows="2" placeholder="ملخص قصير يظهر في بطاقة المقال (اختياري)"></textarea>
         <textarea id="artContent" class="ctrl-input text-sm" rows="6" placeholder="محتوى المقال..." required></textarea>
@@ -2318,19 +2362,22 @@ window.saveFacility = async (e) => {
     if(document.getElementById('new_latlng')) data.latlng = document.getElementById('new_latlng').value.trim();
     if (imgURL) data.image = imgURL; 
     
-    if (!id && (type === 'doctor' || type === 'clinic')) { 
-        data.bookingpass = generateUniqueId(); 
-        const docEmail = `doc_${data.bookingpass.toLowerCase()}@lomedx.app`;
-        const { data: authData, error: authError } = await supabase.auth.signUp({ email: docEmail, password: data.bookingpass });
+        // قراءة كلمة المرور التي أدخلها الأدمن يدوياً
+    const customPassword = document.getElementById('new_custom_password').value.trim();
+    
+    if (!id && (type === 'doctor' || type === 'pharmacy')) { 
+        if (!customPassword || customPassword.length < 6) {
+            showToast('يرجى إدخال كلمة مرور للطبيب/الصيدلية (6 أحرف على الأقل)');
+            return;
+        }
+        // توليد إيميل وهمي ثابت
+        const randomPart = generateUniqueId();
+        const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
+        
+        // إنشاء الحساب بكلمة المرور التي حددتها أنت
+        const { data: authData, error: authError } = await supabase.auth.signUp({ email: dummyEmail, password: customPassword });
         if (authData && authData.user) { data.user_id = authData.user.id; } 
-        if (authError) { showToast('خطأ في إنشاء حساب الطبيب: ' + authError.message); return; }
-    } 
-    if (!id && type === 'pharmacy') { 
-        data.pharmacypass = generateUniqueId(); 
-        const pharmEmail = `pharm_${data.pharmacypass.toLowerCase()}@lomedx.app`;
-        const { data: authData, error: authError } = await supabase.auth.signUp({ email: pharmEmail, password: data.pharmacypass });
-        if (authData && authData.user) { data.user_id = authData.user.id; } 
-        if (authError) { showToast('خطأ في إنشاء حساب الصيدلية: ' + authError.message); return; }
+        if (authError) { showToast('خطأ في إنشاء حساب الدخول. تأكد من كلمة المرور.'); return; }
     } 
     
               if (type === 'hospital' || type === 'center') { 
@@ -2397,13 +2444,7 @@ window.saveFacility = async (e) => {
             const { error } = await supabase.from('listings').insert([data]); 
             if (error) throw error; 
             
-            let successMsg = 'تمت الإضافة بنجاح!';
-            if (type === 'doctor') {
-                successMsg = `تم إضافة الطبيب بنجاح!\nكلمة المرور للدخول للوحة الطبيب هي: ${data.bookingpass}`;
-            } else if (type === 'pharmacy') {
-                successMsg = `تم إضافة الصيدلية بنجاح!\nكلمة المرور للدخول للوحة الصيدلية هي: ${data.pharmacypass}`;
-            }
-            alert(successMsg); 
+          showToast('تمت إضافة المنشأة وإنشاء حساب الدخول بنجاح!');
         } 
         localStorage.setItem('force_listings_update', 'true');
         await fetchListings(); 
@@ -2532,7 +2573,7 @@ window.handleHealthLogin = async (e) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { 
         console.error("Auth Error:", error);
-        showToast('خطأ: ' + error.message); 
+        showToast('بيانات الدخول غير صحيحة. يرجى التحقق من البريد وكلمة المرور.'); 
         return; 
     }
 
@@ -4281,7 +4322,11 @@ window.openArticleReader = async (id) => {
     if (!article) return;
 
     window.location.hash = `article=${id}`;
-    document.title = `${article.title} | Lomedx`;
+    updateMetaTags(
+    `${article.title} | Lomedx`, 
+    article.excerpt || article.content.substring(0, 150), 
+    article.image_url || 'https://i.ibb.co/d09VBmky/37414.png'
+);
     supabase.from('medical_articles').update({ views: (article.views || 0) + 1 }).eq('id', id).then();
 
     const dateStr = new Date(article.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
