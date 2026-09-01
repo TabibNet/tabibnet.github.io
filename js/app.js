@@ -4659,15 +4659,16 @@ window.closeBlogCategory = () => {
 };
 
 window.selectBlogCategory = (cat) => {
-    currentBlogCategory = cat;
+    // إذا كان الخيار المختار هو "كل التصنيفات"، نعيد المتغير إلى 'all' لمنع الفلترة
+    currentBlogCategory = (cat === 'كل التصنيفات') ? 'all' : cat;
     
-    // تحديث النص الظاهر في المدونة ليعكس التصنيف المختار
+    // تحديث النص الظاهر في المدونة
     const catText = document.getElementById('currentBlogCategoryText');
     if (catText) catText.innerText = cat;
     
     closeBlogCategory();
     
-    // إعادة جلب المقالات وفلترتها بناءً على التصنيف الجديد
+    // إعادة جلب المقالات
     const searchInput = document.getElementById('blogSearchInput');
     fetchArticles(searchInput ? searchInput.value : '');
 };
