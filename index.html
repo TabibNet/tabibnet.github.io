@@ -286,39 +286,53 @@
                 </div>
             </div>
 
-                        <!-- صندوق تعرف على المنصة (باستخدام دالتك الأصلية) -->
-            <div class="premium-card rounded-2xl p-4 mb-6 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-1.5 h-full bg-gradient-to-b from-[var(--gold)] to-transparent"></div>
-                <button onclick="togglePlatformInfo()" class="w-full flex items-center justify-center gap-2 text-sm font-bold text-gold-gradient py-1">
-                    <i class="fas fa-circle-info"></i>
-                    تعرّف على المنصة الطبية
-                    <i class="fas fa-chevron-down text-xs mr-auto transition-transform" id="platformInfoIcon"></i>
-                </button>
-                <div id="platformInfo" class="hidden text-right mt-3 space-y-3">
+                        <!-- صندوق منصة طبية متكاملة (مصمم للخلفية الداكنة) -->
+            <div class="bg-white/5 border border-[var(--gold)]/20 rounded-2xl p-4 mb-6 relative overflow-hidden">
+                <!-- شريط ذهبي جانبي للزينة -->
+                <div class="absolute top-0 right-0 w-1.5 h-full bg-[var(--gold)]/70"></div>
+                                <div class="mb-4">
+                    <button onclick="togglePlatformInfo()" class="w-full flex items-center justify-center gap-2 text-sm font-bold text-[var(--gold)] py-2.5 px-4 rounded-xl bg-white/5 border border-[var(--gold)]/20 transition-all hover:bg-white/10" style="font-family: 'Noto Kufi Arabic'">
+                        <i class="fas fa-circle-info"></i>
+                        تعرّف على المنصة الطبية
+                        <i class="fas fa-chevron-down text-xs transition-transform mr-auto" id="platformInfoIcon"></i>
+                    </button>
+                </div>
+                <div id="platformInfo" class="hidden text-right">
+                    <div class="flex justify-center items-center gap-3 mb-4 pt-2">
+                        <span class="h-px w-8 bg-white/20"></span>
+                        <i class="fas fa-quote-right text-sm" style="color: var(--gold)"></i>
+                        <span class="h-px w-8 bg-white/20"></span>
+                    </div>
+
+                    <!-- بطاقة البحث والحجز -->
                     <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(14, 124, 95, 0.2);">
-                            <i class="fas fa-hospital-user icon-gold-gradient text-base mt-1"></i>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: var(--accent-light);">
+                            <i class="fas fa-hospital-user text-base" style="color: var(--accent)"></i>
                         </div>
                         <div>
-                            <h3 class="font-bold text-sm text-white mb-1">دليل المنشآت وحجز المواعيد</h3>
+                            <h3 class="font-bold text-sm text-white mb-1" style="font-family: 'Noto Kufi Arabic'">دليل المنشآت وحجز المواعيد</h3>
                             <p class="text-[10px] leading-relaxed text-white/50">بحث دقيق عن المنشآت الطبية والأطباء، مع إمكانية حجز الموعد إلكترونياً ومتابعته والتواصل المباشر.</p>
                         </div>
                     </div>
+                    
+                    <!-- بطاقة الملف الصحي الرقمي -->
                     <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(236, 72, 153, 0.15);">
-                            <i class="fas fa-id-card text-base mt-1" style="color: #EC4899;"></i>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #FCE7F3;">
+                            <i class="fas fa-id-card text-base" style="color: #EC4899"></i>
                         </div>
                         <div>
-                            <h3 class="font-bold text-sm text-white mb-1">الملف الصحي الذكي</h3>
+                            <h3 class="font-bold text-sm text-white mb-1" style="font-family: 'Noto Kufi Arabic'">الملف الصحي الذكي</h3>
                             <p class="text-[10px] leading-relaxed text-white/50">احفظ سجلك الطبي والروشتات بآمان، واستخرج رمز QR يتيح للطبيب قراءة ملفك بسرعة في الطوارئ.</p>
                         </div>
                     </div>
+                    
+                    <!-- بطاقة الأدوات والمبادرات -->
                     <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(196, 150, 44, 0.15);">
-                            <i class="fas fa-laptop-medical text-base mt-1 icon-gold-gradient"></i>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: var(--gold-light);">
+                            <i class="fas fa-laptop-medical text-base" style="color: var(--gold)"></i>
                         </div>
                         <div>
-                            <h3 class="font-bold text-sm text-white mb-1">الأدوات والمبادرات التكافلية</h3>
+                            <h3 class="font-bold text-sm text-white mb-1" style="font-family: 'Noto Kufi Arabic'">الأدوات والمبادرات التكافلية</h3>
                             <p class="text-[10px] leading-relaxed text-white/50">الحاسبات الطبية، إسعافات أولية، إرشادات التحاليل، بالإضافة لبنك الدم والمستلزمات الطبية.</p>
                         </div>
                     </div>
