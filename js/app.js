@@ -4128,20 +4128,22 @@ window.openMedicalBlog = () => {
             </div>
 
             <!-- حقل البحث والأزرار -->
-            <div class="flex flex-col sm:flex-row gap-3">
-                <button onclick="openBlogCategory()" class="city-pill-btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-all whitespace-nowrap w-full sm:w-auto">
+                        <!-- حقل البحث والأزرار بصف واحد -->
+            <div class="flex items-center gap-2">
+                <button onclick="openBlogCategory()" class="flex-shrink-0 w-12 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-all" title="التصنيفات">
                     <i class="fas fa-filter text-blue-500"></i>
-                    <span id="currentBlogCategoryText">كل التصنيفات</span>
-                    <i class="fas fa-chevron-down text-xs opacity-70"></i>
                 </button>
-                <button onclick="showSavedArticles()" class="city-pill-btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-sm font-semibold transition-all whitespace-nowrap w-full sm:w-auto">
+                <button onclick="showSavedArticles()" class="flex-shrink-0 w-12 h-12 rounded-xl bg-yellow-100 hover:bg-yellow-200 text-yellow-800 flex items-center justify-center transition-all" title="المحفوظات">
                     <i class="fas fa-bookmark"></i>
-                    <span>المحفوظة</span>
                 </button>
                 <div class="relative flex-1">
-                    <input type="text" id="blogSearchInput" class="ctrl-input pr-10" placeholder="ابحث في المقالات..." oninput="searchArticles()">
-                    <i class="fas fa-search absolute top-4 left-4 text-gray-400"></i>
+                    <input type="text" id="blogSearchInput" class="ctrl-input pr-10 w-full" placeholder="ابحث في المقالات..." oninput="searchArticles()">
+                    <i class="fas fa-search absolute top-1/2 -translate-y-1/2 left-4 text-gray-400"></i>
                 </div>
+            </div>
+            <div class="text-xs text-gray-500 mt-2">
+                التصنيف الحالي: <span id="currentBlogCategoryText" class="font-bold text-blue-600">كل التصنيفات</span>
+            </div>
             </div>
 
             <div id="blogArticlesList" class="flex flex-col gap-4">
