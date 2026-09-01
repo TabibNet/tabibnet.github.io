@@ -286,44 +286,40 @@
                 </div>
             </div>
 
-            <!-- صندوق تعرف على المنصة -->
-            <div class="premium-card rounded-2xl p-4 mb-6 relative overflow-hidden" id="platformAccordion">
+                        <!-- صندوق تعرف على المنصة (باستخدام دالتك الأصلية) -->
+            <div class="premium-card rounded-2xl p-4 mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-1.5 h-full bg-gradient-to-b from-[var(--gold)] to-transparent"></div>
-                <button onclick="togglePlatformAccordion()" class="w-full flex items-center justify-between text-right">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-circle-info text-lg icon-gold-gradient"></i>
-                        <span class="text-sm font-bold text-gold-gradient">تعرّف على المنصة الطبية</span>
-                    </div>
-                    <i class="fas fa-chevron-down text-xs text-[var(--gold)] chevron-icon"></i>
+                <button onclick="togglePlatformInfo()" class="w-full flex items-center justify-center gap-2 text-sm font-bold text-gold-gradient py-1">
+                    <i class="fas fa-circle-info"></i>
+                    تعرّف على المنصة الطبية
+                    <i class="fas fa-chevron-down text-xs mr-auto transition-transform" id="platformInfoIcon"></i>
                 </button>
-                <div class="accordion-content mt-2">
-                    <div class="pt-2 border-t border-[var(--gold)]/20 flex flex-col gap-3">
-                        <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(14, 124, 95, 0.2);">
-                                <i class="fas fa-hospital-user icon-gold-gradient text-base mt-1"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-sm text-white mb-1">دليل المنشآت وحجز المواعيد</h3>
-                                <p class="text-[10px] leading-relaxed text-white/50">بحث دقيق عن المنشآت الطبية والأطباء، مع إمكانية حجز الموعد إلكترونياً ومتابعته والتواصل المباشر.</p>
-                            </div>
+                <div id="platformInfo" class="hidden text-right mt-3 space-y-3">
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(14, 124, 95, 0.2);">
+                            <i class="fas fa-hospital-user icon-gold-gradient text-base mt-1"></i>
                         </div>
-                        <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(236, 72, 153, 0.15);">
-                                <i class="fas fa-id-card text-base mt-1" style="color: #EC4899;"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-sm text-white mb-1">الملف الصحي الذكي</h3>
-                                <p class="text-[10px] leading-relaxed text-white/50">احفظ سجلك الطبي والروشتات بآمان، واستخرج رمز QR يتيح للطبيب قراءة ملفك بسرعة في الطوارئ.</p>
-                            </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-white mb-1">دليل المنشآت وحجز المواعيد</h3>
+                            <p class="text-[10px] leading-relaxed text-white/50">بحث دقيق عن المنشآت الطبية والأطباء، مع إمكانية حجز الموعد إلكترونياً ومتابعته والتواصل المباشر.</p>
                         </div>
-                        <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(196, 150, 44, 0.15);">
-                                <i class="fas fa-laptop-medical text-base mt-1 icon-gold-gradient"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-sm text-white mb-1">الأدوات والمبادرات التكافلية</h3>
-                                <p class="text-[10px] leading-relaxed text-white/50">الحاسبات الطبية، إسعافات أولية، إرشادات التحاليل، بالإضافة لبنك الدم والمستلزمات الطبية.</p>
-                            </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(236, 72, 153, 0.15);">
+                            <i class="fas fa-id-card text-base mt-1" style="color: #EC4899;"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-white mb-1">الملف الصحي الذكي</h3>
+                            <p class="text-[10px] leading-relaxed text-white/50">احفظ سجلك الطبي والروشتات بآمان، واستخرج رمز QR يتيح للطبيب قراءة ملفك بسرعة في الطوارئ.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: rgba(196, 150, 44, 0.15);">
+                            <i class="fas fa-laptop-medical text-base mt-1 icon-gold-gradient"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-white mb-1">الأدوات والمبادرات التكافلية</h3>
+                            <p class="text-[10px] leading-relaxed text-white/50">الحاسبات الطبية، إسعافات أولية، إرشادات التحاليل، بالإضافة لبنك الدم والمستلزمات الطبية.</p>
                         </div>
                     </div>
                 </div>
