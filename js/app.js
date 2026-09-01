@@ -4309,34 +4309,16 @@ window.openArticleReader = async (id) => {
         </div>`;
     }
 
-    document.getElementById('modalContent').innerHTML = `
-        <div class="relative">
-            <!-- شريط تقدم القراءة -->
-            <div class="absolute top-0 right-0 left-0 h-1 bg-gray-200 z-10 rounded-t-2xl overflow-hidden">
-                <div id="readingProgressBar" class="h-full bg-emerald-500" style="width: 0%; transition: width 0.2s;"></div>
-            </div>
-
-            ${article.image_url ? `
-            <div class="relative h-56 sm:h-64 overflow-hidden rounded-t-2xl">
-                <img src="${escapeHtml(article.image_url)}" class="w-full h-full object-cover">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
-                <button onclick="closeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-all"><i class="fas fa-times text-sm"></i></button>
-                <div class="absolute bottom-4 right-5 left-5">
-                    <span class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
-                    <h2 class="text-white font-black text-xl sm:text-2xl mt-2" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
-                </div>
-            </div>` : `
-            <div class="p-5 flex justify-between items-center border-b" style="border-color: var(--border);">
-                <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
-                <button onclick="closeModal()" class="text-2xl hover:text-gray-400">&times;</button>
-            </div>`}
-            
-            <!-- شريط أدوات القراءة الذكي -->
-            <div class="sticky top-0 bg-white/90 backdrop-blur-md z-10 p-3 border-b flex flex-wrap items-center justify-between gap-2" style="border-color: var(--border);">
-                <div class="flex items-center gap-3 text-[11px] text-gray-500">
-                    <span><i class="fas fa-calendar-day"></i> ${dateStr}</span>
-                    <span><i class="fas fa-eye"></i> ${article.views || 0}</span>
-                    <span><i class="fas fa-clock"></i> ${readingTime} دقيقة</span>
+        document.getElementById('modalContent').innerHTML = `
+        <div class="flex flex-col h-full">
+            <!-- شريط أدوات القراءة الذكي (ثابت دائماً في الأعلى) -->
+            <div class="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-3 border-b flex flex-wrap items-center justify-between gap-2 shadow-sm" style="border-color: var(--border);">
+                <div class="flex items-center gap-2">
+                    <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-all"><i class="fas fa-times text-sm"></i></button>
+                    <div class="flex items-center gap-3 text-[11px] text-gray-500">
+                        <span><i class="fas fa-eye"></i> ${article.views || 0}</span>
+                        <span><i class="fas fa-clock"></i> ${readingTime} د</span>
+                    </div>
                 </div>
                 <div class="flex items-center gap-1">
                     <button onclick="changeFontSize(-0.1)" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-600 flex items-center justify-center"><i class="fas fa-minus text-xs"></i></button>
@@ -4345,6 +4327,26 @@ window.openArticleReader = async (id) => {
                     <button onclick="shareArticle('${escapeHtml(article.title)}')" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-emerald-600 flex items-center justify-center" title="مشاركة"><i class="fas fa-share-alt text-sm"></i></button>
                 </div>
             </div>
+
+            <!-- شريط تقدم القراءة -->
+            <div class="absolute top-[52px] right-0 left-0 h-1 bg-gray-200 z-10 overflow-hidden">
+                <div id="readingProgressBar" class="h-full bg-emerald-500" style="width: 0%; transition: width 0.2s;"></div>
+            </div>
+
+            <div class="overflow-y-auto" id="modalScrollArea">
+                ${article.image_url ? `
+                <div class="relative h-56 sm:h-64 overflow-hidden">
+                    <img src="${escapeHtml(article.image_url)}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                    <div class="absolute bottom-4 right-5 left-5">
+                        <span class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
+                        <h2 class="text-white font-black text-xl sm:text-2xl mt-2" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
+                    </div>
+                </div>` : `
+                <div class="p-5 border-b" style="border-color: var(--border);">
+                    <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
+                    <h2 class="text-2xl sm:text-3xl font-black text-gray-800 mt-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
+                </div>`}
 
             <div class="p-6 sm:p-8" id="modalScrollArea">
                 ${!article.image_url ? `<h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>` : ''}
