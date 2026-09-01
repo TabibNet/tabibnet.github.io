@@ -441,7 +441,7 @@ html.dark .filter-btn { background: var(--card) !important; border-color: var(--
         .accordion-item { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
         .accordion-header { padding: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--card); font-weight: bold; font-size: 0.9rem; }
         .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; background: var(--bg); }
-        .accordion-item.active .accordion-body { max-height: 500px; }
+        .accordion-item.active .accordion-body { max-height: 2000px; }
         .accordion-item.active .accordion-header i { transform: rotate(180deg); }
                       /* === إخفاء شريط ترجمة جوجل العلوي بالكامل === */
         body { top: 0 !important; position: static !important; }
