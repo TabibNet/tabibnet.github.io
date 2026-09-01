@@ -4607,10 +4607,22 @@ async function fetchAdminArticles() {
         });
     });
 }
-function toggleAccordion() {
-    const accordion = document.getElementById('toolsAccordion');
-    if (accordion) {
-        accordion.classList.toggle('accordion-active');
+window.toggleAccordion = (el) => {
+    // إذا تم تمرير عنصر (el)، فهذا يعني أن الضغط جاء من بطاقة المشفى أو الإسعافات
+    if (el) {
+        const item = el.parentElement;
+        const isActive = item.classList.contains('active');
+        // إغلاق جميع الأكورديونات الأخرى المفتوحة في نفس القسم
+        item.parentElement.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('active'));
+        // فتح الأكورديون المضغوط عليه إذا كان مغلقاً
+        if (!isActive) item.classList.add('active');
+    } 
+    // إذا لم يتم تمرير عنصر، فهذا يعني أن الضغط جاء من زر الحاسبات في قائمة الجوال
+    else {
+        const accordion = document.getElementById('toolsAccordion');
+        if (accordion) {
+            accordion.classList.toggle('accordion-active');
+        }
     }
-}
+};
 // نهاية ملف app.js
