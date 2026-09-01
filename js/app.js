@@ -4625,4 +4625,50 @@ window.toggleAccordion = (el) => {
         }
     }
 };
+// === دوال تصنيفات المدونة المنزلقة (تعتمد على التصنيفات المضافة من لوحة الإدارة) ===
+window.openBlogCategory = () => {
+    const overlay = document.getElementById('blogCategoryOverlay');
+    const listContainer = document.getElementById('blogCategoryList');
+    if (!overlay || !listContainer) return;
+
+    // 1. إضافة خيار "كل التصنيفات" افتراضياً
+    let cats = ['كل التصنيفات'];
+    
+    // 2. استخراج التصنيفات الفريدة من المقالات المحملة في allArticles (التي جاءت من لوحة الإدارة)
+    allArticles.forEach(a => {
+        if (a.category && !cats.includes(a.category)) cats.push(a.category);
+    });
+
+    // 3. رسم القائمة
+    listContainer.innerHTML = cats.map(cat => `
+        <div class="city-option ${currentBlogCategory === cat ? 'selected' : ''}" onclick="selectBlogCategory('${escapeHtml(cat)}')">
+            <div class="flex items-center gap-3">
+                <i class="fas ${cat === 'كل التصنيفات' ? 'fa-globe' : 'fa-tag'}" style="color: var(--accent)"></i>
+                <span class="font-bold text-sm">${escapeHtml(cat)}</span>
+            </div>
+            ${currentBlogCategory === cat ? '<i class="fas fa-check-circle text-white"></i>' : ''}
+        </div>
+    `).join('');
+
+    overlay.classList.add('active');
+};
+
+window.closeBlogCategory = () => {
+    const overlay = document.getElementById('blogCategoryOverlay');
+    if (overlay) overlay.classList.remove('active');
+};
+
+window.selectBlogCategory = (cat) => {
+    currentBlogCategory = cat;
+    
+    // تحديث النص الظاهر في المدونة ليعكس التصنيف المختار
+    const catText = document.getElementById('currentBlogCategoryText');
+    if (catText) catText.innerText = cat;
+    
+    closeBlogCategory();
+    
+    // إعادة جلب المقالات وفلترتها بناءً على التصنيف الجديد
+    const searchInput = document.getElementById('blogSearchInput');
+    fetchArticles(searchInput ? searchInput.value : '');
+};
 // نهاية ملف app.js
