@@ -2365,33 +2365,24 @@ window.saveFacility = async (e) => {
         // قراءة كلمة المرور التي أدخلها الأدمن يدوياً
     const customPassword = document.getElementById('new_custom_password').value.trim();
     
-        if (!id && (type === 'doctor' || type === 'pharmacy')) { 
-        const customPassword = document.getElementById('new_custom_password').value.trim();
-        if (!customPassword || customPassword.length < 6) {
-            showToast('يرجى إدخال كلمة مرور (6 أحرف على الأقل)'); return;
-        }
-        const randomPart = generateUniqueId();
-        const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
-        
-        // استدعاء دالة السيرفر لإنشاء المستخدم دون تسجيل خروج الأدمن
-        const { data: funcData, error: funcError } = await supabase.functions.invoke('create-user', {
-            body: { email: dummyEmail, password: customPassword }
-        });
-        
-        if (funcError || !funcData || !funcData.user_id) { 
-            showToast('خطأ في إنشاء حساب الدخول.'); return; 
-        }
-        data.user_id = funcData.user_id; 
-    } 
-        // توليد إيميل وهمي ثابت
-        const randomPart = generateUniqueId();
-        const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
-        
-        // إنشاء الحساب بكلمة المرور التي حددتها أنت
-        const { data: authData, error: authError } = await supabase.auth.signUp({ email: dummyEmail, password: customPassword });
-        if (authData && authData.user) { data.user_id = authData.user.id; } 
-        if (authError) { showToast('خطأ في إنشاء حساب الدخول. تأكد من كلمة المرور.'); return; }
-    } 
+                    if (!id && (type === 'doctor' || type === 'pharmacy')) { 
+                const customPassword = document.getElementById('new_custom_password').value.trim();
+                if (!customPassword || customPassword.length < 6) {
+                    showToast('يرجى إدخال كلمة مرور (6 أحرف على الأقل)'); return;
+                }
+                const randomPart = generateUniqueId();
+                const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
+                
+                // استدعاء دالة السيرفر لإنشاء المستخدم دون تسجيل خروج الأدمن
+                const { data: funcData, error: funcError } = await supabase.functions.invoke('create-user', {
+                    body: { email: dummyEmail, password: customPassword }
+                });
+                
+                if (funcError || !funcData || !funcData.user_id) { 
+                    showToast('خطأ في إنشاء حساب الدخول.'); return; 
+                }
+                data.user_id = funcData.user_id; 
+            }
     
               if (type === 'hospital' || type === 'center') { 
         data.specialty = specialty; 
@@ -4407,8 +4398,8 @@ window.openArticleReader = async (id) => {
                     <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">${escapeHtml(article.category || 'طب عام')}</span>
                     <h2 class="text-2xl sm:text-3xl font-black text-gray-800 mt-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>
                 </div>`}
-
-            <div class="p-6 sm:p-8" id="modalScrollArea">
+               </div>
+            <div class="p-6 sm:p-8">
                 ${!article.image_url ? `<h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-3" style="font-family: 'Noto Kufi Arabic';">${escapeHtml(article.title)}</h2>` : ''}
                 
                 <div id="articleContentText" class="prose max-w-none text-gray-700 leading-loose space-y-4 transition-all" style="font-family: 'IBM Plex Sans Arabic'; font-size: ${currentFontSize}rem;">${processedContent}</div>
