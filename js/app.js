@@ -2070,7 +2070,15 @@ window.updateAdminFormFields = (type) => {
             phoneInput.classList.remove('hidden');
         }
     }
-
+    // إخفاء حقل كلمة المرور للمشافي والمخابر والمراكز
+    const passInput = document.getElementById('new_custom_password');
+    if (passInput) {
+        if (type === 'doctor' || type === 'pharmacy') {
+            passInput.classList.remove('hidden'); // إظهار الحقل
+        } else {
+            passInput.classList.add('hidden'); // إخفاء الحقل
+        }
+    }
     let html = '';
         if (type === 'hospital' || type === 'center') {
         html = `
@@ -2364,6 +2372,20 @@ window.saveFacility = async (e) => {
     
     // قراءة كلمة المرور التي أدخلها الأدمن يدوياً
     const customPassword = document.getElementById('new_custom_password').value.trim();
+        // === تحديث كلمة المرور إذا كنا في وضع التعديل وأدخل الأدمن كلمة جديدة ===
+    if (id && (type === 'doctor' || type === 'pharmacy') && customPassword.length >= 6) {
+        const item = allData.find(d => d.id === id);
+        if (item && item.user_id) {
+            try {
+                await supabase.functions.invoke('create-user', {
+                    body: { action: 'update', user_id: item.user_id, password: customPassword }
+                });
+                showToast('تم تحديث كلمة المرور بنجاح');
+            } catch (err) {
+                showToast('خطأ في تحديث كلمة المرور');
+            }
+        }
+    }
     
     if (!id && (type === 'doctor' || type === 'pharmacy')) { 
         if (!customPassword || customPassword.length < 6) {
