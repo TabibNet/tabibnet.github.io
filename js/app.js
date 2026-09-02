@@ -2365,11 +2365,24 @@ window.saveFacility = async (e) => {
         // قراءة كلمة المرور التي أدخلها الأدمن يدوياً
     const customPassword = document.getElementById('new_custom_password').value.trim();
     
-    if (!id && (type === 'doctor' || type === 'pharmacy')) { 
+        if (!id && (type === 'doctor' || type === 'pharmacy')) { 
+        const customPassword = document.getElementById('new_custom_password').value.trim();
         if (!customPassword || customPassword.length < 6) {
-            showToast('يرجى إدخال كلمة مرور للطبيب/الصيدلية (6 أحرف على الأقل)');
-            return;
+            showToast('يرجى إدخال كلمة مرور (6 أحرف على الأقل)'); return;
         }
+        const randomPart = generateUniqueId();
+        const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
+        
+        // استدعاء دالة السيرفر لإنشاء المستخدم دون تسجيل خروج الأدمن
+        const { data: funcData, error: funcError } = await supabase.functions.invoke('create-user', {
+            body: { email: dummyEmail, password: customPassword }
+        });
+        
+        if (funcError || !funcData || !funcData.user_id) { 
+            showToast('خطأ في إنشاء حساب الدخول.'); return; 
+        }
+        data.user_id = funcData.user_id; 
+    } 
         // توليد إيميل وهمي ثابت
         const randomPart = generateUniqueId();
         const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
