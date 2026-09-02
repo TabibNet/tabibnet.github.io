@@ -1107,7 +1107,7 @@ window.handlePharmacyLogin = async (e) => {
     e.preventDefault(); 
     const name = document.getElementById('pharmName').value.trim(); 
     const passInput = document.getElementById('pharmPass').value.trim();
-    const pass = passInput.toUpperCase();
+    const pass = passInput;
     
     const dummyEmail = `pharm_${pass.toLowerCase()}@lomedx.app`;
 
@@ -1283,7 +1283,7 @@ window.handleDoctorLogin = async (e) => {
     e.preventDefault(); 
     const name = document.getElementById('docName').value.trim(); 
     const passInput = document.getElementById('docPass').value.trim();
-    const pass = passInput.toUpperCase();
+    const pass = passInput;
     const dummyEmail = `doc_${pass.toLowerCase()}@lomedx.app`;
     
     const { data, error } = await supabase.auth.signInWithPassword({ email: dummyEmail, password: pass });
