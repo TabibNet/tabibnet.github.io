@@ -1977,7 +1977,7 @@ window.submitMedicineRequest = async (e) => {
         }
         const medRef = `MED-${Math.floor(Math.random() * 900) + 100}`; 
         const { error } = await supabase.from('medicine_requests').insert([{ 
-           setRateLimit('med_request');
+           
             med_ref: medRef, 
             med_list: medList,
             urgency: urgency,
@@ -1990,7 +1990,7 @@ window.submitMedicineRequest = async (e) => {
             patient_push_id: localStorage.getItem('patient_push_id') // إرفاق معرف المريض
         }]); 
         if (error) throw error;
-        
+        setRateLimit('med_request');
         // === إشعار للصيدليات فقط بوجود طلب دواء عاجل ===
         sendPushNotification(null, "طلب دواء عاجل 💊", `المريض ${name} يبحث عن: ${medList}`, 'pharmacies');
         
