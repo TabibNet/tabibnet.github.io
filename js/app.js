@@ -2362,34 +2362,39 @@ window.saveFacility = async (e) => {
     if(document.getElementById('new_latlng')) data.latlng = document.getElementById('new_latlng').value.trim();
     if (imgURL) data.image = imgURL; 
     
-        // قراءة كلمة المرور التي أدخلها الأدمن يدوياً
+    // قراءة كلمة المرور التي أدخلها الأدمن يدوياً
     const customPassword = document.getElementById('new_custom_password').value.trim();
     
-                    if (!id && (type === 'doctor' || type === 'pharmacy')) { 
-                const customPassword = document.getElementById('new_custom_password').value.trim();
-                if (!customPassword || customPassword.length < 6) {
-                    showToast('يرجى إدخال كلمة مرور (6 أحرف على الأقل)'); return;
-                }
-                const randomPart = generateUniqueId();
-                const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
-                
-                // استدعاء دالة السيرفر لإنشاء المستخدم دون تسجيل خروج الأدمن
-                const { data: funcData, error: funcError } = await supabase.functions.invoke('create-user', {
-                    body: { email: dummyEmail, password: customPassword }
-                });
-                
-                if (funcError || !funcData || !funcData.user_id) { 
-                    showToast('خطأ في إنشاء حساب الدخول.'); return; 
-                }
-                data.user_id = funcData.user_id; 
+    if (!id && (type === 'doctor' || type === 'pharmacy')) { 
+        if (!customPassword || customPassword.length < 6) {
+            showToast('يرجى إدخال كلمة مرور (6 أحرف على الأقل)');
+            return;
+        }
+        const randomPart = generateUniqueId();
+        const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
+        
+        try {
+            // استدعاء دالة السيرفر لإنشاء المستخدم دون تسجيل خروج الأدمن
+            const { data: funcData, error: funcError } = await supabase.functions.invoke('create-user', {
+                body: { email: dummyEmail, password: customPassword }
+            });
+            
+            if (funcError || !funcData || !funcData.user_id) { 
+                showToast('خطأ في إنشاء حساب الدخول: ' + (funcError?.message || 'Unknown')); 
+                return; 
             }
+            data.user_id = funcData.user_id; 
+        } catch (err) {
+            showToast('خطأ في الاتصال بالسيرفر.');
+            return;
+        }
+    } 
     
-              if (type === 'hospital' || type === 'center') { 
+    if (type === 'hospital' || type === 'center') { 
         data.specialty = specialty; 
         data.address = address; 
         data.capacity_info = document.getElementById('new_capacity_info')?.value || '';
         
-        // جمع البيانات المركبة (facility_details)
         let facilityData = { stats: [], departments: [], clinics: [], units: [], services: [], phones: [] };
         
         document.querySelectorAll('#statsContainer > div').forEach(row => {
@@ -2405,16 +2410,13 @@ window.saveFacility = async (e) => {
             facilityData.services.push({ title: row.querySelector('.row-title')?.value, desc: row.querySelector('.row-desc')?.value });
         });
         
-        // جمع أرقام الهواتف المتعددة
         document.querySelectorAll('#phoneContainer > div').forEach(row => {
             const pLabel = row.querySelector('.row-label')?.value || '';
             const pPhone = row.querySelector('.row-phone')?.value || '';
             if (pPhone) facilityData.phones.push({ label: pLabel, phone: pPhone });
         });
 
-        // حفظ أول رقم كرقم رئيسي للمشفى (ليظهر في بطاقة البحث)
         data.phone = facilityData.phones[0]?.phone || ''; 
-        
         data.facility_details = facilityData;
     } 
     else if (type === 'doctor') { 
@@ -2424,7 +2426,6 @@ window.saveFacility = async (e) => {
         data.bookingnotes = document.getElementById('new_extra')?.value || ''; 
         data.parent_id = document.getElementById('new_parent_id')?.value || '';
     } 
-    
     else if (type === 'pharmacy') { 
         data.address = address; 
         data.night = false; 
@@ -2448,7 +2449,7 @@ window.saveFacility = async (e) => {
             const { error } = await supabase.from('listings').insert([data]); 
             if (error) throw error; 
             
-          showToast('تمت إضافة المنشأة وإنشاء حساب الدخول بنجاح!');
+            showToast('تمت إضافة المنشأة وإنشاء حساب الدخول بنجاح!');
         } 
         localStorage.setItem('force_listings_update', 'true');
         await fetchListings(); 
@@ -2458,6 +2459,7 @@ window.saveFacility = async (e) => {
         console.error("Save Facility Error:", err); 
     } 
 };
+        
 
 window.openHealthFile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
