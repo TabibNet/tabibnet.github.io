@@ -2378,7 +2378,7 @@ window.saveFacility = async (e) => {
         if (item && item.user_id) {
             try {
                 await supabase.functions.invoke('create-user', {
-                    body: { action: 'update', user_id: item.user_id, password: customPassword }
+                    body: { action: 'update', user_id: item.user_id, password: customPassword , type: type}
                 });
                 showToast('تم تحديث كلمة المرور بنجاح');
             } catch (err) {
