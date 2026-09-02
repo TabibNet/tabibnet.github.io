@@ -1975,7 +1975,7 @@ window.submitMedicineRequest = async (e) => {
             if (funcError) throw funcError;
             if (funcData && funcData.success) imageUrl = funcData.data.url;
         }
-        const medRef = `MED-${Math.floor(Math.random() * 900) + 100}`; 
+        const medRef = `MED-${Math.floor(Math.random() * 900000) + 100000}`;
         const { error } = await supabase.from('medicine_requests').insert([{ 
            
             med_ref: medRef, 
