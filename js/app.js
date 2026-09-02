@@ -2371,7 +2371,7 @@ window.saveFacility = async (e) => {
             return;
         }
         const randomPart = generateUniqueId();
-        const dummyEmail = type === 'doctor' ? `doc_${randomPart.toLowerCase()}@lomedx.app` : `pharm_${randomPart.toLowerCase()}@lomedx.app`;
+                const dummyEmail = type === 'doctor' ? `doc_${customPassword.toLowerCase()}@lomedx.app` : `pharm_${customPassword.toLowerCase()}@lomedx.app`;
         
         try {
             // استدعاء دالة السيرفر لإنشاء المستخدم دون تسجيل خروج الأدمن
