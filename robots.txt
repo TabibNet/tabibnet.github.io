@@ -1,4 +1,1 @@
-User-agent: *
-Allow: /
 
-Sitemap: https://tabibnet.github.io/sitemap.xml
