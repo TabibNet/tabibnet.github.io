@@ -1033,7 +1033,7 @@ window.confirmBooking = async () => {
         </div>`; 
         } catch (e) { 
         
-        showToast('خطأ في الحفظ: ' + e.message); // سيظهر لك سبب الخطأ الحقيقي
+        showToast('خطأ في الحفظ: ' + e.message, 'error');
     } 
 }
 
@@ -1465,7 +1465,7 @@ window.updateBookingStatus = async (bookingId, newStatus) => {
 }
 window.saveDoctorSettings = async (id) => { 
     const workingDays = Array.from(document.querySelectorAll('input[name="docWorkingDays"]:checked')).map(cb => cb.value); 
-    try { await supabase.from('listings').update({ workingdays: workingDays }).eq('id', id); showToast('تم الحفظ!'); localStorage.setItem('force_listings_update', 'true'); } catch (e) { showToast('خطأ'); } 
+    try { await supabase.from('listings').update({ workingdays: workingDays }).eq('id', id); showToast('تم الحفظ!', 'success'); localStorage.setItem('force_listings_update', 'true'); } catch (e) { showToast('خطأ', 'error'); } 
 }
 window.sendDocMessage = async (bookingId) => {
     const input = document.getElementById(`docChat_${bookingId}`); const text = input.value.trim(); if (!text) return; input.value = '';
@@ -2484,7 +2484,7 @@ window.saveFacility = async (e) => {
         if (id) { 
             const { error } = await supabase.from('listings').update(data).eq('id', id); 
             if (error) throw error; 
-            showToast('تم التعديل!'); 
+            showToast('تم التعديل!', 'success'); 
         } else { 
             if (!data.image) data.image = `https://picsum.photos/seed/new${Date.now()}/400/250`; 
             const { error } = await supabase.from('listings').insert([data]); 
@@ -2496,7 +2496,7 @@ window.saveFacility = async (e) => {
         await fetchListings(); 
         renderAdminDashboard(); 
     } catch (err) { 
-        showToast('خطأ في الحفظ: ' + err.message); 
+        showToast('خطأ في الحفظ: ' + err.message, 'error');
         
     } 
 };
@@ -4017,7 +4017,7 @@ window.togglePaymentMethod = (method) => {
 window.toggleSubscription = async (id, currentStatus) => {
     try {
         await supabase.from('listings').update({ is_subscribed: currentStatus }).eq('id', id);
-        showToast(currentStatus ? 'تم تفعيل الاشتراك بنجاح!' : , 'تم إلغاء الاشتراك.');
+        showToast(currentStatus ? 'تم تفعيل الاشتراك بنجاح!' : 'تم إلغاء الاشتراك.', currentStatus ? 'success' : 'info');
         await fetchListings();
         renderAdminDashboard();
     } catch (e) { showToast('حدث خطأ', 'error'); }
