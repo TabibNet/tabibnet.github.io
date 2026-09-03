@@ -2421,7 +2421,7 @@ window.saveFacility = async (e) => {
             });
             
             if (funcError || !funcData || !funcData.user_id) { 
-                showToast('خطأ في إنشاء حساب الدخول ', 'error' + (funcError?.message || 'Unknown')); 
+                showToast('خطأ في إنشاء حساب الدخول: ' + (funcError?.message || 'خطأ غير معروف'), 'error');
                 return; 
             }
             data.user_id = funcData.user_id; 
@@ -2511,7 +2511,7 @@ window.openHealthFile = async () => {
         
         if (fetchError) { 
             
-            showToast('خطأ في جلب البيانات: ', 'error' + fetchError.message); 
+            showToast('خطأ في جلب البيانات: ' + fetchError.message); 
             return; 
         }
         
@@ -2524,7 +2524,7 @@ window.openHealthFile = async () => {
             const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: newQrToken }]).select().single();
             if (insertError) {
                 
-                showToast('تعذر إنشاء ملف صحي جديد: ', 'error' + insertError.message);
+                showToast('تعذر إنشاء ملف صحي جديد: ' + insertError.message, 'error');
                 return;
             }
             if (newFile) { 
@@ -2597,7 +2597,7 @@ window.handleHealthRegister = async (e) => {
 
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) { 
-        showToast('حدث خطأ أثناء التسجيل: ' , 'error'+ error.message); 
+        showToast('حدث خطأ أثناء التسجيل: ' + err.message, 'error');
         return; 
     }
     
@@ -2631,7 +2631,7 @@ window.handleHealthLogin = async (e) => {
     
     if (fileError) { 
         
-        showToast('خطأ في جلب الملف: ', 'error' + fileError.message); 
+         showToast('خطأ في جلب الملف: ' + fileError.message, 'error');
         return; 
     }
     
@@ -2640,7 +2640,7 @@ window.handleHealthLogin = async (e) => {
                 const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: generateSecureQrToken() }]).select().single();
         if (insertError) {
             
-            showToast('تعذر إنشاء ملف صحي: ', 'error' + insertError.message);
+            showToast('تعذر إنشاء ملف صحي: ' + insertError.message, 'error');
             return;
         }
         fileData = newFile;
