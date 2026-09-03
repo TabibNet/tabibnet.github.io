@@ -50,9 +50,9 @@ async function sendPushNotification(userId, title, message, target = 'user', pla
         const { data, error } = await supabase.functions.invoke('send-push-notification', {
             body: bodyData
         });
-        if (error) 
-    } catch (err) 
-        
+        if (error) return;
+    } catch (err) {
+    }   
     
 }
 // 1. التهيئة (يجب أن توضع في أعلى الملف ليتم تنفيذها فور تحميل الصفحة)
@@ -107,8 +107,8 @@ window.setupOneSignal = async () => {
             } else {
                 showToast("تم رفض الإذن، لن تصلك إشعارات.");
             }
-        } catch (err) 
-            
+        } catch (err) {
+        }   
         
     });
 };
@@ -327,7 +327,7 @@ window.addEventListener('DOMContentLoaded', () => {
 async function fetchListings() {
     // حماية: جلب أعمدة محددة فقط لمنع تسريب كلمات المرور
     const { data: freshData, error } = await supabase.from('listings').select('id, name, type, specialty, address, clinic, hours, consulthours, emergencyphone, departments, floors, services, tests, homesample, night, nightdetails, bookingnotes, rating, image, view_count, phone_clicks, phone, is_subscribed, isopen, workingdays, latlng, user_id, parent_id, capacity_info, facility_details');
-    if (error) 
+    if (error) return;
     
     const forceUpdate = localStorage.getItem('force_listings_update') === 'true';
     if (JSON.stringify(freshData) !== JSON.stringify(allData) || forceUpdate) {
@@ -345,7 +345,7 @@ let allEmergencyContacts = [];
 
 async function fetchEmergencyContacts() {
     const { data, error } = await supabase.from('emergency_contacts').select('*').order('id', { ascending: true });
-    if (error) 
+    if (error) return;
     allEmergencyContacts = data || [];
     renderEmergencyPopup();
 }
@@ -391,7 +391,7 @@ function renderEmergencyPopup() {
 // fetchEmergencyContacts();
 async function fetchBookings() {
     const { data, error } = await supabase.from('bookings').select('*');
-    if (error) 
+    if (error) return;
     bookings = data || [];
     if (currentFollowupBookingId) renderFollowupChat(currentFollowupBookingId);
 }
@@ -399,14 +399,14 @@ async function fetchBookings() {
 async function fetchBloodRequests() {
     const twentyHoursAgo = new Date(Date.now() - (20 * 60 * 60 * 1000)).toISOString();
     const { data, error } = await supabase.from('blood_requests').select('*').gt('created_at', twentyHoursAgo).neq('status', 'resolved');
-    if (error) 
+    if (error) return;
     bloodRequests = data || [];
     renderHomeBloodAlerts();
 }
 
 async function fetchMedicineDonations() {
     const { data, error } = await supabase.from('medicine_donations').select('*').eq('status', 'active');
-    if (error) 
+    if (error) return;
     medicineDonations = data || [];
     renderHomeMedicines();
 }
@@ -1081,8 +1081,8 @@ window.sendChatMessage = async (bookingId) => {
                 sendPushNotification(doctorData.user_id, "رسالة جديدة 💬", `لديك رسالة جديدة من المريض ${booking.name}`);
             }
         }
-    } catch (err) 
-        
+    } catch (err) {
+    }   
     
 }
 
@@ -2838,7 +2838,8 @@ async function trackAndDisplayVisitors() {
             animateCounter(realVisitors, 'visitorCount');
             animateCounter(realViews, 'viewsCount');
         }
-    } catch (error) 
+    } catch (error) {
+    }
 }
 function animateCounter(target, elementId) {
     const el = document.getElementById(elementId); if (!el) return;
