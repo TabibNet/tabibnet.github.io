@@ -2942,7 +2942,7 @@ if ('serviceWorker' in navigator) {
                     }
                 });
             });
-        }).catch(err => console.error('SW registration failed:', err));
+        }).catch(() => {});
     });
     
     // قفل أمان لمنع دوران التحديث (Infinite Refresh Loop)
@@ -4159,24 +4159,20 @@ window.toggleEmergencyPopup = () => {
 window.toggleEmergencyPopup = function() {
     var popup = document.getElementById('emergencyPopup');
     if (popup) {
-        // تبديل العرض بين block و none
         if (popup.style.display === 'none' || popup.style.display === '') {
             popup.style.display = 'block';
         } else {
             popup.style.display = 'none';
         }
-    } else 
-        
-    
+    }
 }
 
 window.hideEmergencyFab = function() {
     var wrapper = document.getElementById('emergencyFabWrapper');
     if (wrapper) {
-        wrapper.style.display = 'none'; // إخفاء الزر نهائياً
+        wrapper.style.display = 'none';
     }
 }
-
 // === نظام المدونة الطبية المتطور ===
 let allArticles = [];
 let currentBlogCategory = 'all';
@@ -4564,7 +4560,7 @@ window.shareArticle = (title) => {
     const text = `مقال طبي مفيد من منصة Lomedx:\n\n${title}\n\nاقرأ المقال كاملاً من هنا:\n${url}`;
     
     if (navigator.share) {
-        navigator.share({ title: 'Lomedx', text: text, url: url }).catch(err => console.log('Error sharing:', err));
+        navigator.share({ title: 'Lomedx', text: text, url: url }).catch(() => {});
     } else {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
