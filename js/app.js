@@ -881,9 +881,28 @@ window.trackPhoneClick = (id) => {
 };
 window.copyText = (text) => { navigator.clipboard.writeText(text).then(() => showToast('تم نسخ الكود بنجاح')).catch(() => showToast('تعذر النسخ')); }
 
-function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 4000); }
+function showToast(message, type = 'info') { 
+    const toast = document.getElementById('toast');
+    
+    // تحديد الأيقونة واللون حسب نوع الإشعار
+    let icon = 'ℹ️'; // معلومات
+    let bgColor = '#1B2A1B'; // اللون الأساسي
+    
+    if (type === 'success') {
+        icon = '✅';
+        bgColor = '#10B981'; // أخضر
+    } else if (type === 'error') {
+        icon = '❌';
+        bgColor = '#EF4444'; // أحمر
+    }
+    
+    toast.innerHTML = `<span style="margin-left: 8px;">${icon}</span> ${message}`;
+    toast.style.backgroundColor = bgColor;
+    
+    toast.classList.add('show'); 
+    setTimeout(() => toast.classList.remove('show'), 4000); 
+}
 window.showToast = showToast;
-
 window.toggleMobileMenu = () => { const menu = document.getElementById('mobileMenu'); const overlay = document.getElementById('menuOverlay'); const icon = document.getElementById('menuIcon'); const isOpen = menu.classList.contains('open'); if (isOpen) { menu.classList.remove('open'); overlay.classList.add('hidden'); icon.className = 'fas fa-bars'; unlockScroll(); } else { menu.classList.add('open'); overlay.classList.remove('hidden'); icon.className = 'fas fa-times'; lockScroll(); } }
 window.togglePlatformInfo = () => {
     const infoDiv = document.getElementById('platformInfo');
@@ -4559,9 +4578,15 @@ window.shareArticle = (title) => {
     const url = window.location.href;
     const text = `مقال طبي مفيد من منصة Lomedx:\n\n${title}\n\nاقرأ المقال كاملاً من هنا:\n${url}`;
     
+    // التحقق إذا كان المتصفح يدعم المشاركة الأصلية (خاصة للهواتف)
     if (navigator.share) {
-        navigator.share({ title: 'Lomedx', text: text, url: url }).catch(() => {});
+        navigator.share({ 
+            title: 'Lomedx', 
+            text: text, 
+            url: url 
+        }).catch(() => {}); // تجاهل أي خطأ إذا أغلق المستخدم النافذة
     } else {
+        // الحل البديل للمتصفحات التي لا تدعم المشاركة الأصلية
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 }
