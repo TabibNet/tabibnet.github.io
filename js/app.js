@@ -1448,20 +1448,20 @@ window.acceptBooking = async (bookingId) => {
             sendPushNotification(null, "تم تأكيد موعدك ✅", `تم تأكيد موعدك مع ${booking.itemname} الساعة ${time}`, 'player', booking.patient_push_id);
         }
 
-        showToast('تم قبول الموعد'); 
-    } catch (e) { showToast('خطأ'); } 
+        showToast('تم قبول الموعد', 'success'); 
+    } catch (e) { showToast('حدث خطأ', 'error'); } 
 }
 window.updateBookingStatus = async (bookingId, newStatus) => { 
     try { 
     
         if (newStatus === 'deleted') { 
             await supabase.from('bookings').delete().eq('id', bookingId); 
-            showToast('تم حذف الطلب نهائياً'); 
+            showToast('تم حذف الطلب نهائياً', 'success'); 
             return; 
         } 
         await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId); 
-        showToast('تم التحديث'); 
-    } catch (e) { showToast('خطأ'); } 
+        showToast('تم التحديث', 'success'); 
+    } catch (e) { showToast('حدث خطأ', 'error'); } 
 }
 window.saveDoctorSettings = async (id) => { 
     const workingDays = Array.from(document.querySelectorAll('input[name="docWorkingDays"]:checked')).map(cb => cb.value); 
@@ -1478,7 +1478,7 @@ window.sendDocMessage = async (bookingId) => {
         if (booking.patient_push_id) {
             sendPushNotification(null, "رد من الطبيب 💬", `لديك رسالة جديدة من ${booking.itemname}: ${text.substring(0, 30)}`, 'player', booking.patient_push_id);
         }
-    } catch (e) { showToast('خطأ في الإرسال'); }
+    } catch (e) { showToast('خطأ في الإرسال', 'error'); }
 }
 
 window.openDoctorScanner = (docId) => {
@@ -1488,7 +1488,7 @@ window.openDoctorScanner = (docId) => {
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => { html5QrCode.stop().then(() => { fetchPatientHealthFile(decodedText, docData); }).catch(() => {}); },
         (errorMessage) => { }
-    ).catch(err => { showToast("تعذر الوصول للكاميرا."); });
+    ).catch(err => { showToast("تعذر الوصول للكاميرا.", 'error'); });
 }
 
 window.fetchPatientHealthFile = async (userId, doctorData) => {
@@ -1500,7 +1500,7 @@ window.fetchPatientHealthFile = async (userId, doctorData) => {
         // فك تشفير البيانات للطبيب باستخدام رمز QR
         const decryptedP = decryptHealthFile(p, userId);
         
-        if (error || !decryptedP) { showToast("لم يتم العثور على ملف بهذا الرمز."); return; }
+        if (error || !decryptedP) { showToast("لم يتم العثور على ملف بهذا الرمز.", 'error'); return; }
         closeCtrlPanel();
         
         let specializedRecordHtml = '';
@@ -1525,7 +1525,7 @@ window.fetchPatientHealthFile = async (userId, doctorData) => {
         document.getElementById('modalContent').innerHTML = `<div class="p-6"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-file-medical ml-2" style="color: var(--doctor)"></i> الملف الصحي للمريض</h3><button onclick="closeModal()" class="text-2xl">&times;</button>${prescriptionBtn}</div><div class="flex flex-col gap-3"><div class="flex items-center gap-4 p-3 rounded-xl" style="background: #DBEAFE"><i class="fas fa-user-circle text-3xl" style="color: var(--doctor)"></i><div><h4 class="font-bold text-lg">${escapeHtml(decryptedP.full_name)}</h4><p class="text-sm text-gray-600">${escapeHtml(decryptedP.age || '-')} سنة | ${escapeHtml(decryptedP.gender || '-')}</p></div></div><div class="grid grid-cols-2 gap-3 text-sm"><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">فصيلة الدم</div><div class="font-bold text-red-600">${escapeHtml(decryptedP.blood_type || 'غير محدد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500">الوزن</div><div class="font-bold">${escapeHtml(decryptedP.weight || '-')} كغ</div></div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأمراض المزمنة</div><div class="font-semibold">${escapeHtml(decryptedP.diseases || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الحساسية</div><div class="font-semibold text-red-600">${escapeHtml(decryptedP.allergies || 'لا يوجد')}</div></div><div class="p-3 rounded-xl border"><div class="text-xs text-gray-500 mb-1">الأدوية الحالية</div><div class="font-semibold">${escapeHtml(decryptedP.medications || 'لا يوجد')}</div></div>${specializedRecordHtml}<div class="p-3 rounded-xl bg-green-50 border border-green-200"><div class="text-xs text-green-700 mb-1">جهة طوارئ</div><div class="font-semibold">${escapeHtml(decryptedP.emergency_name || '')} - <span dir="ltr">${escapeHtml(decryptedP.emergency_phone || '')}</span></div></div></div></div>`;
         document.getElementById('modalOverlay').classList.add('active');
         lockScroll();
-    } catch (e) { showToast("خطأ في قراءة الملف."); }
+    } catch (e) { showToast("خطأ في قراءة الملف.", 'error'); }
 }
 
 window.openPrescriptionModal = (patientId, patientName, doctorInfo) => {
@@ -1608,11 +1608,11 @@ window.generatePrescription = async (e, patientId, patientName) => {
         // 3. حفظ الروشتة المشفرة في قاعدة البيانات
         await supabase.from('health_files').update({ prescriptions: currentRx }).eq('qr_token', patientId);
         
-        showToast('تم حفظ الروشتة وتشفيرها في ملف المريض بنجاح!');
+        showToast('تم حفظ الروشتة وتشفيرها في ملف المريض بنجاح!', 'success');
         closeModal();
         fetchPatientHealthFile(patientId, { specialty: 'general' }); 
     } catch (err) { 
-        showToast('خطأ في حفظ الروشتة'); 
+        showToast('خطأ في حفظ الروشتة', 'error'); 
         
     }
 }
@@ -1631,9 +1631,9 @@ window.deletePrescription = async (rxDate) => {
         if (error) return;
         const updatedRx = (docSnap.prescriptions || []).filter(p => p.date !== rxDate);
         await supabase.from('health_files').update({ prescriptions: updatedRx }).eq('id', currentHealthFileId);
-        showToast('تم حذف الروشتة بنجاح');
+        showToast('تم حذف الروشتة بنجاح', 'success');
         renderHealthDashboard({ ...docSnap, prescriptions: updatedRx });
-    } catch (err) { showToast('حدث خطأ أثناء الحذف'); }
+    } catch (err) { showToast('حدث خطأ أثناء الحذف', 'error'); }
 };
             
 window.openMedicineDonation = () => {
@@ -1755,7 +1755,7 @@ window.submitMedicineDonation = async (e) => {
 
         if (!/^09\d{8}$/.test(phone)) { 
             phoneInput.classList.add('input-invalid'); 
-            showToast('رقم هاتف غير صحيح'); 
+            showToast('رقم هاتف غير صحيح', 'error'); 
             return; 
         }
         phoneInput.classList.remove('input-invalid');
@@ -1774,7 +1774,7 @@ window.submitMedicineDonation = async (e) => {
         
         // === إشعار لجميع المستخدمين بوجود جهاز طبي ===
         await sendPushNotification(null, "جهاز طبي متاح 🩺", `تم إضافة جهاز: ${medName}`, 'all');
-        showToast('تم نشر إعلانك بنجاح !');
+        showToast('تم نشر إعلانك بنجاح !', 'success');
         document.querySelector('#ctrlContent form').reset();
         await fetchMedicineDonations();
         renderMedicineDonationsUI();
@@ -1790,10 +1790,10 @@ window.submitMedicineDonation = async (e) => {
 window.resolveMedicineDonation = async (id) => { 
     try { 
         await supabase.from('medicine_donations').update({ status: 'resolved' }).eq('id', id); 
-        showToast('تمت الإزالة.'); 
+        showToast('تمت الإزالة.', 'success'); 
         await fetchMedicineDonations(); 
         renderAdminDashboard(); 
-    } catch (err) { showToast('خطأ'); } 
+    } catch (err) { showToast('حدث خطأ', 'error'); } 
 }
 window.openBloodBank = () => {
     const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -1874,10 +1874,10 @@ window.submitBloodRequest = async (e) => {
         setRateLimit('blood_request');
         // === إشعار لجميع المستخدمين بوجود استغاثة دم ===
         await sendPushNotification(null, "استغاثة دم طارئة 🩸", `المريض ${name} يحتاج فصيلة ${bloodType} في ${hospital}`, 'all');
-        showToast('تم نشر استغاثتك بنجاح! سيتم التواصل معك قريباً.');
+        showToast('تم نشر استغاثتك بنجاح! سيتم التواصل معك قريباً.', 'success');
         e.target.reset();
     } catch (err) { 
-        showToast('حدث خطأ أثناء النشر'); 
+        showToast('حدث خطأ أثناء النشر', 'error'); 
     } finally {
         submitBtn.disabled = false; submitBtn.innerText = 'نشر الاستغاثة';
     }
@@ -1886,10 +1886,10 @@ window.submitBloodRequest = async (e) => {
 window.resolveBloodRequest = async (id) => { 
     try { 
         await supabase.from('blood_requests').update({ status: 'resolved' }).eq('id', id); 
-        showToast('تم إنهاء الطلب.'); 
+        showToast('تم إنهاء الطلب.', 'success'); 
         await fetchBloodRequests(); 
         renderAdminDashboard();
-    } catch (err) { showToast('خطأ'); } 
+    } catch (err) { showToast('حدث خطأ', 'error'); } 
 }
 window.respondToBloodRequest = (btnElement, reqId, patientName, phone) => {
     btnElement.disabled = true; btnElement.innerText = 'جاري التسجيل...'; btnElement.classList.add('opacity-50', 'cursor-not-allowed');
@@ -1905,7 +1905,7 @@ window.respondToBloodRequest = (btnElement, reqId, patientName, phone) => {
             toast.innerHTML = `<div class="flex flex-col items-center gap-3"><div class="text-sm font-bold">بارك الله فيك! 🌹<br>تم تسجيل استجابتك.</div><a href="tel:${escapeHtml(phone)}" onclick="hideToast()" style="background:#2563EB; color:white; padding:8px 20px; border-radius:8px; font-size:14px; text-decoration:none; font-weight:bold; display:flex; align-items:center; gap:8px;"><i class="fas fa-phone-volume"></i> اتصال بالمريض</a></div>`;
             toast.classList.add('show');
             setTimeout(() => { toast.classList.remove('show'); }, 10000);
-        } catch (err) { showToast('حدث خطأ أثناء التسجيل'); btnElement.disabled = false; btnElement.innerText = 'استجبت'; btnElement.classList.remove('opacity-50', 'cursor-not-allowed'); }
+        } catch (err) { showToast('حدث خطأ أثناء التسجيل', 'error'); btnElement.disabled = false; btnElement.innerText = 'استجبت'; btnElement.classList.remove('opacity-50', 'cursor-not-allowed'); }
     }, 6000);
 }
 window.undoRespond = () => { if (window.bloodUndoTimeout) clearTimeout(window.bloodUndoTimeout); document.getElementById('toast').classList.remove('show'); setTimeout(() => showToast('تم التراجع.'), 300); }
@@ -1941,7 +1941,7 @@ window.setStatus = async (id, status) => {
         }
 
     } catch (e) { 
-        showToast('حدث خطأ'); 
+        showToast('حدث خطأ', 'error'); 
     }
 }
 window.openMedicineFinder = () => { 
@@ -2026,7 +2026,7 @@ window.submitMedicineRequest = async (e) => {
             <button onclick="closeModal()" class="w-full py-2 rounded-xl border font-bold text-sm" style="border-color: var(--border)">حسناً</button>
         </div>`; 
     } catch (err) { 
-        showToast('حدث خطأ أثناء إرسال الطلب'); 
+        showToast('حدث خطأ أثناء إرسال الطلب', 'error'); 
         submitBtn.disabled = false; 
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال للصيدليات'; 
     } 
@@ -2047,11 +2047,11 @@ window.quickLookup = async () => {
             else if (m.status === 'unavailable') { statusText = 'غير متوفر حالياً'; statusColor = '#6B7280'; statusIcon = 'fa-times-circle'; }
             else { statusText = 'تم إنهاء الطلب'; statusColor = '#6B7280'; statusIcon = 'fa-archive'; }
             
-            // تم إصلاح الخطأ هنا بإضافة علامة ` والفاصلة المنقوطة ; في النهاية
+            
             document.getElementById('modalContent').innerHTML = `<div class="p-6 text-center"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-pills ml-2" style="color: var(--gold)"></i> حالة طلب الدواء</h3><button onclick="closeModal()" class="text-2xl">&times;</button></div><div class="text-sm text-gray-500 mb-1">رقم الطلب</div><div class="text-xl font-black text-yellow-600 mb-6">#${escapeHtml(m.med_ref)}</div><div class="p-4 rounded-xl mb-4" style="background: ${statusColor}20; color: ${statusColor};"><i class="fas ${statusIcon} text-3xl mb-2"></i><div class="font-bold text-lg">${statusText}</div></div> ${m.notes ? `<div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 text-right" style="white-space: pre-line;"><b>ملاحظة الصيدلية:</b><br>${escapeHtml(m.notes)}</div>` : '<div class="text-xs text-gray-400">لا توجد ملاحظات.</div>'}</div>`;
             
             document.getElementById('modalOverlay').classList.add('active'); lockScroll();
-        } else { showToast('لم يتم العثور على طلب دواء'); }
+        } else { showToast('لم يتم العثور على طلب دواء', 'error'); }
     } else { showToast('صيغة غير صحيحة. استخدم R-XXX أو MED-XXX'); }
 }
 
@@ -2069,7 +2069,7 @@ window.handleAdminLogin = async (e) => {
     });
     
     if (error) { 
-        showToast('الإيميل أو كلمة المرور غير صحيحة!'); 
+        showToast('الإيميل أو كلمة المرور غير صحيحة!', 'error'); 
         return; 
     }
     renderAdminDashboard(); 
@@ -2077,7 +2077,7 @@ window.handleAdminLogin = async (e) => {
 window.logoutAdmin = async () => {
     await supabase.auth.signOut();
     closeCtrlPanel();
-    showToast('تم تسجيل الخروج بنجاح');
+    showToast('تم تسجيل الخروج بنجاح', 'success');
 }
 window.updateAdminFormFields = (type) => {
     // إخفاء حقل الهاتف العام للمشافي والمراكز فقط
@@ -2273,11 +2273,11 @@ window.saveAnnouncement = async (e) => {
         // === إشعار لجميع المستخدمين بوجود إعلان جديد ===
         await sendPushNotification(null, "إعلان جديد 📢", text, 'all');
         
-        showToast('تم النشر!'); 
+        showToast('تم النشر!', 'success'); 
         e.target.reset(); 
         fetchAnnouncements(); 
     } catch (err) { 
-        showToast('خطأ'); 
+        showToast('حدث خطأ', 'error'); 
     }
 };
 async function fetchAnnouncements() {
@@ -2368,10 +2368,10 @@ window.deleteFacility = async (id) => {
     try { 
         await supabase.from('listings').delete().eq('id', id); 
         localStorage.setItem('force_listings_update', 'true'); 
-        showToast('تم الحذف'); 
+        showToast('تم الحذف', 'success'); 
         await fetchListings(); 
         renderAdminDashboard(); 
-    } catch (e) { showToast('خطأ'); } 
+    } catch (e) { showToast('حدث خطأ', 'error'); } 
 }
 window.saveFacility = async (e) => { 
     e.preventDefault(); 
@@ -2399,9 +2399,9 @@ window.saveFacility = async (e) => {
                 await supabase.functions.invoke('create-user', {
                     body: { action: 'update', user_id: item.user_id, password: customPassword , type: type}
                 });
-                showToast('تم تحديث كلمة المرور بنجاح');
+                showToast('تم تحديث كلمة المرور بنجاح', 'success');
             } catch (err) {
-                showToast('خطأ في تحديث كلمة المرور');
+                showToast('خطأ في تحديث كلمة المرور', 'error');
             }
         }
     }
@@ -2421,12 +2421,12 @@ window.saveFacility = async (e) => {
             });
             
             if (funcError || !funcData || !funcData.user_id) { 
-                showToast('خطأ في إنشاء حساب الدخول: ' + (funcError?.message || 'Unknown')); 
+                showToast('خطأ في إنشاء حساب الدخول ', 'error' + (funcError?.message || 'Unknown')); 
                 return; 
             }
             data.user_id = funcData.user_id; 
         } catch (err) {
-            showToast('خطأ في الاتصال بالسيرفر.');
+            showToast('خطأ في الاتصال بالسيرفر.', 'error');
             return;
         }
     } 
@@ -2490,7 +2490,7 @@ window.saveFacility = async (e) => {
             const { error } = await supabase.from('listings').insert([data]); 
             if (error) throw error; 
             
-            showToast('تمت إضافة المنشأة وإنشاء حساب الدخول بنجاح!');
+            showToast('تمت إضافة المنشأة وإنشاء حساب الدخول بنجاح!', 'success');
         } 
         localStorage.setItem('force_listings_update', 'true');
         await fetchListings(); 
@@ -2511,7 +2511,7 @@ window.openHealthFile = async () => {
         
         if (fetchError) { 
             
-            showToast('خطأ في جلب البيانات: ' + fetchError.message); 
+            showToast('خطأ في جلب البيانات: ', 'error' + fetchError.message); 
             return; 
         }
         
@@ -2524,7 +2524,7 @@ window.openHealthFile = async () => {
             const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: newQrToken }]).select().single();
             if (insertError) {
                 
-                showToast('تعذر إنشاء ملف صحي جديد: ' + insertError.message);
+                showToast('تعذر إنشاء ملف صحي جديد: ', 'error' + insertError.message);
                 return;
             }
             if (newFile) { 
@@ -2580,7 +2580,7 @@ window.signInWithGoogle = async () => {
     });
     if (error) {
         sessionStorage.removeItem('google_login_intent');
-        showToast('حدث خطأ أثناء الاتصال بـ Google');
+        showToast('حدث خطأ أثناء الاتصال بـ Google', 'error');
         
     }
 };
@@ -2597,7 +2597,7 @@ window.handleHealthRegister = async (e) => {
 
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) { 
-        showToast('حدث خطأ أثناء التسجيل: ' + error.message); 
+        showToast('حدث خطأ أثناء التسجيل: ' , 'error'+ error.message); 
         return; 
     }
     
@@ -2609,7 +2609,7 @@ window.handleHealthRegister = async (e) => {
         return; 
     }
 
-    showToast('تم إنشاء الحساب بنجاح! يرجى تأكيد بريدك الإلكتروني ثم تسجيل الدخول.');
+    showToast('تم إنشاء الحساب بنجاح! يرجى تأكيد بريدك الإلكتروني ثم تسجيل الدخول.', 'success');
     switchHealthTab('login'); 
 }
 window.handleHealthLogin = async (e) => {
@@ -2620,7 +2620,7 @@ window.handleHealthLogin = async (e) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { 
         
-        showToast('بيانات الدخول غير صحيحة. يرجى التحقق من البريد وكلمة المرور.'); 
+        showToast('بيانات الدخول غير صحيحة. يرجى التحقق من البريد وكلمة المرور.', 'error'); 
         return; 
     }
 
@@ -2631,7 +2631,7 @@ window.handleHealthLogin = async (e) => {
     
     if (fileError) { 
         
-        showToast('خطأ في جلب الملف: ' + fileError.message); 
+        showToast('خطأ في جلب الملف: ', 'error' + fileError.message); 
         return; 
     }
     
@@ -2640,7 +2640,7 @@ window.handleHealthLogin = async (e) => {
                 const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: generateSecureQrToken() }]).select().single();
         if (insertError) {
             
-            showToast('تعذر إنشاء ملف صحي: ' + insertError.message);
+            showToast('تعذر إنشاء ملف صحي: ', 'error' + insertError.message);
             return;
         }
         fileData = newFile;
@@ -2768,12 +2768,12 @@ window.saveHealthProfile = async (e) => {
 
     try { 
         await supabase.from('health_files').update(encryptedData).eq('id', currentHealthFileId); 
-        showToast('تم الحفظ والتشفير بنجاح!'); 
+        showToast('تم الحفظ والتشفير بنجاح!', 'success'); 
         
         // إعادة جلب البيانات وفك تشفيرها لعرضها للمريض
         const { data: updatedFile } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
         if (updatedFile) renderHealthDashboard(updatedFile);
-    } catch (err) { showToast('خطأ'); }
+    } catch (err) { showToast('حدث خطأ', 'error'); }
 }
 window.regenerateQrToken = async () => {
     if (!confirm("هل أنت متأكد من تغيير رمز QR؟ سيتم إعادة تشفير بياناتك بمفتاح جديد.")) return;
@@ -2808,14 +2808,14 @@ window.regenerateQrToken = async () => {
 
         // 5. حفظ الرمز الجديد والبيانات المعاد تشفيرها
         await supabase.from('health_files').update(newEncryptedData).eq('id', currentHealthFileId);
-        showToast('تم تغيير الرمز وإعادة تشفير البيانات بنجاح!');
+        showToast('تم تغيير الرمز وإعادة تشفير البيانات بنجاح!', 'success');
 
         // إعادة تحميل اللوحة
         const { data: updatedFile } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
         if (updatedFile) renderHealthDashboard(updatedFile);
     } catch (err) {
         
-        showToast('حدث خطأ أثناء تغيير الرمز');
+        showToast('حدث خطأ أثناء تغيير الرمز', 'error');
     }
 }
 window.logoutHealthFile = async () => { 
@@ -2823,7 +2823,7 @@ window.logoutHealthFile = async () => {
     localStorage.removeItem('healthFileId'); 
     currentHealthFileId = null; 
     closeCtrlPanel(); 
-    showToast('تم تسجيل الخروج بنجاح'); 
+    showToast('تم تسجيل الخروج بنجاح', 'success'); 
 }
 async function trackAndDisplayVisitors() {
     const cachedVisitors = localStorage.getItem('cached_visitors') || '0';
@@ -3194,7 +3194,7 @@ window.calcDose = () => {
     const weight = parseFloat(document.getElementById('childWeight').value);
     const type = document.getElementById('medType').value;
     const conc = parseInt(document.getElementById('medConc').value);
-    if (!weight || weight <= 0) { showToast('الرجاء إدخال وزن صحيح'); return; }
+    if (!weight || weight <= 0) { showToast('الرجاء إدخال وزن صحيح', 'error'); return; }
     if (weight < 3) { showToast('الوزن أقل من 3 كغ! يجب استشارة الطبيب.'); return; }
     if (weight > 45) { showToast('الوزن أكبر من 45 كغ! يرجى مراجعة الطبيب.'); return; }
     let doseMg = 0, maxDoseMg = 0, frequency = "", medName = "";
@@ -3364,7 +3364,7 @@ window.calcWater = () => {
     const weight = parseFloat(document.getElementById('waterWeight').value);
     const activity = document.getElementById('waterActivity').checked;
     const weather = document.getElementById('waterWeather').checked;
-    if (!weight || weight <= 0) { showToast('الرجاء إدخال وزن صحيح'); return; }
+    if (!weight || weight <= 0) { showToast('الرجاء إدخال وزن صحيح', 'error'); return; }
     let waterMl = weight * 35;
     if (activity) waterMl += 500;
     if (weather) waterMl += 500;
@@ -3698,13 +3698,13 @@ window.submitRadarVote = async () => {
     try {
         await supabase.from('disease_reports').insert([{ disease_id: window.selectedRadarDisease, season: currentRadarTab, duration: duration, timestamp: new Date().toISOString() }]);
         localStorage.setItem('lastRadarVoteTime', Date.now().toString());
-        closeModal(); showToast('تم تسجيل حالتك بنجاح!');
+        closeModal(); showToast('تم تسجيل حالتك بنجاح!', 'success');
         fetchRadarReports();
         setTimeout(() => {
             document.getElementById('modalContent').innerHTML = `<div class="p-8 text-center"><div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-heart text-4xl text-red-500"></i></div><h3 class="font-bold text-xl mb-2 text-gray-800">نتمنى لك الشفاء العاجل!</h3><p class="text-sm text-gray-500 mb-6">تم إضافتك لرادار الرحيبة الصحي. ساهم تسجيلك في حماية المجتمع.</p><button onclick="redirectToDoctorsSearch()" class="w-full bg-blue-500 text-white py-4 rounded-xl font-bold mb-2 hover:bg-blue-600 transition-all">👨‍⚕️ تواصل مع الأطباء المتاحين الآن</button><button onclick="closeModal()" class="text-gray-400 py-2 text-sm hover:text-gray-600">إغلاق</button></div>`;
             document.getElementById('modalOverlay').classList.add('active');
         }, 300);
-    } catch (err) { showToast('حدث خطأ'); }
+    } catch (err) { showToast('حدث خطأ', 'error'); }
 }; 
 
 window.redirectToDoctorsSearch = () => {
@@ -3755,7 +3755,7 @@ window.calcVaccines = () => {
     const today = new Date();
     const diffTime = today - birthDate;
     const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.44));
-    if (diffMonths < 0 || diffMonths > 72) { showToast('تاريخ الميلاد غير منطقي'); return; }
+    if (diffMonths < 0 || diffMonths > 72) { showToast('تاريخ الميلاد غير منطقي', 'error'); return; }
     const resultContainer = document.getElementById('vaccResult');
     resultContainer.classList.remove('hidden');
     let html = `<div class="bg-white p-4 rounded-xl border text-center mb-2" style="border-color: var(--border)"><div class="text-sm text-gray-500">عمر الطفل الحالي</div><div class="text-2xl font-black text-orange-600">${escapeHtml(diffMonths)} شهر</div></div>`;
@@ -3874,11 +3874,11 @@ window.submitQuestion = async (e) => {
         
         // === إشعار للجميع بوجود سؤال طبي جديد ===
       await sendPushNotification(null, "سؤال طبي جديد ❓", `تم طرح سؤال جديد: ${text.substring(0, 40)}...`, 'all');
-        showToast('تم نشر سؤالك بنجاح!');     
+        showToast('تم نشر سؤالك بنجاح!', 'success');     
         e.target.reset();
         fetchQuestions();
     } catch (err) { 
-        showToast('حدث خطأ أثناء النشر: ' + err.message); 
+        showToast('حدث خطأ أثناء النشر: ', 'error' + err.message); 
     } finally {
         submitBtn.disabled = false; submitBtn.innerText = 'نشر السؤال';
     }
@@ -3895,10 +3895,10 @@ window.submitAnswer = async (qId) => {
         currentAnswers.push({ doctorName: docName, text: text, timestamp: new Date().toISOString() });
         const { error } = await supabase.from('medical_questions').update({ answers: currentAnswers, status: 'answered' }).eq('id', qId);
         if (error) throw error;
-        showToast('تم نشر إجابتك!');
+        showToast('تم نشر إجابتك!', 'success');
         fetchQuestions();
     } catch (err) { 
-        showToast('خطأ في إرسال الإجابة: ' + err.message); 
+        showToast('خطأ في إرسال الإجابة: ', 'error' + err.message); 
         
     }
 }
@@ -4017,10 +4017,10 @@ window.togglePaymentMethod = (method) => {
 window.toggleSubscription = async (id, currentStatus) => {
     try {
         await supabase.from('listings').update({ is_subscribed: currentStatus }).eq('id', id);
-        showToast(currentStatus ? 'تم تفعيل الاشتراك بنجاح!' : 'تم إلغاء الاشتراك.');
+        showToast(currentStatus ? 'تم تفعيل الاشتراك بنجاح!' : , 'تم إلغاء الاشتراك.');
         await fetchListings();
         renderAdminDashboard();
-    } catch (e) { showToast('حدث خطأ'); }
+    } catch (e) { showToast('حدث خطأ', 'error'); }
 }
 // دالة لتشفير النص
 function encryptField(text, key) {
@@ -4126,20 +4126,20 @@ window.saveEmergencyContact = async (e) => {
 
     try {
         await supabase.from('emergency_contacts').insert([{ name, phone, icon, color, category }]);
-        showToast('تمت الإضافة بنجاح!');
+        showToast('تمت الإضافة بنجاح!', 'success');
         e.target.reset();
         fetchEmergencyContacts();
         renderAdminEmergencyList();
-    } catch (err) { showToast('خطأ في الإضافة'); }
+    } catch (err) { showToast('حدث خطأ في الإضافة', 'error'); }
 };
 
 window.deleteEmergencyContact = async (id) => {
     try {
         await supabase.from('emergency_contacts').delete().eq('id', id);
-        showToast('تم حذف الرقم');
+        showToast('تم حذف الرقم', 'success');
         fetchEmergencyContacts();
         renderAdminEmergencyList();
-    } catch (err) { showToast('خطأ في الحذف'); }
+    } catch (err) { showToast('خطأ في الحذف', 'error'); }
 };
 
 function renderAdminEmergencyList() {
@@ -4265,10 +4265,10 @@ window.toggleSaveArticle = (id) => {
     const index = savedArticleIds.indexOf(id);
     if (index > -1) {
         savedArticleIds.splice(index, 1);
-        showToast('تم إزالة المقال من المحفوظات');
+        showToast('تم إزالة المقال من المحفوظات', 'success');
     } else {
         savedArticleIds.push(id);
-        showToast('تم حفظ المقال!');
+        showToast('تم حفظ المقال!', 'success');
     }
     localStorage.setItem('lomedx_saved_articles', JSON.stringify(savedArticleIds));
     
@@ -4505,7 +4505,7 @@ window.rateArticle = async (id, isHelpful) => {
         return;
     }
 
-    showToast('شكراً لتقييمك!');
+    showToast('شكراً لتقييمك!', 'success');
     
     // حفظ معرف المقال في قائمة المُقيّمة لمنع التكرار
     ratedArticleIds.push(id);
@@ -4570,7 +4570,7 @@ window.toggleSpeech = () => {
             btn.classList.add('text-red-600');
         }
     } else {
-        showToast("متصفحك لا يدعم ميزة الاستماع الصوتي.");
+        showToast("متصفحك لا يدعم ميزة الاستماع الصوتي.", 'error');
     }
 }
 
@@ -4608,16 +4608,16 @@ window.saveArticle = async (e) => {
         if (id) {
             // وضع التعديل
             await supabase.from('medical_articles').update({ title, category, image_url: image, content, excerpt }).eq('id', id);
-            showToast('تم حفظ التعديلات بنجاح!');
+            showToast('تم حفظ التعديلات بنجاح!', 'success');
         } else {
             // وضع الإضافة
             await supabase.from('medical_articles').insert([{ title, category, image_url: image, content, excerpt }]);
-            showToast('تم نشر المقال بنجاح!');
+            showToast('تم نشر المقال بنجاح!', 'success');
         }
         resetArticleForm();
         fetchAdminArticles();
     } catch (err) {
-        showToast('خطأ في الحفظ');
+        showToast('خطأ في الحفظ', 'error');
     }
 };
 
@@ -4656,10 +4656,10 @@ window.deleteArticle = async (id) => {
     if (!confirm("هل أنت متأكد من حذف هذا المقال؟")) return;
     try {
         await supabase.from('medical_articles').delete().eq('id', id);
-        showToast('تم حذف المقال');
+        showToast('تم حذف المقال', 'success');
         fetchAdminArticles();
     } catch (err) {
-        showToast('خطأ في الحذف');
+        showToast('خطأ في الحذف', 'error');
     }
 };
 
