@@ -50,10 +50,10 @@ async function sendPushNotification(userId, title, message, target = 'user', pla
         const { data, error } = await supabase.functions.invoke('send-push-notification', {
             body: bodyData
         });
-        if (error) console.error("Supabase Function Error:", error);
-    } catch (err) {
-        console.error("Notification Engine Error:", err);
-    }
+        if (error) 
+    } catch (err) 
+        
+    
 }
 // 1. التهيئة (يجب أن توضع في أعلى الملف ليتم تنفيذها فور تحميل الصفحة)
 window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -71,7 +71,7 @@ OneSignalDeferred.push(function(OneSignal) {
 
 // 2. دالة التفعيل (سليمة تماماً ومعدلة لتتوافق مع الإصدار الجديد)
 window.setupOneSignal = async () => {
-    console.log("جاري طلب الإشعارات...");
+    
     
     // تأكد أن المكتبة قيد التحميل
     if (!window.OneSignalDeferred) {
@@ -102,14 +102,14 @@ window.setupOneSignal = async () => {
                 const id = OneSignal.User.PushSubscription.id;
                 if (id) {
                     localStorage.setItem('patient_push_id', id);
-                    console.log("تم تحديث الـ ID:", id);
+                    
                 }
             } else {
                 showToast("تم رفض الإذن، لن تصلك إشعارات.");
             }
-        } catch (err) {
-            console.error("خطأ في التفعيل:", err);
-        }
+        } catch (err) 
+            
+        
     });
 };
 function generateUniqueId() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
@@ -327,7 +327,7 @@ window.addEventListener('DOMContentLoaded', () => {
 async function fetchListings() {
     // حماية: جلب أعمدة محددة فقط لمنع تسريب كلمات المرور
     const { data: freshData, error } = await supabase.from('listings').select('id, name, type, specialty, address, clinic, hours, consulthours, emergencyphone, departments, floors, services, tests, homesample, night, nightdetails, bookingnotes, rating, image, view_count, phone_clicks, phone, is_subscribed, isopen, workingdays, latlng, user_id, parent_id, capacity_info, facility_details');
-    if (error) { console.error("Error fetching listings:", error); return; }
+    if (error) 
     
     const forceUpdate = localStorage.getItem('force_listings_update') === 'true';
     if (JSON.stringify(freshData) !== JSON.stringify(allData) || forceUpdate) {
@@ -345,7 +345,7 @@ let allEmergencyContacts = [];
 
 async function fetchEmergencyContacts() {
     const { data, error } = await supabase.from('emergency_contacts').select('*').order('id', { ascending: true });
-    if (error) { console.error("Error fetching emergency contacts:", error); return; }
+    if (error) 
     allEmergencyContacts = data || [];
     renderEmergencyPopup();
 }
@@ -391,7 +391,7 @@ function renderEmergencyPopup() {
 // fetchEmergencyContacts();
 async function fetchBookings() {
     const { data, error } = await supabase.from('bookings').select('*');
-    if (error) { console.error("Error fetching bookings:", error); return; }
+    if (error) 
     bookings = data || [];
     if (currentFollowupBookingId) renderFollowupChat(currentFollowupBookingId);
 }
@@ -399,14 +399,14 @@ async function fetchBookings() {
 async function fetchBloodRequests() {
     const twentyHoursAgo = new Date(Date.now() - (20 * 60 * 60 * 1000)).toISOString();
     const { data, error } = await supabase.from('blood_requests').select('*').gt('created_at', twentyHoursAgo).neq('status', 'resolved');
-    if (error) { console.error("Error fetching blood requests:", error); return; }
+    if (error) 
     bloodRequests = data || [];
     renderHomeBloodAlerts();
 }
 
 async function fetchMedicineDonations() {
     const { data, error } = await supabase.from('medicine_donations').select('*').eq('status', 'active');
-    if (error) { console.error("Error fetching medicine donations:", error); return; }
+    if (error) 
     medicineDonations = data || [];
     renderHomeMedicines();
 }
@@ -1013,7 +1013,7 @@ window.confirmBooking = async () => {
             <button onclick="closeModal()" class="w-full py-2 rounded-xl border font-bold text-sm" style="border-color: var(--border)">إغلاق</button>
         </div>`; 
         } catch (e) { 
-        console.error("Booking Error:", e);
+        
         showToast('خطأ في الحفظ: ' + e.message); // سيظهر لك سبب الخطأ الحقيقي
     } 
 }
@@ -1081,9 +1081,9 @@ window.sendChatMessage = async (bookingId) => {
                 sendPushNotification(doctorData.user_id, "رسالة جديدة 💬", `لديك رسالة جديدة من المريض ${booking.name}`);
             }
         }
-    } catch (err) {
-        console.error("Chat Error:", err);
-    }
+    } catch (err) 
+        
+    
 }
 
 window.openPharmacyLogin = async () => { 
@@ -1594,7 +1594,7 @@ window.generatePrescription = async (e, patientId, patientName) => {
         fetchPatientHealthFile(patientId, { specialty: 'general' }); 
     } catch (err) { 
         showToast('خطأ في حفظ الروشتة'); 
-        console.error(err);
+        
     }
 }
 window.addPrescriptionRow = () => {
@@ -1762,7 +1762,7 @@ window.submitMedicineDonation = async (e) => {
 
     } catch (err) {
         showToast('حدث خطأ: ' + err.message);
-        console.error("Donation Error:", err);
+        
     } finally {
         btn.disabled = false; 
         btn.innerHTML = '<i class="fas fa-bullhorn ml-2"></i> نشر الإعلان للمجتمع';
@@ -2478,7 +2478,7 @@ window.saveFacility = async (e) => {
         renderAdminDashboard(); 
     } catch (err) { 
         showToast('خطأ في الحفظ: ' + err.message); 
-        console.error("Save Facility Error:", err); 
+        
     } 
 };
         
@@ -2491,7 +2491,7 @@ window.openHealthFile = async () => {
         const { data: docSnap, error: fetchError } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
         
         if (fetchError) { 
-            console.error("DB Fetch Error:", fetchError);
+            
             showToast('خطأ في جلب البيانات: ' + fetchError.message); 
             return; 
         }
@@ -2504,7 +2504,7 @@ window.openHealthFile = async () => {
             const newQrToken = generateSecureQrToken(); // رمز عشوائي
             const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: newQrToken }]).select().single();
             if (insertError) {
-                console.error("DB Insert Error:", insertError);
+                
                 showToast('تعذر إنشاء ملف صحي جديد: ' + insertError.message);
                 return;
             }
@@ -2562,7 +2562,7 @@ window.signInWithGoogle = async () => {
     if (error) {
         sessionStorage.removeItem('google_login_intent');
         showToast('حدث خطأ أثناء الاتصال بـ Google');
-        console.error(error);
+        
     }
 };
 
@@ -2600,7 +2600,7 @@ window.handleHealthLogin = async (e) => {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { 
-        console.error("Auth Error:", error);
+        
         showToast('بيانات الدخول غير صحيحة. يرجى التحقق من البريد وكلمة المرور.'); 
         return; 
     }
@@ -2611,7 +2611,7 @@ window.handleHealthLogin = async (e) => {
     let { data: fileData, error: fileError } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
     
     if (fileError) { 
-        console.error("DB Fetch Error:", fileError);
+        
         showToast('خطأ في جلب الملف: ' + fileError.message); 
         return; 
     }
@@ -2620,7 +2620,7 @@ window.handleHealthLogin = async (e) => {
         const defaultName = data.user.email ? data.user.email.split('@')[0] : 'مريض';
                 const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: generateSecureQrToken() }]).select().single();
         if (insertError) {
-            console.error("DB Insert Error:", insertError);
+            
             showToast('تعذر إنشاء ملف صحي: ' + insertError.message);
             return;
         }
@@ -2795,7 +2795,7 @@ window.regenerateQrToken = async () => {
         const { data: updatedFile } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
         if (updatedFile) renderHealthDashboard(updatedFile);
     } catch (err) {
-        console.error(err);
+        
         showToast('حدث خطأ أثناء تغيير الرمز');
     }
 }
@@ -2838,7 +2838,7 @@ async function trackAndDisplayVisitors() {
             animateCounter(realVisitors, 'visitorCount');
             animateCounter(realViews, 'viewsCount');
         }
-    } catch (error) { console.error("Error tracking visitors:", error); }
+    } catch (error) 
 }
 function animateCounter(target, elementId) {
     const el = document.getElementById(elementId); if (!el) return;
@@ -3787,7 +3787,7 @@ async function fetchQuestions() {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data, error } = await supabase.from('medical_questions').select('*').in('status', ['open', 'answered']).gte('created_at', weekAgo);
     if (error) { 
-        console.error("Error fetching questions:", error); 
+        
         const container = document.getElementById('qaListContainer');
         if (container) container.innerHTML = '<p class="text-center py-8 text-red-500 text-sm">حدث خطأ في تحميل الأسئلة.</p>';
         return; 
@@ -3879,7 +3879,7 @@ window.submitAnswer = async (qId) => {
         fetchQuestions();
     } catch (err) { 
         showToast('خطأ في إرسال الإجابة: ' + err.message); 
-        console.error(err); 
+        
     }
 }
 
@@ -4164,9 +4164,9 @@ window.toggleEmergencyPopup = function() {
         } else {
             popup.style.display = 'none';
         }
-    } else {
-        console.error("عنصر النافذة المنبثقة غير موجود!");
-    }
+    } else 
+        
+    
 }
 
 window.hideEmergencyFab = function() {
