@@ -877,7 +877,7 @@ window.trackPhoneClick = (id) => {
     const item = allData.find(d => d.id === id);
     if (!item) return;
     item.phone_clicks = (item.phone_clicks || 0) + 1;
-    supabase.rpc('increment_phone_click', { listing_id: id }).catch(e => console.error('Phone Click Error:', e));
+    supabase.rpc('increment_phone_click', { listing_id: id }).catch(() => {});
 };
 window.copyText = (text) => { navigator.clipboard.writeText(text).then(() => showToast('تم نسخ الكود بنجاح')).catch(() => showToast('تعذر النسخ')); }
 
@@ -1467,7 +1467,7 @@ window.openDoctorScanner = (docId) => {
     openCtrlPanel('قارئ الملفات الصحية للمريض', `<div class="flex flex-col gap-4"><div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 text-sm flex items-center gap-3"><i class="fas fa-camera text-xl"></i><span>وجه كاميرا الهاتف نحو رمز QR الخاص بالمريض.</span></div><div id="qr-reader" style="width:100%"></div></div>`, '#2563EB');
     const html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => { html5QrCode.stop().then(() => { fetchPatientHealthFile(decodedText, docData); }).catch(err => console.log(err)); },
+        (decodedText) => { html5QrCode.stop().then(() => { fetchPatientHealthFile(decodedText, docData); }).catch(() => {}); },
         (errorMessage) => { }
     ).catch(err => { showToast("تعذر الوصول للكاميرا."); });
 }
