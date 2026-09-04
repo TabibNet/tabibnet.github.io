@@ -1123,29 +1123,57 @@ html.dark .search-input::placeholder {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* === تنسيقات البحث الذكي المنسدل === */
+/* === تنسيقات البحث الذكي المعزول === */
 #smartSearchDropdown {
-    position: absolute !important;
-    top: 100% !important;
-    right: 0 !important;
-    left: 0 !important;
-    z-index: 99999 !important;
-    margin-top: 8px !important;
-    background-color: #ffffff !important;
-    border: 1px solid #DDE3DD !important;
-    border-radius: 16px !important;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
-    overflow: hidden !important;
+    background-color: #ffffff;
+    border: 1px solid #DDE3DD;
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    overflow: hidden;
     max-height: 350px;
     overflow-y: auto;
 }
 
-/* دعم الوضع المظلم للقائمة المنسدلة */
+/* دعم الوضع المظلم */
 html.dark #smartSearchDropdown {
-    background-color: #1e293b !important;
-    border-color: #334155 !important;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5) !important;
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
 }
-html.dark #smartSearchDropdown .smart-result-item:hover {
-    background-color: #334155 !important;
+
+/* عناصر القائمة */
+.smart-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #DDE3DD;
+    transition: background 0.2s;
 }
+.smart-result-item:last-child { border-bottom: none; }
+.smart-result-item:hover { background-color: #F0EDE6; }
+html.dark .smart-result-item:hover { background-color: #334155; }
+
+.smart-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+.smart-text { flex: 1; min-width: 0; }
+.smart-name { font-weight: 700; font-size: 0.875rem; color: #1B2A1B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.dark .smart-name { color: #f8fafc; }
+.smart-desc { font-size: 0.75rem; color: #7A8B7A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.dark .smart-desc { color: #94a3b8; }
+
+.smart-arrow { font-size: 0.75rem; color: #DDE3DD; }
+html.dark .smart-arrow { color: #334155; }
+
+.smart-empty { padding: 24px; text-align: center; font-size: 0.875rem; color: #7A8B7A; }
+html.dark .smart-empty { color: #94a3b8; }
