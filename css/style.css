@@ -1122,3 +1122,30 @@ html.dark .search-input::placeholder {
     font-size: 0.85rem;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* === تنسيقات البحث الذكي المنسدل === */
+#smartSearchDropdown {
+    position: absolute !important;
+    top: 100% !important;
+    right: 0 !important;
+    left: 0 !important;
+    z-index: 99999 !important;
+    margin-top: 8px !important;
+    background-color: #ffffff !important;
+    border: 1px solid #DDE3DD !important;
+    border-radius: 16px !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
+    overflow: hidden !important;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+/* دعم الوضع المظلم للقائمة المنسدلة */
+html.dark #smartSearchDropdown {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5) !important;
+}
+html.dark #smartSearchDropdown .smart-result-item:hover {
+    background-color: #334155 !important;
+}
