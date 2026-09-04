@@ -277,10 +277,10 @@ window.addEventListener('DOMContentLoaded', () => {
             }, 1200);
         }
     }
-    // فتح المقال تلقائياً إذا تم الدخول عبر رابط مباشر (من بحث جوجل)
+    
     if (window.location.hash.includes('article=')) {
         const artId = window.location.hash.split('=')[1];
-        // تأخير بسيط لانتظار تحميل المكتبات
+    
         setTimeout(async () => {
             const { data, error } = await supabase.from('medical_articles').select('*').eq('id', artId).single();
             if (data) {
@@ -350,7 +350,8 @@ window.addEventListener('DOMContentLoaded', () => {
             heroLogo.style.transform = 'translateY(0)';
         }, 300);
     }
-
+    // تفعيل البحث الذكي
+    initSmartSearch();
     trackAndDisplayVisitors();
     // استدعاء دالة تحديد الموقع
     detectUserLocation();
@@ -488,7 +489,25 @@ function updateStats() {
     document.getElementById('stat-doctor').textContent = allData.filter(d => d.type === 'doctor').length;
     document.getElementById('stat-pharmacy').textContent = allData.filter(d => d.type === 'pharmacy').length;
 }
-
+// دالة تحسين الصور الخارجية (مثل ImgBB) لتسريع التحميل
+function getOptimizedImageUrl(url, width = 400, height = 300) {
+    if (!url) return 'https://picsum.photos/seed/default/400/250';
+    
+    // 1. إذا كانت الصورة من Supabase (للمستقبل)
+    if (url.includes('supabase.co/storage/v1/object/public/')) {
+        return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + `?width=${width}&height=${height}&resize=cover&quality=75`;
+    }
+    
+    // 2. إذا كانت الصورة رابطاً خارجياً (مثل ImgBB أو أي رابط آخر)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        // استخدام خدمة wsrv.nl المجانية لضغط الصورة وتحويلها لـ WebP
+        const cleanUrl = url.replace(/^https?:\/\//, '');
+        return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&w=${width}&h=${height}&fit=cover&output=webp&q=70`;
+    }
+    
+    // إرجاع الرابط كما هو إذا لم يتحقق أي شرط
+    return url;
+}
 // دالة للتحقق من معدل الطلبات (منع السبام)
 function checkRateLimit(actionKey, hoursCooldown = 1) {
     const lastAction = localStorage.getItem(`ratelimit_${actionKey}`);
@@ -555,7 +574,8 @@ function createCard(item) {
         }
     }
     
-    return `<div class="card ${t.cardClass} cursor-pointer" onclick="openModal('${escapeHtml(item.id)}')" data-type="${escapeHtml(item.type)}"><div class="relative h-40 overflow-hidden rounded-t-2xl"><img src="${escapeHtml(item.image || 'https://picsum.photos/seed/default/400/250')}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110 cursor-zoom-in" loading="lazy" onclick="event.stopPropagation(); openLightbox(this.src)"><div class="absolute top-3 right-3"><span class="badge ${t.badgeClass}">${t.label}</span></div><div class="absolute top-3 left-3 flex flex-col gap-1 items-start">
+    return `<div class="card ${t.cardClass} cursor-pointer" onclick="openModal('${escapeHtml(item.id)}')" data-type="${escapeHtml(item.type)}"><div class="relative h-40 overflow-hidden rounded-t-2xl">// الكود الجديد:
+<img src="${getOptimizedImageUrl(item.image, 400, 300)}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110 cursor-zoom-in" loading="lazy" onclick="event.stopPropagation(); openLightbox(this.src)"><div class="absolute top-3 right-3"><span class="badge ${t.badgeClass}">${t.label}</span></div><div class="absolute top-3 left-3 flex flex-col gap-1 items-start">
     ${['doctor', 'pharmacy'].includes(item.type) && item.isopen === true ? '<span class="badge" style="background:#10B981;color:white"><i class="fas fa-door-open ml-1"></i>مفتوح</span>' : ''}
     ${['doctor', 'pharmacy'].includes(item.type) && item.isopen === false ? '<span class="badge" style="background:#EF4444;color:white"><i class="fas fa-door-closed ml-1"></i>مغلق</span>' : ''}
     ${item.night ? '<span class="badge" style="background:rgba(196,150,44,0.9);color:white"><i class="fas fa-moon ml-1"></i>ليلي</span>' : ''}
@@ -627,6 +647,98 @@ window.handleSearch = (value) => {
         showToast('لا توجد نتائج مطابقة لبحثك. جرب كلمة أخرى أو عرض كل المدن');
     }
 }
+// === نظام البحث الذكي (Autocomplete) ===
+let searchDebounceTimer;
+let searchDropdown = null;
+
+function initSmartSearch() {
+    const searchInput = document.getElementById('heroSearch');
+    if (!searchInput) return;
+
+    // إنشاء حاوية القائمة المنسدلة ديناميكياً
+    searchDropdown = document.createElement('div');
+    searchDropdown.id = 'smartSearchDropdown';
+    searchDropdown.className = 'absolute z-50 w-full mt-2 bg-white rounded-xl shadow-2xl border overflow-hidden hidden';
+    searchInput.parentElement.style.position = 'relative'; // ضروري لتحديد موقع القائمة
+    searchInput.parentElement.appendChild(searchDropdown);
+
+    // مستمع الكتابة (Debounce)
+    searchInput.addEventListener('input', (e) => {
+        handleSmartSearch(e.target.value);
+    });
+
+    // إخفاء القائمة عند النقر خارجها
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && searchDropdown && !searchDropdown.contains(e.target)) {
+            searchDropdown.classList.add('hidden');
+        }
+    });
+}
+
+function handleSmartSearch(value) {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+        const q = value.toLowerCase().trim();
+        // إذا كان النص أقل من حرفين، نخفي القائمة
+        if (q.length < 2) { 
+            if(searchDropdown) searchDropdown.classList.add('hidden'); 
+            return; 
+        }
+
+        // البحث في البيانات المحملة مسبقاً
+        const matches = allData.filter(item => {
+            return (item.name?.toLowerCase().includes(q) ||
+                    item.specialty?.toLowerCase().includes(q) ||
+                    item.address?.toLowerCase().includes(q) ||
+                    item.type?.toLowerCase().includes(q));
+        }).slice(0, 6); // عرض أقصى 6 نتائج
+
+        renderSearchDropdown(matches);
+    }, 300); // تأخير 300 مللي ثانية
+}
+
+function renderSearchDropdown(matches) {
+    if (!searchDropdown) return;
+    
+    const typeMap = {
+        hospital: { icon: 'fa-hospital-symbol', color: 'var(--hospital)', label: 'مشفى' },
+        center: { icon: 'fa-clinic-medical', color: 'var(--center)', label: 'مركز' },
+        lab: { icon: 'fa-flask', color: 'var(--lab)', label: 'مخبر' },
+        doctor: { icon: 'fa-user-md', color: 'var(--doctor)', label: 'طبيب' },
+        pharmacy: { icon: 'fa-pills', color: 'var(--pharmacy)', label: 'صيدلية' }
+    };
+
+    if (matches.length === 0) {
+        searchDropdown.innerHTML = '<div class="p-4 text-sm text-gray-400 text-center">لا توجد نتائج مطابقة</div>';
+        searchDropdown.classList.remove('hidden');
+        return;
+    }
+
+    searchDropdown.innerHTML = matches.map(item => {
+        const t = typeMap[item.type] || typeMap.doctor;
+        return `
+            <div onclick="selectSearchResult('${escapeHtml(item.id)}')" class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: ${t.color}15; color: ${t.color};">
+                    <i class="fas ${t.icon}"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-sm text-gray-800 truncate">${escapeHtml(item.name)}</div>
+                    <div class="text-xs text-gray-500 truncate">${escapeHtml(item.specialty || item.address || t.label)}</div>
+                </div>
+                <i class="fas fa-arrow-left text-gray-300 text-xs"></i>
+            </div>
+        `;
+    }).join('');
+
+    searchDropdown.classList.remove('hidden');
+}
+
+window.selectSearchResult = (id) => {
+    if(searchDropdown) searchDropdown.classList.add('hidden');
+    const searchInput = document.getElementById('heroSearch');
+    if(searchInput) searchInput.value = '';
+    openModal(id); // فتح نافذة التفاصيل فوراً
+};
 window.openCitySelector = () => {
     const overlay = document.getElementById('citySelectorOverlay');
     const listContainer = document.getElementById('cityListContainer');
