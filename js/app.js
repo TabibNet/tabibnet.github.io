@@ -1255,7 +1255,6 @@ async function fetchMedRequests(pharmName) {
     const container = document.getElementById('requestsContainer'); 
     if (!container) return; 
     
-    // حماية: إذا كان الصيدلي يكتب حالياً في حقل الملاحظات، نؤجل التحديث لكي لا يمسح ما يكتبه
     const activeElement = document.activeElement;
     if (activeElement && activeElement.id && activeElement.id.startsWith('medNotes_')) {
         return; 
@@ -1263,14 +1262,10 @@ async function fetchMedRequests(pharmName) {
     
     container.innerHTML = '<p class="text-center py-10" style="color: var(--muted)">جاري تحديث الطلبات...</p>';
     
-    // === التعديل: جلب الطلبات التي مضى عليها أقل من 30 دقيقة فقط ===
-    const thirtyMinutesAgo = new Date(Date.now() - (30 * 60 * 1000)).toISOString();
-    const { data: snapshot, error } = await supabase.from('medicine_requests')
-        .select('*')
-        .in('status', ['active', 'searching', 'available', 'unavailable'])
-        .gt('created_at', thirtyMinutesAgo); // أكبر من (بعد) وقت قبل 30 دقيقة
+    // استخدام الدالة الآمنة RPC
+    const { data: snapshot, error } = await supabase.rpc('get_active_med_requests');
         
-    if (error) { container.innerHTML = '<p class="text-center py-10 text-red-500">حدث خطأ.</p>'; return; }
+    if (error || !snapshot) { container.innerHTML = '<p class="text-center py-10 text-red-500">حدث خطأ أو لا تملك صلاحية.</p>'; return; }
     if (snapshot.length === 0) { container.innerHTML = '<p class="text-center py-10" style="color: var(--muted)">لا توجد طلبات أدوية حالياً.</p>'; return; } 
     
     let html = ''; 
@@ -1297,35 +1292,53 @@ async function fetchMedRequests(pharmName) {
         }
 
         html += `<div class="bg-white border rounded-xl p-4 flex flex-col gap-3" style="border-color: var(--border)"><div class="flex flex-col sm:flex-row gap-3 items-center">${req.image_url ? `<img src="${escapeHtml(req.image_url)}" class="w-full sm:w-24 h-24 object-cover rounded-lg cursor-zoom-in" onclick="openLightbox('${escapeHtml(req.image_url)}')">` : ''}<div class="flex-1 text-center sm:text-right"><h4 class="font-bold">${escapeHtml(req.patient_name)} <span class="text-xs text-yellow-600 font-mono">#${escapeHtml(req.med_ref || '')}</span></h4><p class="text-sm text-gray-700 font-semibold">${escapeHtml(req.med_list || '')}</p><p class="text-xs mt-1 text-red-500">الإلحاح: ${escapeHtml(req.urgency || 'عادي')}</p><p class="text-xs" style="color: var(--muted)"><i class="fas fa-clock"></i> ${escapeHtml(date)}</p>${requestStatus}</div></div><div class="flex flex-col gap-2 mt-2 border-t pt-3" style="border-color: var(--border)">${interactionArea}</div></div>`; 
-     
     }); 
     container.innerHTML = html; 
 }
 
 window.toggleNightShift = async (id, currentStatus) => { try { await supabase.from('listings').update({ night: currentStatus }).eq('id', id); showToast(currentStatus ? 'تم تفعيل المناوبة!' : 'تم إيقاف المناوبة.'); localStorage.setItem('force_listings_update', 'true'); } catch (e) { showToast('خطأ في التحديث'); } }
-window.updateMedStatus = async (id, status) => { try { await supabase.from('medicine_requests').update({ status: status }).eq('id', id); showToast('تم تحديث حالة الدواء'); } catch (e) { showToast('خطأ في التحديث'); } }
-window.updateMedNotes = async (id, notes) => { try { await supabase.from('medicine_requests').update({ notes: notes }).eq('id', id); showToast('تم حفظ الملاحظة'); } catch (e) { showToast('خطأ في الحفظ'); } }
+// دالة تحديث الحالة (متوففر/غير متوفر/قيد البحث)
+window.updateMedStatus = async (id, status) => { 
+    try { 
+        await supabase.rpc('update_med_request_status', {
+            p_req_id: id,
+            p_status: status
+        });
+        showToast('تم تحديث حالة الدواء'); 
+    } catch (e) { showToast('خطأ في التحديث', 'error'); } 
+}
+
+// دالة تحديث الملاحظات
+window.updateMedNotes = async (id, notes) => { 
+    try { 
+        await supabase.rpc('update_med_request_status', {
+            p_req_id: id,
+            p_status: 'searching', // نبقي الحالة كما هي
+            p_notes: notes
+        });
+        showToast('تم حفظ الملاحظة'); 
+    } catch (e) { showToast('خطأ في الحفظ', 'error'); } 
+}
+
+// دالة توفير الدواء
 window.setMedAvailable = async (id, pharmName, patientPushId) => { 
     try { 
-        // 1. جلب الملاحظة التي كتبتها الصيدلية من حقل الإدخال
         const noteInput = document.getElementById(`medNotes_${id}`);
         const customNote = noteInput ? noteInput.value.trim() : '';
         
-        // 2. دمج رسالة التوفير مع الملاحظة المكتوبة
         let finalNotes = `الدواء متوفر لدى ${pharmName}. يرجى الحضور لاستلامه.`;
         if (customNote) {
             finalNotes += `\nملاحظة من الصيدلية: ${customNote}`;
         }
 
-        await supabase.from('medicine_requests').update({ 
-            status: 'available', 
-            notes: finalNotes, // حفظ الرسالة والملاحظة معاً
-            available_pharmacy: pharmName 
-        }).eq('id', id); 
+        await supabase.rpc('update_med_request_status', { 
+            p_req_id: id, 
+            p_status: 'available', 
+            p_notes: finalNotes, 
+            p_pharmacy_name: pharmName 
+        }); 
         
-        // === إشعار للمريض بأن دواءه متوفر الآن ===
         if (patientPushId) {
-            // نرسل الملاحظة كجزء من الإشعار إذا وجدت
             let pushMessage = `تم توفير الدواء في  ${pharmName}. يرجى الحضور لاستلامه.`;
             if (customNote) pushMessage += ` (ملاحظة: ${customNote})`;
             sendPushNotification(null, "تم توفير دوائك ✅", pushMessage, 'player', patientPushId);
@@ -1333,7 +1346,7 @@ window.setMedAvailable = async (id, pharmName, patientPushId) => {
 
         showToast('تم إعلام المريض بتوفر الدواء'); 
     } catch (e) { 
-        showToast('خطأ في التحديث'); 
+        showToast('خطأ في التحديث', 'error'); 
     } 
 }
 window.openDoctorLogin = async () => { 
