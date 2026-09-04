@@ -647,7 +647,7 @@ window.handleSearch = (value) => {
         showToast('لا توجد نتائج مطابقة لبحثك. جرب كلمة أخرى أو عرض كل المدن');
     }
 }
-// === نظام البحث الذكي  ===
+// === نظام البحث الذكي (Autocomplete) المعزول ===
 let searchDebounceTimer;
 let searchDropdown = null;
 
@@ -655,21 +655,33 @@ function initSmartSearch() {
     const searchInput = document.getElementById('heroSearch');
     if (!searchInput) return;
 
-    // إجبار الحاوية الأب على السماح بظهور العناصر خارجها
-    const parent = searchInput.parentElement;
-    parent.style.position = 'relative';
-    parent.style.overflow = 'visible';
-
-    // إنشاء حاوية القائمة المنسدلة ديناميكياً
+    // إنشاء القائمة و إضافتها للـ body مباشرة لتفادي أي تعارض مع CSS الحاوية
     searchDropdown = document.createElement('div');
     searchDropdown.id = 'smartSearchDropdown';
-    searchDropdown.classList.add('hidden'); // مخفية افتراضياً
-    parent.appendChild(searchDropdown);
+    searchDropdown.classList.add('hidden'); 
+    document.body.appendChild(searchDropdown);
 
-    // مستمع الكتابة (Debounce)
+    // دالة لتحديث موقع القائمة تحت حقل البحث مباشرة
+    const updateDropdownPosition = () => {
+        if (!searchDropdown || !searchInput) return;
+        const rect = searchInput.getBoundingClientRect();
+        searchDropdown.style.position = 'fixed';
+        searchDropdown.style.top = `${rect.bottom + 8}px`;
+        searchDropdown.style.left = `${rect.left}px`;
+        searchDropdown.style.width = `${rect.width}px`;
+        searchDropdown.style.zIndex = '99999';
+    };
+
     searchInput.addEventListener('input', (e) => {
         handleSmartSearch(e.target.value);
     });
+
+    // تحديث الموقع عند تمرير الصفحة أو تكبير/تصغير الشاشة
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    window.addEventListener('resize', updateDropdownPosition);
+    
+    // حفظ الدالة لاستخدامها عند ظهور النتائج
+    window.updateSmartSearchPosition = updateDropdownPosition;
 
     // إخفاء القائمة عند النقر خارجها
     document.addEventListener('click', (e) => {
@@ -711,27 +723,27 @@ function renderSearchDropdown(matches) {
     };
 
     if (matches.length === 0) {
-        searchDropdown.innerHTML = '<div class="p-4 text-sm text-gray-400 text-center">لا توجد نتائج مطابقة</div>';
-        searchDropdown.classList.remove('hidden');
-        return;
+        searchDropdown.innerHTML = '<div class="smart-empty">لا توجد نتائج مطابقة</div>';
+    } else {
+        searchDropdown.innerHTML = matches.map(item => {
+            const t = typeMap[item.type] || typeMap.doctor;
+            return `
+                <div onclick="selectSearchResult('${escapeHtml(item.id)}')" class="smart-result-item">
+                    <div class="smart-icon" style="background: ${t.color}15; color: ${t.color};">
+                        <i class="fas ${t.icon}"></i>
+                    </div>
+                    <div class="smart-text">
+                        <div class="smart-name">${escapeHtml(item.name)}</div>
+                        <div class="smart-desc">${escapeHtml(item.specialty || item.address || t.label)}</div>
+                    </div>
+                    <i class="fas fa-arrow-left smart-arrow"></i>
+                </div>
+            `;
+        }).join('');
     }
 
-    searchDropdown.innerHTML = matches.map(item => {
-        const t = typeMap[item.type] || typeMap.doctor;
-        return `
-            <div onclick="selectSearchResult('${escapeHtml(item.id)}')" class="smart-result-item flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors">
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: ${t.color}15; color: ${t.color};">
-                    <i class="fas ${t.icon}"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="font-bold text-sm truncate" style="color: var(--fg);">${escapeHtml(item.name)}</div>
-                    <div class="text-xs truncate" style="color: var(--muted);">${escapeHtml(item.specialty || item.address || t.label)}</div>
-                </div>
-                <i class="fas fa-arrow-left text-xs" style="color: var(--muted);"></i>
-            </div>
-        `;
-    }).join('');
-
+    // تحديد الموقع بدقة ثم إظهار القائمة
+    if (window.updateSmartSearchPosition) window.updateSmartSearchPosition();
     searchDropdown.classList.remove('hidden');
 }
 
@@ -741,7 +753,7 @@ window.selectSearchResult = (id) => {
     if(searchInput) searchInput.value = '';
     openModal(id);
 };
-
+        
 window.openCitySelector = () => {
     const overlay = document.getElementById('citySelectorOverlay');
     const listContainer = document.getElementById('cityListContainer');
