@@ -658,7 +658,7 @@ function initSmartSearch() {
     // إنشاء حاوية القائمة المنسدلة ديناميكياً
     searchDropdown = document.createElement('div');
     searchDropdown.id = 'smartSearchDropdown';
-    searchDropdown.className = 'absolute z-[9999] w-full top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden hidden';
+    searchDropdown.className = 'absolute z-50 w-full mt-2 bg-white rounded-xl shadow-2xl border overflow-hidden hidden';
     searchInput.parentElement.style.position = 'relative'; 
     searchInput.parentElement.appendChild(searchDropdown);
 
