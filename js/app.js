@@ -2943,13 +2943,56 @@ window.saveFacility = async (e) => {
 
 window.openHealthFile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
+    
+    // حماية: إذا كان المسجل دخوله طبيباً أو صيدلياً، نخرجه لكي لا يتم الدخول للملف الصحي تلقائياً بحسابه
+    if (session && session.user.email && session.user.email.endsWith('@lomedx.app')) {
+        await supabase.auth.signOut();
+        showToast('تم تسجيل الخروج من حساب الطبيب/الصيدلية. يرجى تسجيل الدخول ك مريض.');
+        // عرض شاشة الدخول الخاصة بالمرضى
+        openCtrlPanel('الملف الصحي الذكي', `
+            <div class="flex flex-col gap-4 max-w-md mx-auto w-full">
+                <div class="bg-pink-50 border border-pink-200 rounded-xl p-4 text-pink-800 text-sm flex items-center gap-3">
+                    <i class="fas fa-shield-heart text-xl"></i>
+                    <span>ملفك الطبي الخاص، محمي بأمان عالي. يمكنك تسجيل الدخول بحساب Google لسرعة الوصول، أو عبر البريد الإلكتروني.</span>
+                </div>
+            
+                <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition-all shadow-sm">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                    المتابعة عبر حساب Google
+                </button>
+
+                <div class="relative my-2">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div>
+                    <div class="relative flex justify-center"><span class="bg-transparent px-4 text-xs text-gray-500">أو سجل عبر البريد الإلكتروني</span></div>
+                </div>
+
+                <div class="flex gap-2 bg-gray-100 p-1 rounded-xl">
+                    <button onclick="switchHealthTab('login')" id="tabLoginBtn" class="flex-1 py-2 rounded-lg text-sm font-bold bg-white shadow">تسجيل الدخول</button>
+                    <button onclick="switchHealthTab('register')" id="tabRegBtn" class="flex-1 py-2 rounded-lg text-sm font-bold text-gray-500">حساب جديد</button>
+                </div>
+                <form id="loginForm" onsubmit="handleHealthLogin(event)" class="flex flex-col gap-3">
+                    <input type="email" id="loginEmail" class="ctrl-input" placeholder="البريد الإلكتروني" required>
+                    <input type="password" id="loginPassword" class="ctrl-input" placeholder="كلمة المرور" required>
+                    <button type="submit" class="w-full py-3 rounded-xl text-white font-bold text-sm" style="background: #EC4899">دخول</button>
+                </form>
+                <form id="registerForm" onsubmit="handleHealthRegister(event)" class="hidden flex-col gap-3">
+                    <input type="text" id="regFullName" class="ctrl-input" placeholder="الاسم الكامل" required>
+                    <input type="email" id="regEmail" class="ctrl-input" placeholder="البريد الإلكتروني" required>
+                    <input type="password" id="regPassword" class="ctrl-input" placeholder="اختر كلمة مرور قوية" required>
+                    <button type="submit" class="w-full py-3 rounded-xl text-white font-bold text-sm" style="background: #EC4899">إنشاء الملف</button>
+                </form>
+            </div>
+        `, '#EC4899');
+        return;
+    }
+
+    // إذا كان مسجل دخول ك مريض بالفعل، افتح له لوحته
     if (session) {
         currentHealthFileId = session.user.id;
         
         const { data: docSnap, error: fetchError } = await supabase.from('health_files').select('*').eq('id', currentHealthFileId).maybeSingle();
         
         if (fetchError) { 
-            
             showToast('خطأ في جلب البيانات: ' + fetchError.message); 
             return; 
         }
@@ -2959,10 +3002,9 @@ window.openHealthFile = async () => {
             return; 
         } else {
             const defaultName = session.user.email ? session.user.email.split('@')[0] : 'مريض';
-            const newQrToken = generateSecureQrToken(); // رمز عشوائي
+            const newQrToken = generateSecureQrToken();
             const { data: newFile, error: insertError } = await supabase.from('health_files').insert([{ id: currentHealthFileId, full_name: defaultName, qr_token: newQrToken }]).select().single();
             if (insertError) {
-                
                 showToast('تعذر إنشاء ملف صحي جديد: ' + insertError.message, 'error');
                 return;
             }
@@ -2973,6 +3015,7 @@ window.openHealthFile = async () => {
         }
     }
 
+    // إذا لم يكن مسجل دخول أبداً، اعرض له شاشة الدخول
     openCtrlPanel('الملف الصحي الذكي', `
         <div class="flex flex-col gap-4 max-w-md mx-auto w-full">
             <div class="bg-pink-50 border border-pink-200 rounded-xl p-4 text-pink-800 text-sm flex items-center gap-3">
@@ -3007,7 +3050,7 @@ window.openHealthFile = async () => {
             </form>
         </div>
     `, '#EC4899');
-}
+};
 window.signInWithGoogle = async () => {
     sessionStorage.setItem('google_login_intent', 'true');
     
