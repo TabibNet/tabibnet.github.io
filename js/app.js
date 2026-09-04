@@ -4133,7 +4133,7 @@ function encryptField(text, key) {
 
 // دالة لفك تشفير النص
 function decryptField(ciphertext, key) {
-    if (!ciphertext || !ciphertext.startsWith('U2FsdGVk')) return ciphertext; // إذا لم يكن النص مشفراً اعرضه كما هو
+    if (!ciphertext || typeof ciphertext !== 'string' || !ciphertext.startsWith('U2FsdGVk')) return ciphertext; 
     try {
         const bytes = CryptoJS.AES.decrypt(ciphertext, key);
         const originalText = bytes.toString(CryptoJS.enc.Utf8);
@@ -4253,7 +4253,7 @@ function renderAdminEmergencyList() {
     list.innerHTML = allEmergencyContacts.map(c => `
         <div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)">
             <div class="flex items-center gap-2">
-                <i class="fas ${escapeHtml(c.icon)} text-${escapeHtml(c.color)}-500"></i>
+               <i class="fas ${escapeHtml(c.icon)}" style="color: ${escapeHtml(c.color)};"></i>
                 <span class="text-sm font-semibold">${escapeHtml(c.name)}</span>
                 <span class="text-xs text-gray-500" dir="ltr">${escapeHtml(c.phone)}</span>
             </div>
