@@ -129,6 +129,37 @@ function escapeHtml(text) {
 function lockScroll() { scrollLockCount++; document.body.style.overflow = 'hidden'; }
 function unlockScroll() { scrollLockCount = Math.max(0, scrollLockCount - 1); if (scrollLockCount === 0) { document.body.style.overflow = ''; } }
 
+// === فلتر الكلمات المسيئة (شامل) ===
+const badWords = [
+  "ahole", "anus", "ash0le", "ash0les", "asholes", "asshole", "assholes", "assholz", "asswipe", "azzhole",
+  "bastard", "bastards", "bitch", "bitches", "biatch", "blowjob", "blow job", "butthole", "buttwipe",
+  "c0ck", "c0cks", "c0k", "cawk", "clit", "clitoris", "cock", "cocks", "cocksucker", "cocksuckers", "cum", "cunt", "cunts",
+  "dick", "dickhead", "dildo", "dildos", "dyke", "fag", "faggot", "faggots", "fags", "fuck", "fucker", "fuckers", "fucking", "fucks", "fuk", "fukker",
+  "handjob", "jackoff", "jerkoff", "jizz", "knob", "kunt", "masochist", "masterbate", "masterbates", "masturbate",
+  "motherfucker", "motherfuckers", "nigger", "nigga", "niggas", "niggaz", "orgasm", "paki", "pecker", "penis", "piss", "pissed", "prick",
+  "pussy", "rectum", "retard", "retarded", "shit", "shits", "shitty", "slut", "sluts", "sonofabitch", "tit", "tits", "titties",
+  "turd", "vagina", "vulva", "whore", "whores", "wank", "wanker", "a55", "a_s_s", "ar5e", "arrse", "assfucker", "assfukka", "b00bs", "b1tch", "b17ch", "bi+ch", "b!tch", "c0cksucker",
+  "cl1t", "cnut", "cockmuncher", "cocksuka", "d1ck", "f4nny", "fcuk", "fecker", "fook", "fooker", "f_u_c_k", "fux0r",
+  "m0f0", "m0fo", "m45terbate", "ma5terbate", "n1gga", "n1gger", "phuck", "phuk", "s_h_i_t", "sh1t", "shi+", "t1tties",
+  "tw4t", "v1gra", "w00se", "5h1t", "5hit",
+  "احا", "احه", "اير", "لعين", "واطي", "عاهر", "عاهره", "قحبه", "قحبة", "كحبه", "شرموط", "شرموطه", "شرموطة",
+  "عرص", "خول", "متناك", "متناكة", "منيوك", "منيوكة", "زب", "زبي", "زبه", "كس", "كسي", "كسمك", "كسختك", "كس امك", "كس اختك",
+  "طيز", "طيزي", "طيزك", "نيك", "انيك", "انيكك", "هنيكك", "نياكه", "نياكة", "يلعن", "يلعنك", "يلعن ابو", "يلعن ام",
+  "ابن المتناكة", "ابن الشرموطة", "ابن القحبة", "ابن الوسخة", "ابن الكلب", "يا خول", "يا عرص", "يا شرموطة",
+  "وسخ", "وسخة", "قذر", "قذرة", "حيوان", "كلب", "كلبة", "حمار", "حمارة", "خنيث", "مخنث", "لوطي", "لواط", "ديوث",
+  "زق", "خرا", "خراء", "خره", "خرى", "تفو", "سافل", "ساقطة", "عبيط", "اهبل", "غبي", "نذل", "حقير", "خسيس",
+  "ممحون", "ممحونة", "لبوه", "لبوة", "قواد", "قوادة", "فاجر", "فاسق", "زنا", "زناه", "اغتصاب", "احتلام",
+  "فشخ", "فشخة", "جلخ", "جلق", "بعبص", "بعص", "لحس", "مص", "تمص", "بظر", "بزاز", "ثدي", "حلمه", "قضيب",
+  "سكسي", "سيكس", "سكس", "اباحي", "اباحية"
+];
+
+// دالة سريعة وآمنة للتحقق من وجود كلمات ممنوعة
+function containsBadWords(text) {
+    if (!text) return false;
+    const lowerText = text.toLowerCase();
+    return badWords.some(word => lowerText.includes(word.toLowerCase()));
+}
+
 const localFallbackTips = [
     "احرص على شرب 8 أكواب من الماء يومياً للحفاظ على ترطيب الجسم ووظائف الكلى.",
     "تجنب شرب الشاي أو القهوة بعد الوجبات مباشرة لمنع تقليل امتصاص الحديد من الطعام.",
@@ -3783,15 +3814,17 @@ window.openAskDoctor = (docName) => {
             </div>
             <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
                 <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-question-circle text-sky-600"></i> اطرح سؤالاً جديداً</h4>
-                <form onsubmit="submitQuestion(event)" class="flex flex-col gap-3">
-                    <input type="text" id="qaName" class="ctrl-input text-sm" placeholder="الاسم (اختياري - يمكن كتابة مجهول)" required>
-                    <select id="qaCategory" class="ctrl-input text-sm">
-                        <option>طب عام / باطنة</option><option>أطفال</option><option>نسائية وتوليد</option>
-                        <option>جلدية</option><option>عظمية</option><option>أسنان</option><option>أخرى</option>
-                    </select>
-                    <textarea id="qaText" class="ctrl-input text-sm" rows="3" placeholder="اكتب تفاصيل السؤال والأعراض بوضوح..." required></textarea>
-                    <button type="submit" class="py-3 rounded-xl text-white font-bold text-sm" style="background: #0EA5E9">نشر السؤال</button>
-                </form>
+              <form onsubmit="submitQuestion(event)" class="flex flex-col gap-3">
+    <input type="text" id="website_url" name="website_url" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;" tabindex="-1" autocomplete="off">
+    
+    <input type="text" id="qaName" class="ctrl-input text-sm" placeholder="الاسم (اختياري - يمكن كتابة مجهول)" required>
+    <select id="qaCategory" class="ctrl-input text-sm">
+        <option>طب عام / باطنة</option><option>أطفال</option><option>نسائية وتوليد</option>
+        <option>جلدية</option><option>عظمية</option><option>أسنان</option><option>أخرى</option>
+    </select>
+    <textarea id="qaText" class="ctrl-input text-sm" rows="3" placeholder="اكتب تفاصيل السؤال والأعراض بوضوح..." required></textarea>
+    <button type="submit" class="py-3 rounded-xl text-white font-bold text-sm" style="background: #0EA5E9">نشر السؤال</button>
+</form>
             </div>
             <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
                 <h4 class="font-bold mb-4 text-sm">الأسئلة والإجابات</h4>
@@ -3801,7 +3834,8 @@ window.openAskDoctor = (docName) => {
             </div>
         </div>
     `, '#0EA5E9');
-    fetchQuestions();
+        fetchQuestions();
+    window.askDoctorOpenTime = Date.now(); 
 }
 async function fetchQuestions() {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -3862,25 +3896,50 @@ function renderQAList() {
 window.submitQuestion = async (e) => {
     e.preventDefault();
     const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true; submitBtn.innerText = 'جاري النشر...';
     
+    // 1. مصيدة البوتات (Honeypot): إذا تم ملء الحقل المخفي، فهو بوت
+    const honeypotField = document.getElementById('website_url');
+    if (honeypotField && honeypotField.value !== '') {
+        showToast('تم رفض النشر.', 'error');
+        return; // أوقف العملية بصمت
+    }
+
+    // 2. مصيدة الوقت (Time Trap): إذا أرسل السؤال في أقل من 3 ثوانٍ، فهو بوت
+    if (window.askDoctorOpenTime && (Date.now() - window.askDoctorOpenTime < 3000)) {
+        showToast('جاري المعالجة، يرجى الانتظار قليلاً قبل الإرسال.', 'error');
+        return;
+    }
+
     const name = document.getElementById('qaName').value.trim() || 'مجهول';
     const category = document.getElementById('qaCategory').value;
     const text = document.getElementById('qaText').value.trim();
+    
     if (!text) return;
+
+    // 3. فلتر الكلمات الممنوعة
+    if (containsBadWords(text) || containsBadWords(name)) {
+        showToast('تم رفض السؤال لاحتوائه على كلمات غير لائقة أو إعلانية.', 'error');
+        return; // إيقاف الإرسال
+    }
+
+    submitBtn.disabled = true; 
+    submitBtn.innerText = 'جاري النشر...';
+    
     try {
-    const { error } = await supabase.from('medical_questions').insert([{ name, category, text, status: 'open', answers: [] }]);
-    if (error) throw error;
+        const { error } = await supabase.from('medical_questions').insert([{ name, category, text, status: 'open', answers: [] }]);
+        if (error) throw error;
         
         // === إشعار للجميع بوجود سؤال طبي جديد ===
-      await sendPushNotification(null, "سؤال طبي جديد ❓", `تم طرح سؤال جديد: ${text.substring(0, 40)}...`, 'all');
+        await sendPushNotification(null, "سؤال طبي جديد ❓", `تم طرح سؤال جديد: ${text.substring(0, 40)}...`, 'all');
+        
         showToast('تم نشر سؤالك بنجاح!', 'success');     
         e.target.reset();
         fetchQuestions();
     } catch (err) { 
-        showToast('حدث خطأ أثناء النشر: ', 'error' + err.message); 
+        showToast('حدث خطأ أثناء النشر: ' + err.message, 'error'); 
     } finally {
-        submitBtn.disabled = false; submitBtn.innerText = 'نشر السؤال';
+        submitBtn.disabled = false; 
+        submitBtn.innerText = 'نشر السؤال';
     }
 }
 window.submitAnswer = async (qId) => {
