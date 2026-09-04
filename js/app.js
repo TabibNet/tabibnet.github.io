@@ -2477,6 +2477,8 @@ window.renderAdminDashboard = async () => {
         <h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-satellite-dish text-indigo-600"></i> نشاط رادار الرحيبة الصحي</h4>
         <div style="height: 300px;"><canvas id="radarChart"></canvas></div>
     </div>`;
+    
+    const { data: topArticles } = await supabase.from('medical_articles').select('title, views').order('views', { ascending: false }).limit(5);
     const radarAdminHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-satellite-dish text-indigo-600"></i> إدارة رادار الرحيبة الصحي</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="bg-gray-50 p-3 rounded-xl"><span class="text-xs text-gray-500 block mb-1">الفصل الافتراضي للزوار:</span><select id="adminRadarSeason" onchange="setRadarDefaultSeason()" class="ctrl-input text-sm"><option value="summer">☀️ صيف</option><option value="winter">❄️ شتاء</option></select></div><div class="bg-gray-50 p-3 rounded-xl flex flex-col justify-center"><span class="text-xs text-gray-500 block mb-1">تصفير العدادات الأسبوعي:</span><button onclick="resetRadarVotes()" class="bg-red-500 text-white py-2 rounded-lg text-sm font-bold hover:bg-red-600 transition-all">تصفير العدادات</button></div></div></div>`;
     const homeAdsHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-photo-video text-purple-600"></i> إعلانات الصفحة الرئيسية (صور/فيديو)</h4><form onsubmit="saveHomeAd(event)" class="grid grid-cols-1 gap-3 mb-4"><select id="adType" class="ctrl-input text-sm"><option value="image">صورة (رابط مباشر ينتهي بـ .jpg أو .png)</option><option value="video">فيديو (رابط مباشر ينتهي بـ .mp4 فقط)</option></select><input type="text" id="adContent" class="ctrl-input text-sm" placeholder="الصق الرابط هنا..." required><input type="text" id="adLink" class="ctrl-input text-sm" placeholder="رابط التحويل عند الضغط (اختياري للصور)"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="adActiveCheck" class="w-5 h-5 accent-purple-600" checked> تفعيل وعرض الإعلان فوراً</label><button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #8B5CF6"><i class="fas fa-plus ml-1"></i> إضافة إعلان</button></form><div id="adminHomeAdsList" class="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1"><p class="text-center text-gray-400 text-sm py-2">جاري تحميل الإعلانات...</p></div></div>`;
     const announcementsHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-bullhorn text-blue-600"></i> إدارة الشريط الإعلاني العلوي</h4><form onsubmit="saveAnnouncement(event)" class="grid grid-cols-1 gap-3 mb-4"><textarea id="annText" class="ctrl-input text-sm" rows="2" placeholder="نص الإعلان (مثال: افتتاحية قسم الطوارئ الجديد...)" required></textarea><input type="text" id="annLink" class="ctrl-input text-sm" placeholder="رابط التفاصيل (اتركه فارغاً لإخفاء الزر تماماً)"><input type="text" id="annLinkText" class="ctrl-input text-sm" placeholder="نص الزر (اختياري - افتراضي: اضغط هنا)"><button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #2563EB"><i class="fas fa-paper-plane ml-1"></i> نشر الإعلان</button></form><div id="adminAnnouncementList" class="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1"><p class="text-center text-gray-400 text-sm py-2">جاري تحميل الإعلانات...</p></div></div>`;
@@ -2588,16 +2590,70 @@ window.renderAdminDashboard = async () => {
 
         // 3. رسم أكثر المقالات قراءةً
         const ctxArt = document.getElementById('articlesChart');
-        if (ctxArt && adminArticlesCache.length > 0) {
-            const topArticles = [...adminArticlesCache].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
-            new Chart(ctxArt, {
-                type: 'bar',
-                data: {
-                    labels: topArticles.map(a => a.title.length > 15 ? a.title.substring(0, 15)+'...' : a.title),
-                    datasets: [{ label: 'عدد المشاهدات', data: topArticles.map(a => a.views || 0), backgroundColor: '#2563EB', borderRadius: 8 }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } } }
-            });
+        if (ctxArt) {
+            if (topArticles && topArticles.length > 0) {
+                // أخذ أول 3 كلمات من العنوان لجعل الرسم البياني أنيقاً وغير مزدحم
+                const labels = topArticles.map(a => {
+                    const words = a.title.split(' ').slice(0, 3).join(' ');
+                    return words + (a.title.split(' ').length > 3 ? '...' : '');
+                });
+                const data = topArticles.map(a => a.views || 0);
+
+                new Chart(ctxArt, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'عدد المشاهدات',
+                            data: data,
+                            // ألوان متدرجة من الأقوى للأضعف
+                            backgroundColor: [
+                                'rgba(14, 124, 95, 0.9)',  // زمردي (الأكثر قراءة)
+                                'rgba(196, 150, 44, 0.9)',  // ذهبي
+                                'rgba(37, 99, 235, 0.9)',   // أزرق
+                                'rgba(147, 51, 234, 0.9)',  // بنفسجي
+                                'rgba(220, 38, 38, 0.9)'    // أحمر (الأقل قراءة)
+                            ],
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barThickness: 24, // عرض الأعمدة
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // لجعله أفقياً
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                // إظهار العنوان كاملاً عند تمرير الماوس
+                                backgroundColor: 'rgba(7, 61, 46, 0.95)',
+                                titleFont: { family: 'Noto Kufi Arabic', size: 14 },
+                                bodyFont: { family: 'IBM Plex Sans Arabic', size: 12 },
+                                padding: 12,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    title: (context) => topArticles[context[0].dataIndex].title,
+                                    label: (context) => `قراءة: ${context.raw} مرة`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0,0,0,0.05)' }, 
+                                ticks: { font: { family: 'IBM Plex Sans Arabic' }, color: '#7A8B7A', stepSize: 1 } 
+                            },
+                            y: { 
+                                grid: { display: false }, 
+                                ticks: { font: { family: 'Noto Kufi Arabic', weight: 'bold' }, color: '#1B2A1B' } 
+                            }
+                        }
+                    }
+                });
+            } else {
+                ctxArt.parentElement.innerHTML = '<p style="text-align:center; color:var(--muted); padding: 50px 0; font-size: 0.875rem;">لا توجد مقالات منشورة بعد.</p>';
+            }
         }
 
         // 4. رسم توزيع المستلزمات الطبية
