@@ -647,7 +647,7 @@ window.handleSearch = (value) => {
         showToast('لا توجد نتائج مطابقة لبحثك. جرب كلمة أخرى أو عرض كل المدن');
     }
 }
-// === نظام البحث الذكي (Autocomplete) ===
+// === نظام البحث الذكي  ===
 let searchDebounceTimer;
 let searchDropdown = null;
 
@@ -655,12 +655,16 @@ function initSmartSearch() {
     const searchInput = document.getElementById('heroSearch');
     if (!searchInput) return;
 
+    // إجبار الحاوية الأب على السماح بظهور العناصر خارجها
+    const parent = searchInput.parentElement;
+    parent.style.position = 'relative';
+    parent.style.overflow = 'visible';
+
     // إنشاء حاوية القائمة المنسدلة ديناميكياً
     searchDropdown = document.createElement('div');
     searchDropdown.id = 'smartSearchDropdown';
-    searchDropdown.className = 'absolute z-50 w-full mt-2 bg-white rounded-xl shadow-2xl border overflow-hidden hidden';
-    searchInput.parentElement.style.position = 'relative'; 
-    searchInput.parentElement.appendChild(searchDropdown);
+    searchDropdown.classList.add('hidden'); // مخفية افتراضياً
+    parent.appendChild(searchDropdown);
 
     // مستمع الكتابة (Debounce)
     searchInput.addEventListener('input', (e) => {
@@ -679,22 +683,20 @@ function handleSmartSearch(value) {
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => {
         const q = value.toLowerCase().trim();
-        // إذا كان النص أقل من حرفين، نخفي القائمة
         if (q.length < 2) { 
             if(searchDropdown) searchDropdown.classList.add('hidden'); 
             return; 
         }
 
-        // البحث في البيانات المحملة مسبقاً
         const matches = allData.filter(item => {
             return (item.name?.toLowerCase().includes(q) ||
                     item.specialty?.toLowerCase().includes(q) ||
                     item.address?.toLowerCase().includes(q) ||
                     item.type?.toLowerCase().includes(q));
-        }).slice(0, 6); // عرض أقصى 6 نتائج
+        }).slice(0, 6);
 
         renderSearchDropdown(matches);
-    }, 300); // تأخير 300 مللي ثانية
+    }, 300);
 }
 
 function renderSearchDropdown(matches) {
@@ -717,15 +719,15 @@ function renderSearchDropdown(matches) {
     searchDropdown.innerHTML = matches.map(item => {
         const t = typeMap[item.type] || typeMap.doctor;
         return `
-            <div onclick="selectSearchResult('${escapeHtml(item.id)}')" class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors">
+            <div onclick="selectSearchResult('${escapeHtml(item.id)}')" class="smart-result-item flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors">
                 <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: ${t.color}15; color: ${t.color};">
                     <i class="fas ${t.icon}"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <div class="font-bold text-sm text-gray-800 truncate">${escapeHtml(item.name)}</div>
-                    <div class="text-xs text-gray-500 truncate">${escapeHtml(item.specialty || item.address || t.label)}</div>
+                    <div class="font-bold text-sm truncate" style="color: var(--fg);">${escapeHtml(item.name)}</div>
+                    <div class="text-xs truncate" style="color: var(--muted);">${escapeHtml(item.specialty || item.address || t.label)}</div>
                 </div>
-                <i class="fas fa-arrow-left text-gray-300 text-xs"></i>
+                <i class="fas fa-arrow-left text-xs" style="color: var(--muted);"></i>
             </div>
         `;
     }).join('');
@@ -737,8 +739,9 @@ window.selectSearchResult = (id) => {
     if(searchDropdown) searchDropdown.classList.add('hidden');
     const searchInput = document.getElementById('heroSearch');
     if(searchInput) searchInput.value = '';
-    openModal(id); // فتح نافذة التفاصيل فوراً
+    openModal(id);
 };
+
 window.openCitySelector = () => {
     const overlay = document.getElementById('citySelectorOverlay');
     const listContainer = document.getElementById('cityListContainer');
