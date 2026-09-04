@@ -1518,19 +1518,27 @@ window.acceptBooking = async (bookingId) => {
     const timeInput = document.getElementById(`time_${bookingId}`); const time = timeInput.value.trim(); 
     if (!time) { showToast('أدخل وقت الموعد'); return; } 
     const booking = bookings.find(b => b.id === bookingId); if (!booking) return; 
+    
     try { 
-        const currentChat = booking.chat || []; 
-        currentChat.push({ sender: 'doctor', text: `تم تثبيت موعدك اليوم الساعة ${time}. نرحب بك في العيادة.`, timestamp: new Date().toISOString() }); 
-        await supabase.from('bookings').update({ status: 'accepted', time: time, chat: currentChat }).eq('id', bookingId); 
+    
+        const { error: updateError } = await supabase.from('bookings').update({ status: 'accepted', time: time }).eq('id', bookingId); 
+        if (updateError) throw updateError;
+        await supabase.rpc('append_chat_message', {
+            p_booking_id: bookingId,
+            p_sender: 'doctor',
+            p_text: `تم تثبيت موعدك اليوم الساعة ${time}. نرحب بك في العيادة.`
+        });
         
-        // === إشعار للمريض بقبول موعده (باستخدام معرف هاتفه) ===
+        // 3. إشعار للمريض بقبول موعده
         if (booking.patient_push_id) {
             sendPushNotification(null, "تم تأكيد موعدك ✅", `تم تأكيد موعدك مع ${booking.itemname} الساعة ${time}`, 'player', booking.patient_push_id);
         }
 
         showToast('تم قبول الموعد', 'success'); 
-    } catch (e) { showToast('حدث خطأ', 'error'); } 
-}
+    } catch (e) { 
+        showToast('حدث خطأ', 'error'); 
+    } 
+};
 window.updateBookingStatus = async (bookingId, newStatus) => { 
     try { 
     
@@ -4371,12 +4379,10 @@ window.openMedicalBlog = () => {
                     <input type="text" id="blogSearchInput" class="ctrl-input pr-10 w-full" placeholder="ابحث في المقالات..." oninput="searchArticles()">
                     <i class="fas fa-search absolute top-1/2 -translate-y-1/2 left-4 text-gray-400"></i>
                 </div>
-            </div>
+                </div>
             <div class="text-xs text-gray-500 mt-2">
                 التصنيف الحالي: <span id="currentBlogCategoryText" class="font-bold text-blue-600">كل التصنيفات</span>
             </div>
-            </div>
-
             <div id="blogArticlesList" class="flex flex-col gap-4">
                 <p class="text-center py-10 text-gray-400 text-sm">جاري تحميل المقالات...</p>
             </div>
