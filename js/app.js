@@ -949,13 +949,35 @@ window.toggleFooterBox = (contentId, iconId) => {
 }
 
 window.handleContactSubmit = (e) => { 
-    e.preventDefault(); const phoneInput = document.getElementById('contactPhone'); const phone = phoneInput.value.trim(); 
-    if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('رقم هاتف غير صحيح'); return; } phoneInput.classList.remove('input-invalid'); 
-    const name = document.getElementById('contactName').value; const type = document.getElementById('contactType').value; const message = document.getElementById('contactMessage').value; 
-    const text = `*رسالة جديدة من منصة LomedX الطبية*%0A*الاسم:* ${name}%0A*الهاتف:* ${phone}%0A*النوع:* ${type}%0A*الرسالة:* ${message}`; 
+    e.preventDefault(); 
+    const phoneInput = document.getElementById('contactPhone'); 
+    const phone = phoneInput.value.trim(); 
+    
+    if (!/^09\d{8}$/.test(phone)) { 
+        phoneInput.classList.add('input-invalid'); 
+        showToast('رقم الهاتف غير صحيح', 'error'); 
+        return; 
+    } 
+       // فلتر الكلمات المسيئة في نموذج التواصل
+    if (containsBadWords(name) || containsBadWords(message)) {
+        showToast('تم رفض الرسالة لاحتوائها على كلمات غير لائقة.', 'error');
+        return;
+    }
+    phoneInput.classList.remove('input-invalid'); 
+    
+    const name = document.getElementById('contactName').value; 
+    const type = document.getElementById('contactType').value; 
+    const message = document.getElementById('contactMessage').value; 
+    
+    // تم إصلاح المشكلة هنا: استخدام \n للنزول لسطر جديد بدلاً من %0A
+    const text = `*رسالة جديدة من منصة LomedX الطبية*\n*الاسم:* ${name}\n*الهاتف:* ${phone}\n*النوع:* ${type}\n*الرسالة:* ${message}`; 
+    
     const adminWhatsAppNumber = "963980390813";
     const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(text)}`;
-window.open(whatsappUrl, '_blank'); showToast('جاري تحويلك إلى واتساب لإرسال الرسالة...'); e.target.reset(); 
+    
+    window.open(whatsappUrl, '_blank'); 
+    showToast('جاري تحويلك إلى واتساب لإرسال الرسالة...', 'success'); 
+    e.target.reset(); 
 }
 
 window.addEventListener('scroll', () => { document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 80); document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 500); });
@@ -1789,6 +1811,12 @@ window.submitMedicineDonation = async (e) => {
             showToast('رقم هاتف غير صحيح', 'error'); 
             return; 
         }
+                // فلتر الكلمات المسيئة في تبرع الأجهزة
+        if (containsBadWords(name) || containsBadWords(medName) || containsBadWords(notes)) {
+            phoneInput.classList.remove('input-invalid');
+            showToast('تم رفض الإعلان لاحتوائه على كلمات غير لائقة.', 'error');
+            return;
+        }
         phoneInput.classList.remove('input-invalid');
         const { error } = await supabase.from('medicine_donations').insert([{ 
             donor_name: name, 
@@ -1898,7 +1926,12 @@ window.submitBloodRequest = async (e) => {
     const phone = phoneInput.value.trim();
     const notes = document.getElementById('bloodNotes').value.trim();
 
-    if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('رقم هاتف غير صحيح'); submitBtn.disabled = false; submitBtn.innerText = 'نشر الاستغاثة'; return; }
+    if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('رقم هاتف غير صحيح'); submitBtn.disabled = false; submitBtn.innerText = 'نشر الاستغاثة'; return; }    // فلتر الكلمات المسيئة في بنك الدم
+    if (containsBadWords(name) || containsBadWords(notes)) {
+        showToast('تم رفض الاستغاثة لاحتوائها على كلمات غير لائقة.', 'error');
+        submitBtn.disabled = false; submitBtn.innerText = 'نشر الاستغاثة';
+        return;
+    }
     phoneInput.classList.remove('input-invalid');
     try {
         await supabase.from('blood_requests').insert([{ patient_name: name, blood_type: bloodType, hospital: hospital, phone: phone, notes: notes, status: 'active' }]);
@@ -2004,7 +2037,14 @@ window.submitMedicineRequest = async (e) => {
     const file = fileInput.files[0]; 
     
     if (!medList) { showToast('الرجاء كتابة الأدوية المطلوبة'); return; }
-    if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('الرجاء إدخال رقم هاتف صحيح'); return; } 
+    if (!/^09\d{8}$/.test(phone)) { phoneInput.classList.add('input-invalid'); showToast('الرجاء إدخال رقم هاتف صحيح'); return; }     // فلتر الكلمات المسيئة في طلبات الأدوية
+    if (containsBadWords(medList) || containsBadWords(name)) {
+        showToast('تم رفض الطلب لاحتوائه على كلمات غير لائقة أو إعلانية.', 'error');
+        phoneInput.classList.remove('input-invalid');
+        submitBtn.disabled = false; 
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال للصيدليات';
+        return;
+    }
     phoneInput.classList.remove('input-invalid'); 
     
     const submitBtn = document.getElementById('medSubmitBtn'); 
