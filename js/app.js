@@ -1010,7 +1010,7 @@ window.closeCtrlPanel = (event) => {
     if (unsubscribeMedRequests) { supabase.removeChannel(unsubscribeMedRequests); unsubscribeMedRequests = null; } 
     if (unsubscribeMedRequestsInterval) { clearInterval(unsubscribeMedRequestsInterval); unsubscribeMedRequestsInterval = null; } 
     if (unsubscribeDocBookings) { supabase.removeChannel(unsubscribeDocBookings); unsubscribeDocBookings = null; }
-    if (activeFollowupUnsub) { clearInterval(activeFollowupUnsub); activeFollowupUnsub = null; } 
+    if (activeFollowupUnsub) { supabase.removeChannel(activeFollowupUnsub); activeFollowupUnsub = null; } 
     currentFollowupBookingId = null;
 }
 
@@ -1096,21 +1096,26 @@ window.openBookingFollowup = (bookingId) => {
     currentFollowupBookingId = bookingId;
     openCtrlPanel('متابعة الحجز والدردشة', `<div id="followupContent" class="flex flex-col gap-4"><p class="text-center py-8 text-gray-400">جاري تحميل بيانات الحجز...</p></div>`, '#0E7C5F');
     
-    if (activeFollowupUnsub) clearInterval(activeFollowupUnsub);
+    // إيقاف أي اشتراك سابق
+    if (activeFollowupUnsub) { supabase.removeChannel(activeFollowupUnsub); activeFollowupUnsub = null; }
+    
+    // جلب البيانات لأول مرة
     fetchFollowupChat(bookingId);
-    activeFollowupUnsub = setInterval(() => fetchFollowupChat(bookingId), 3000);
-}
-
-async function fetchFollowupChat(bookingId) {
-    const { data: docSnap, error } = await supabase.from('bookings').select('*').eq('id', bookingId).single();
-    if (error) { showToast("لم يتم العثور على الحجز."); closeCtrlPanel(); return; }
     
-    const index = bookings.findIndex(b => b.id === bookingId);
-    if (index !== -1) bookings[index] = docSnap;
-    else bookings.push(docSnap);
-    
-    renderFollowupChat(bookingId);
-}
+    // الاستماع للتحديثات اللحظية (Realtime)
+    activeFollowupUnsub = supabase
+      .channel(`booking_chat_${bookingId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bookings', filter: `id=eq.${bookingId}` }, payload => {
+          // عند وصول رسالة جديدة، نقوم بتحديث الواجهة فوراً
+          const updatedBooking = payload.new;
+          const index = bookings.findIndex(b => b.id === bookingId);
+          if (index !== -1) bookings[index] = updatedBooking;
+          else bookings.push(updatedBooking);
+          
+          renderFollowupChat(bookingId);
+      })
+      .subscribe();
+};
 
 window.renderFollowupChat = (bookingId) => {
     const booking = bookings.find(b => b.id === bookingId); 
@@ -1139,26 +1144,33 @@ window.renderFollowupChat = (bookingId) => {
 }
 
 window.sendChatMessage = async (bookingId) => {
-    const input = document.getElementById('chatInput'); const text = input.value.trim(); if (!text) return; input.value = '';
+    const input = document.getElementById('chatInput'); 
+    const text = input.value.trim(); 
+    if (!text) return; 
+    input.value = '';
+    
     const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
     try {
-        const { data: docSnap, error } = await supabase.from('bookings').select('chat').eq('id', bookingId).single();
-        if (error) return;
-        const currentChat = docSnap.chat || []; 
-        currentChat.push({ sender: 'patient', text: text, timestamp: new Date().toISOString() });
-        await supabase.from('bookings').update({ chat: currentChat }).eq('id', bookingId);
+        // استدعاء دالة SQL الآمنة لإضافة الرسالة
+        const { error } = await supabase.rpc('append_chat_message', {
+            p_booking_id: bookingId,
+            p_sender: 'patient',
+            p_text: text
+        });
+        
+        if (error) throw error;
         
         // === إشعار للطبيب بوجود رسالة جديدة ===
-        if (booking) {
-            const doctorData = allData.find(d => d.id === booking.itemid);
-            if (doctorData && doctorData.user_id) {
-                sendPushNotification(doctorData.user_id, "رسالة جديدة 💬", `لديك رسالة جديدة من المريض ${booking.name}`);
-            }
+        const doctorData = allData.find(d => d.id === booking.itemid);
+        if (doctorData && doctorData.user_id) {
+            sendPushNotification(doctorData.user_id, "رسالة جديدة 💬", `لديك رسالة جديدة من المريض ${booking.name}`);
         }
     } catch (err) {
+        showToast('خطأ في الإرسال', 'error');
     }   
-    
-}
+};
 
 window.openPharmacyLogin = async () => { 
     const { data: { session } } = await supabase.auth.getSession();
@@ -1536,18 +1548,32 @@ window.saveDoctorSettings = async (id) => {
     try { await supabase.from('listings').update({ workingdays: workingDays }).eq('id', id); showToast('تم الحفظ!', 'success'); localStorage.setItem('force_listings_update', 'true'); } catch (e) { showToast('خطأ', 'error'); } 
 }
 window.sendDocMessage = async (bookingId) => {
-    const input = document.getElementById(`docChat_${bookingId}`); const text = input.value.trim(); if (!text) return; input.value = '';
-    const booking = bookings.find(b => b.id === bookingId); const currentChat = booking.chat || []; 
-    currentChat.push({ sender: 'doctor', text: text, timestamp: new Date().toISOString() });
+    const input = document.getElementById(`docChat_${bookingId}`); 
+    const text = input.value.trim(); 
+    if (!text) return; 
+    input.value = '';
+    
+    const booking = bookings.find(b => b.id === bookingId); 
+    if (!booking) return;
+
     try { 
-        await supabase.from('bookings').update({ chat: currentChat }).eq('id', bookingId); 
+        // استدعاء دالة SQL الآمنة لإضافة الرسالة
+        const { error } = await supabase.rpc('append_chat_message', {
+            p_booking_id: bookingId,
+            p_sender: 'doctor',
+            p_text: text
+        });
+        
+        if (error) throw error;
         
         // === إشعار للمريض بوجود رد من الطبيب ===
         if (booking.patient_push_id) {
             sendPushNotification(null, "رد من الطبيب 💬", `لديك رسالة جديدة من ${booking.itemname}: ${text.substring(0, 30)}`, 'player', booking.patient_push_id);
         }
-    } catch (e) { showToast('خطأ في الإرسال', 'error'); }
-}
+    } catch (e) { 
+        showToast('خطأ في الإرسال', 'error'); 
+    }
+};
 
 window.openDoctorScanner = (docId) => {
     const docData = allData.find(d => d.id === docId) || {};
@@ -2120,9 +2146,15 @@ window.submitMedicineRequest = async (e) => {
 window.quickLookup = async () => {
     let val = document.getElementById('quickLookupInput').value.trim().toUpperCase().replace(/#/g, '').replace(/\s/g, '');
     if (!val) { showToast('الرجاء إدخال رقم الاستعلام'); return; }
+    
     if (val.startsWith('R-')) {
-        const { data, error } = await supabase.from('bookings').select('*').eq('ref', val);
-        if (data && data.length > 0) { openBookingFollowup(data[0].id); } else { showToast('لم يتم العثور على حجز'); }
+        // استخدام الدالة الآمنة RPC بدلاً من البحث المباشر
+        const { data, error } = await supabase.rpc('get_booking_by_ref', { p_ref: val });
+        if (data && data.length > 0) { 
+            openBookingFollowup(data[0].id); 
+        } else { 
+            showToast('لم يتم العثور على حجز'); 
+        }
     } else if (val.startsWith('MED-')) {
         const { data, error } = await supabase.from('medicine_requests').select('*').eq('med_ref', val);
         if (data && data.length > 0) {
@@ -2133,14 +2165,12 @@ window.quickLookup = async () => {
             else if (m.status === 'unavailable') { statusText = 'غير متوفر حالياً'; statusColor = '#6B7280'; statusIcon = 'fa-times-circle'; }
             else { statusText = 'تم إنهاء الطلب'; statusColor = '#6B7280'; statusIcon = 'fa-archive'; }
             
-            
             document.getElementById('modalContent').innerHTML = `<div class="p-6 text-center"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-pills ml-2" style="color: var(--gold)"></i> حالة طلب الدواء</h3><button onclick="closeModal()" class="text-2xl">&times;</button></div><div class="text-sm text-gray-500 mb-1">رقم الطلب</div><div class="text-xl font-black text-yellow-600 mb-6">#${escapeHtml(m.med_ref)}</div><div class="p-4 rounded-xl mb-4" style="background: ${statusColor}20; color: ${statusColor};"><i class="fas ${statusIcon} text-3xl mb-2"></i><div class="font-bold text-lg">${statusText}</div></div> ${m.notes ? `<div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 text-right" style="white-space: pre-line;"><b>ملاحظة الصيدلية:</b><br>${escapeHtml(m.notes)}</div>` : '<div class="text-xs text-gray-400">لا توجد ملاحظات.</div>'}</div>`;
             
             document.getElementById('modalOverlay').classList.add('active'); lockScroll();
         } else { showToast('لم يتم العثور على طلب دواء', 'error'); }
     } else { showToast('صيغة غير صحيحة. استخدم R-XXX أو MED-XXX'); }
-}
-
+};
 window.openAdminLogin = () => { 
     openCtrlPanel('لوحة الإدارة', `<div class="max-w-sm mx-auto py-8"><div class="text-center mb-6"><div class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-3" style="background: var(--accent-light)"><i class="fas fa-user-shield text-2xl" style="color: var(--accent)"></i></div><h3 class="font-bold text-lg">دخول الإدارة</h3></div><form onsubmit="handleAdminLogin(event)" class="flex flex-col gap-4"><input type="email" id="adminEmail" class="ctrl-input text-center" placeholder="البريد الإلكتروني" required><input type="password" id="adminPass" class="ctrl-input text-center" placeholder="كلمة المرور" required><button type="submit" class="w-full py-3 rounded-xl text-white font-bold text-sm" style="background: var(--accent)">دخول</button></form></div>`, '#073D2E'); 
 }
