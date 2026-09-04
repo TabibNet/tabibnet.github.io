@@ -156,8 +156,9 @@ const badWords = [
 // دالة سريعة وآمنة للتحقق من وجود كلمات ممنوعة
 function containsBadWords(text) {
     if (!text) return false;
-    const lowerText = text.toLowerCase();
-    return badWords.some(word => lowerText.includes(word.toLowerCase()));
+    // إزالة المسافات والرموز الخاصة لتضييق الخناق على من يحاول تجاوز الفلتر
+    const cleanedText = text.toLowerCase().replace(/[\s\.\-\_\ـ]/g, '');
+    return badWords.some(word => cleanedText.includes(word.toLowerCase().replace(/[\s\.\-\_\ـ]/g, '')));
 }
 
 const localFallbackTips = [
@@ -958,18 +959,19 @@ window.handleContactSubmit = (e) => {
         showToast('رقم الهاتف غير صحيح', 'error'); 
         return; 
     } 
-       // فلتر الكلمات المسيئة في نموذج التواصل
+    phoneInput.classList.remove('input-invalid'); 
+    
+    // 1. تعريف المتغيرات أولاً
+    const name = document.getElementById('contactName').value; 
+    const type = document.getElementById('contactType').value; 
+    const message = document.getElementById('contactMessage').value; 
+
+    // 2. ثم فحص الكلمات المسيئة
     if (containsBadWords(name) || containsBadWords(message)) {
         showToast('تم رفض الرسالة لاحتوائها على كلمات غير لائقة.', 'error');
         return;
     }
-    phoneInput.classList.remove('input-invalid'); 
     
-    const name = document.getElementById('contactName').value; 
-    const type = document.getElementById('contactType').value; 
-    const message = document.getElementById('contactMessage').value; 
-    
-    // تم إصلاح المشكلة هنا: استخدام \n للنزول لسطر جديد بدلاً من %0A
     const text = `*رسالة جديدة من منصة LomedX الطبية*\n*الاسم:* ${name}\n*الهاتف:* ${phone}\n*النوع:* ${type}\n*الرسالة:* ${message}`; 
     
     const adminWhatsAppNumber = "963980390813";
@@ -2668,7 +2670,7 @@ window.handleHealthRegister = async (e) => {
 
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) { 
-        showToast('حدث خطأ أثناء التسجيل: ' + err.message, 'error');
+        showToast('حدث خطأ أثناء التسجيل: ' + error.message, 'error');
         return; 
     }
     
