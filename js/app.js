@@ -2430,6 +2430,7 @@ window.renderAdminDashboard = async () => {
     }
 
     const { data: recentPatients } = await supabase.from('health_files').select('full_name, blood_type, created_at').order('created_at', { ascending: false }).limit(5);
+    const { count: totalHealthFilesCount } = await supabase.from('health_files').select('*', { count: 'exact', head: true });
     let patientsHtml = '';
     if (recentPatients && recentPatients.length > 0) {
         patientsHtml = recentPatients.map(p => `<div class="flex items-center justify-between p-2 rounded-lg border" style="border-color: var(--border)"><div class="flex items-center gap-2"><i class="fas fa-user-circle text-gray-400"></i><span class="text-sm font-semibold">${escapeHtml(p.full_name)}</span></div><span class="text-xs text-red-500 font-bold">${escapeHtml(p.blood_type || 'غير محدد')}</span></div>`).join('');
@@ -2437,7 +2438,45 @@ window.renderAdminDashboard = async () => {
         patientsHtml = '<p class="text-center text-gray-400 text-sm py-4">لا يوجد مرضى مسجلين بعد.</p>';
     }
     const patientsAdminHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-file-medical text-pink-600"></i> أحدث الملفات الصحية المسجلة</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${patientsHtml}</div></div>`;
-
+    const analyticsHtml = `
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+        <div class="bg-white p-5 rounded-xl border shadow-sm flex flex-col items-center justify-center" style="border-color: var(--border)">
+            <div class="text-4xl font-black text-pink-600 mb-1">${totalHealthFilesCount || 0}</div>
+            <div class="text-xs text-gray-500 text-center">ملف صحي مسجل</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border shadow-sm flex flex-col items-center justify-center" style="border-color: var(--border)">
+            <div class="text-4xl font-black text-indigo-600 mb-1">${allData.length}</div>
+            <div class="text-xs text-gray-500 text-center">منشأة طبية</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border shadow-sm flex flex-col items-center justify-center col-span-2 sm:col-span-1" style="border-color: var(--border)">
+            <div class="text-4xl font-black text-red-600 mb-1">${bloodRequests.length}</div>
+            <div class="text-xs text-gray-500 text-center">استغاثة دم نشطة</div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="bg-white p-5 rounded-xl border shadow-sm" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-chart-pie text-teal-600"></i> توزيع المنشآت الطبية</h4>
+            <div style="height: 250px;"><canvas id="facilitiesChart"></canvas></div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border shadow-sm" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-chart-bar text-red-600"></i> استغاثات الدم حسب الفصيلة</h4>
+            <div style="height: 250px;"><canvas id="bloodChart"></canvas></div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="bg-white p-5 rounded-xl border shadow-sm" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-newspaper text-blue-600"></i> أكثر 5 مقالات قراءةً</h4>
+            <div style="height: 250px;"><canvas id="articlesChart"></canvas></div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border shadow-sm" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-laptop-medical text-emerald-600"></i> توزيع المستلزمات والأجهزة</h4>
+            <div style="height: 250px;"><canvas id="medEquivChart"></canvas></div>
+        </div>
+    </div>
+    <div class="bg-white p-5 rounded-xl border shadow-sm mb-4" style="border-color: var(--border)">
+        <h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-satellite-dish text-indigo-600"></i> نشاط رادار الرحيبة الصحي</h4>
+        <div style="height: 300px;"><canvas id="radarChart"></canvas></div>
+    </div>`;
     const radarAdminHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-satellite-dish text-indigo-600"></i> إدارة رادار الرحيبة الصحي</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="bg-gray-50 p-3 rounded-xl"><span class="text-xs text-gray-500 block mb-1">الفصل الافتراضي للزوار:</span><select id="adminRadarSeason" onchange="setRadarDefaultSeason()" class="ctrl-input text-sm"><option value="summer">☀️ صيف</option><option value="winter">❄️ شتاء</option></select></div><div class="bg-gray-50 p-3 rounded-xl flex flex-col justify-center"><span class="text-xs text-gray-500 block mb-1">تصفير العدادات الأسبوعي:</span><button onclick="resetRadarVotes()" class="bg-red-500 text-white py-2 rounded-lg text-sm font-bold hover:bg-red-600 transition-all">تصفير العدادات</button></div></div></div>`;
     const homeAdsHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-photo-video text-purple-600"></i> إعلانات الصفحة الرئيسية (صور/فيديو)</h4><form onsubmit="saveHomeAd(event)" class="grid grid-cols-1 gap-3 mb-4"><select id="adType" class="ctrl-input text-sm"><option value="image">صورة (رابط مباشر ينتهي بـ .jpg أو .png)</option><option value="video">فيديو (رابط مباشر ينتهي بـ .mp4 فقط)</option></select><input type="text" id="adContent" class="ctrl-input text-sm" placeholder="الصق الرابط هنا..." required><input type="text" id="adLink" class="ctrl-input text-sm" placeholder="رابط التحويل عند الضغط (اختياري للصور)"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="adActiveCheck" class="w-5 h-5 accent-purple-600" checked> تفعيل وعرض الإعلان فوراً</label><button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #8B5CF6"><i class="fas fa-plus ml-1"></i> إضافة إعلان</button></form><div id="adminHomeAdsList" class="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1"><p class="text-center text-gray-400 text-sm py-2">جاري تحميل الإعلانات...</p></div></div>`;
     const announcementsHtml = `<div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-bullhorn text-blue-600"></i> إدارة الشريط الإعلاني العلوي</h4><form onsubmit="saveAnnouncement(event)" class="grid grid-cols-1 gap-3 mb-4"><textarea id="annText" class="ctrl-input text-sm" rows="2" placeholder="نص الإعلان (مثال: افتتاحية قسم الطوارئ الجديد...)" required></textarea><input type="text" id="annLink" class="ctrl-input text-sm" placeholder="رابط التفاصيل (اتركه فارغاً لإخفاء الزر تماماً)"><input type="text" id="annLinkText" class="ctrl-input text-sm" placeholder="نص الزر (اختياري - افتراضي: اضغط هنا)"><button type="submit" class="py-2.5 rounded-xl text-white font-semibold text-sm" style="background: #2563EB"><i class="fas fa-paper-plane ml-1"></i> نشر الإعلان</button></form><div id="adminAnnouncementList" class="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1"><p class="text-center text-gray-400 text-sm py-2">جاري تحميل الإعلانات...</p></div></div>`;
@@ -2505,12 +2544,104 @@ window.renderAdminDashboard = async () => {
         <p class="text-center text-gray-400 text-sm py-2">جاري تحميل المقالات...</p>
     </div>
 </div>`;
-    openCtrlPanel('لوحة الإدارة', `<div class="flex flex-col gap-6"> ${announcementsHtml} ${homeAdsHtml} ${radarAdminHtml} ${blogAdminHtml} ${patientsAdminHtml} ${emergencyAdminHtml} <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-tint text-red-600"></i> إدارة استغاثات الدم (${bloodRequests.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${bloodHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-hand-holding-medical text-green-600"></i>إدارة المستلزمات الطبية (${medicineDonations.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${medDonHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-plus-circle ml-2" style="color: var(--accent)"></i> <span id="formTitle">إضافة منشأة</span></h4><form onsubmit="saveFacility(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="hidden" id="edit_id"><select id="new_type" class="ctrl-input text-sm" required onchange="updateAdminFormFields(this.value)"><option value="hospital">مشفى</option><option value="center">مركز</option><option value="lab">مخبر</option><option value="doctor">طبيب</option><option value="pharmacy">صيدلية</option></select><input type="text" id="new_name" class="ctrl-input text-sm" placeholder="الاسم" required><input type="text" id="new_specialty" class="ctrl-input text-sm" placeholder="التخصص الأساسي" required><input type="text" id="new_address" class="ctrl-input text-sm" placeholder="العنوان / الموقع" required><input type="text" id="new_phone" class="ctrl-input text-sm" placeholder="رقم الهاتف (اختياري)"><input type="text" id="new_hours" class="ctrl-input text-sm" placeholder="أوقات العمل"><input type="text" id="new_image_url" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)"><input type="text" id="new_custom_password" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="كلمة مرور الطبيب/الصيدلية (6 أحرف فأكثر)"><textarea id="new_desc" class="ctrl-input text-sm col-span-2" placeholder="وصف عام (اختياري)" rows="2"></textarea><div id="adminExtraFields" class="contents"></div><button type="submit" class="col-span-1 sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--accent)"><i class="fas fa-save ml-1"></i> حفظ</button></form></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-list ml-2"></i> المنشآت (${allData.length})</h4><div class="flex flex-col gap-2 max-h-96 overflow-y-auto">${listHtml}</div></div> <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl border font-semibold text-sm mt-2" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button> </div>`, '#073D2E'); 
+        openCtrlPanel('لوحة الإدارة', `<div class="flex flex-col gap-6"> 
+        ${analyticsHtml} 
+        ${announcementsHtml} 
+        ${homeAdsHtml} 
+        ${announcementsHtml} ${homeAdsHtml} ${radarAdminHtml} ${blogAdminHtml} ${patientsAdminHtml} ${emergencyAdminHtml} <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-tint text-red-600"></i> إدارة استغاثات الدم (${bloodRequests.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${bloodHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm flex items-center gap-2" style="font-family: 'Noto Kufi Arabic'"><i class="fas fa-hand-holding-medical text-green-600"></i>إدارة المستلزمات الطبية (${medicineDonations.length})</h4><div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">${medDonHtml}</div></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-plus-circle ml-2" style="color: var(--accent)"></i> <span id="formTitle">إضافة منشأة</span></h4><form onsubmit="saveFacility(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="hidden" id="edit_id"><select id="new_type" class="ctrl-input text-sm" required onchange="updateAdminFormFields(this.value)"><option value="hospital">مشفى</option><option value="center">مركز</option><option value="lab">مخبر</option><option value="doctor">طبيب</option><option value="pharmacy">صيدلية</option></select><input type="text" id="new_name" class="ctrl-input text-sm" placeholder="الاسم" required><input type="text" id="new_specialty" class="ctrl-input text-sm" placeholder="التخصص الأساسي" required><input type="text" id="new_address" class="ctrl-input text-sm" placeholder="العنوان / الموقع" required><input type="text" id="new_phone" class="ctrl-input text-sm" placeholder="رقم الهاتف (اختياري)"><input type="text" id="new_hours" class="ctrl-input text-sm" placeholder="أوقات العمل"><input type="text" id="new_image_url" class="ctrl-input text-sm" placeholder="رابط الصورة (URL)"><input type="text" id="new_custom_password" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="كلمة مرور الطبيب/الصيدلية (6 أحرف فأكثر)"><textarea id="new_desc" class="ctrl-input text-sm col-span-2" placeholder="وصف عام (اختياري)" rows="2"></textarea><div id="adminExtraFields" class="contents"></div><button type="submit" class="col-span-1 sm:col-span-2 py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--accent)"><i class="fas fa-save ml-1"></i> حفظ</button></form></div> <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)"><h4 class="font-bold mb-4 text-sm"><i class="fas fa-list ml-2"></i> المنشآت (${allData.length})</h4><div class="flex flex-col gap-2 max-h-96 overflow-y-auto">${listHtml}</div></div> <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl border font-semibold text-sm mt-2" style="border-color: #EF4444; color: #EF4444;"><i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج</button> </div>`, '#073D2E'); 
     renderAdminEmergencyList();
     fetchAnnouncements();
     fetchHomeAdsForAdmin();
     updateAdminFormFields('doctor');
     fetchAdminArticles();
+        // === رسم الرسوم البيانية التحليلية ===
+    setTimeout(() => {
+        // 1. رسم توزيع المنشآت
+        const ctxFac = document.getElementById('facilitiesChart');
+        if (ctxFac) {
+            const counts = { hospital: 0, center: 0, lab: 0, doctor: 0, pharmacy: 0 };
+            allData.forEach(item => { if(counts[item.type] !== undefined) counts[item.type]++; });
+            new Chart(ctxFac, {
+                type: 'doughnut',
+                data: {
+                    labels: ['مشافي', 'مراكز', 'مخابر', 'أطباء', 'صيدليات'],
+                    datasets: [{ data: [counts.hospital, counts.center, counts.lab, counts.doctor, counts.pharmacy], backgroundColor: ['#0D9488', '#9333EA', '#DC2626', '#2563EB', '#C4962C'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'IBM Plex Sans Arabic' } } } } }
+            });
+        }
+
+        // 2. رسم استغاثات الدم
+        const ctxBlood = document.getElementById('bloodChart');
+        if (ctxBlood) {
+            const bloodCounts = { "A+":0, "B+":0, "O+":0, "AB+":0, "A-":0, "B-":0, "O-":0, "AB-":0 };
+            bloodRequests.forEach(req => { if(bloodCounts[req.blood_type] !== undefined) bloodCounts[req.blood_type]++; });
+            new Chart(ctxBlood, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(bloodCounts),
+                    datasets: [{ label: 'عدد الاستغاثات', data: Object.values(bloodCounts), backgroundColor: '#DC2626', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        // 3. رسم أكثر المقالات قراءةً
+        const ctxArt = document.getElementById('articlesChart');
+        if (ctxArt && adminArticlesCache.length > 0) {
+            const topArticles = [...adminArticlesCache].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
+            new Chart(ctxArt, {
+                type: 'bar',
+                data: {
+                    labels: topArticles.map(a => a.title.length > 15 ? a.title.substring(0, 15)+'...' : a.title),
+                    datasets: [{ label: 'عدد المشاهدات', data: topArticles.map(a => a.views || 0), backgroundColor: '#2563EB', borderRadius: 8 }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } } }
+            });
+        }
+
+        // 4. رسم توزيع المستلزمات الطبية
+        const ctxMedEq = document.getElementById('medEquivChart');
+        if (ctxMedEq) {
+            const typeCounts = { 'تبرع': 0, 'إعارة': 0, 'طلب': 0, 'مستلزمات': 0 };
+            medicineDonations.forEach(m => {
+                if (m.medicine_type.includes('تبرع')) typeCounts['تبرع']++;
+                else if (m.medicine_type.includes('إعارة')) typeCounts['إعارة']++;
+                else if (m.medicine_type.includes('طلب')) typeCounts['طلب']++;
+                else if (m.medicine_type.includes('مستلزمات')) typeCounts['مستلزمات']++;
+            });
+            new Chart(ctxMedEq, {
+                type: 'doughnut',
+                data: {
+                    labels: ['تبرع', 'إعارة', 'طلبات', 'مستلزمات للتبادل'],
+                    datasets: [{ data: [typeCounts['تبرع'], typeCounts['إعارة'], typeCounts['طلب'], typeCounts['مستلزمات']], backgroundColor: ['#10B981', '#F59E0B', '#3B82F6', '#9333EA'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'IBM Plex Sans Arabic' } } } } }
+            });
+        }
+
+        // 5. رسم نشاط رادار الرحيبة
+        const ctxRadar = document.getElementById('radarChart');
+        if (ctxRadar) {
+            supabase.from('disease_reports').select('disease_id, season').then(({ data: radarData }) => {
+                const counts = {};
+                const allDiseases = [...radarDiseasesData.summer, ...radarDiseasesData.winter];
+                allDiseases.forEach(d => counts[d.name] = 0);
+                radarData?.forEach(r => {
+                    const disease = allDiseases.find(d => d.id === r.disease_id);
+                    if (disease) counts[disease.name] = (counts[disease.name] || 0) + 1;
+                });
+                new Chart(ctxRadar, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(counts),
+                        datasets: [{ label: 'عدد الحالات المسجلة', data: Object.values(counts), backgroundColor: '#4F46E5', borderRadius: 8 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+                });
+            });
+        }
+    }, 500);
 }
 window.saveAnnouncement = async (e) => {
     e.preventDefault(); 
