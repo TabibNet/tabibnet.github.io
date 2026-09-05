@@ -3567,38 +3567,55 @@ async function fetchHomeAdsPublic() {
 }
 fetchHomeAdsPublic();
 fetchAnnouncements();
-                   //سسسسسسيرفر
+            // === نظام التحديث الذكي والأناق (بدون دوامة) ===
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('OneSignalSDKWorker.js').then(reg => {
-            // فحص التحديث كل ساعة
-            setInterval(() => {
-                reg.update();
-            }, 3600000); 
-            
-            reg.addEventListener('updatefound', () => {
-                const newWorker = reg.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { 
-                        newWorker.postMessage({ type: 'SKIP_WAITING' });
-                    }
-                });
-            });
-        }).catch(() => {});
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('OneSignalSDKWorker.js').then(reg => {
+      // فحص عند العودة للتبويب
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update();
+      });
+      
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          // إذا تم تثبيت نسخة جديدة، أظهر رسالة فقط ولا تقم بالتحديث الإجباري
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateToast();
+          }
+        });
+      });
     });
-    
-    // قفل أمان لمنع دوران التحديث (Infinite Refresh Loop)
-    let refreshing = sessionStorage.getItem('isReloading') === 'true';
-    navigator.serviceWorker.addEventListener('controllerchange', () => { 
-        if (refreshing) {
-            sessionStorage.removeItem('isReloading');
-            return; 
-        }
-        sessionStorage.setItem('isReloading', 'true');
-        window.location.reload(); 
-    });
+  });
+
+  // إعادة التحميل تحدث فقط إذا ضغط المستخدم على زر التحديث
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
 }
 
+// دالة إظهار رسالة التحديث الأنيقة
+function showUpdateToast() {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `
+    <div class="flex flex-col items-center gap-3 w-full">
+      <div class="text-sm font-bold text-blue-800">🎉 يتوفر إصدار جديد من المنصة بميزات أسرع.</div>
+      <button id="updateBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all">تحديث الآن</button>
+    </div>`;
+  toast.style.backgroundColor = '#EFF6FF';
+  toast.classList.add('show');
+
+  document.getElementById('updateBtn').onclick = () => {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg && reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  };
+}
 // === الأدوات الطبية والرادار واسأل طبيب ===
 window.openBurnCalculator = () => {
     burnState = { cause: null, degree: null, area: null };
@@ -5488,4 +5505,57 @@ window.checkOnlineStatus = () => {
   }
   return true;
 };
+// === نظام تثبيت التطبيق (PWA Install) ===
+let deferredPrompt = null;
+
+// 1. التقاط حدث التثبيت من المتصفح
+window.addEventListener('beforeinstallprompt', (e) => {
+    // منع المتصفح من إظهار النافذة الصغيرة الافتراضية فوراً
+    e.preventDefault();
+    // تخزين الحدث لنستخدمه لاحقاً عند ضغط المستخدم على الزر
+    deferredPrompt = e;
+    // console.log('حدث التثبيت جاهز');
+});
+
+// 2. دالة تثبيت التطبيق (ترتبط بزر قائمة الجوال)
+window.installPwaApp = async () => {
+    // إذا كان المتصفح يدعم التثبيت وحدث التثبيت جاهز
+    if (deferredPrompt) {
+        // إظهار نافذة التثبيت الرسمية للمتصفح
+        deferredPrompt.prompt();
+        
+        // انتظار رد المستخدم (هل ضغط تثبيت أم رفض؟)
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            showToast('تم تثبيت التطبيق بنجاح! تجده على شاشتك الرئيسية 🎉', 'success');
+        } else {
+            showToast('تم إلغاء التثبيت. يمكنك تثبيته في أي وقت لاحقاً.', 'info');
+        }
+        
+        // الحدث يُستخدم مرة واحدة فقط، لذا نفرغ المتغير
+        deferredPrompt = null;
+    } else {
+        // إذا كان المتصفح لا يدعم التثبيت التلقائي (مثل آيفون أو متصفح قديم)
+        showToast('لتثبيت التطبيق: اضغط على زر المشاركة (المربع بسهم لأعلى) في المتصفح، ثم اختر "إضافة إلى الشاشة الرئيسية".', 'info');
+    }
+};
+
+// 3. التحقق إذا كان التطبيق مثبتاً بالفعل (لإخفاء الزر إذا كان يعمل كتطبيق)
+window.addEventListener('appinstalled', () => {
+    // إخفاء زر التثبيت من قائمة الجوال بعد تثبيته
+    const installBtn = document.querySelector('[onclick="installPwaApp()"]');
+    if (installBtn) {
+        installBtn.classList.add('hidden');
+    }
+    deferredPrompt = null;
+});
+
+// فحص عند تحميل الصفحة: إذا كان الموقع مفتوحاً كتطبيق (standalone)، إخفاء الزر
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    window.addEventListener('DOMContentLoaded', () => {
+        const installBtn = document.querySelector('[onclick="installPwaApp()"]');
+        if (installBtn) installBtn.classList.add('hidden');
+    });
+}
 // نهاية ملف app.js
