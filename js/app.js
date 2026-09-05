@@ -2500,7 +2500,7 @@ window.updateAdminFormFields = (type) => {
                 </label>
             </div>
         </div>`;
-    }
+    
     } else if (type === 'lab') {
         html = `<input type="text" id="new_extra" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="نوع التحاليل"><select id="new_home_sample" class="ctrl-input text-sm"><option value="لا">لا يوجد سحب منزلي</option><option value="نعم">يوجد سحب منزلي</option></select>`;
     } else if (type === 'pharmacy') {
