@@ -1,6 +1,6 @@
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
-const CACHE_NAME = 'lomedx-pro-v2'; // إصدار احترافي
+const CACHE_NAME = 'lomedx-pro-v3'; // كاشش
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -10,12 +10,12 @@ const CORE_ASSETS = [
   './manifest.json'
 ];
 
-// 1. التثبيت: تخزين الواجهة الأساسية
+// 1. التثبيت: تخزين الواجهة الأساسية (بدون skipWaiting)
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
-  self.skipWaiting(); // تجهيز النسخة الجديدة في الخلفية
+  // تم إزالة self.skipWaiting() من هنا لنسمح بظهور رسالة التحديث
 });
 
 // 2. التفعيل: مسح النسخ القديمة فوراً
@@ -34,37 +34,34 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. استراتيجية الفصل الذكي (العبقرية هنا)
+// 3. استراتيجية الفصل الذكي
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
 
-  // أ) تجاهل تام لطلبات Supabase و OneSignal (لتبقى الدردشة والحجوزات حية ولا تتعلق)
   if (url.hostname.includes('supabase.co') || url.hostname.includes('onesignal.com')) {
     return; 
   }
 
-  // ب) استراتيجية (الشبكة أو الكاش مع التحديث بالخلفية) للملفات الأساسية
   event.respondWith(
     caches.match(req).then((cachedRes) => {
-      // أرجع الملف من الكاش فوراً (للمستخدم السريع)، ثم حدثه من السيرفر بالخلفية
       const fetchPromise = fetch(req).then((networkRes) => {
         if (networkRes && networkRes.status === 200) {
           caches.open(CACHE_NAME).then((cache) => cache.put(req, networkRes.clone()));
         }
         return networkRes;
-      }).catch(() => cachedRes); // إذا انقطع النت، استخدم الكاش
+      }).catch(() => cachedRes);
       
       return cachedRes || fetchPromise;
     })
   );
 });
 
-// 4. استقبال أمر التحديث من المستخدم
+// 4. استقبال أمر التحديث من المستخدم (هنا يكمن الحل)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+    self.skipWaiting(); // لا يتم التفعيل إلا عندما يضغط المستخدم على زر التحديث
   }
 });
