@@ -1147,6 +1147,7 @@ window.openBookingModal = (id) => {
     const item = allData.find(d => d.id === id); 
     if (!item) return; 
     tempBooking = { itemid: id, itemname: item.name, itemphone: (item.phone || '').replace(/[^0-9]/g, '') }; 
+    
     let daysHTML = ''; let validDaysCount = 0; 
     for (let i = 1; i <= 14; i++) { 
         const date = new Date(); date.setDate(date.getDate() + i); 
@@ -1160,17 +1161,65 @@ window.openBookingModal = (id) => {
         } 
     } 
     if (validDaysCount === 0) { daysHTML = '<p class="text-sm text-center w-full" style="color: var(--muted)">لا توجد أيام متاحة للحجز.</p>'; } 
-    document.getElementById('modalContent').innerHTML = `<div class="p-6"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-calendar-plus ml-2" style="color: var(--accent)"></i> طلب موعد</h3><button onclick="closeModal()" class="text-2xl hover:text-gray-400 leading-none">&times;</button></div><div class="mb-4 p-3 rounded-xl flex items-center gap-3" style="background: var(--accent-light)"><i class="fas fa-hospital text-xl" style="color: var(--accent)"></i><div><div class="text-xs" style="color: var(--accent-dark)">سيتم طلب الموعد في:</div><div class="font-bold text-sm" style="color: var(--accent-dark)">${escapeHtml(item.name)}</div></div></div><div id="step1" class="booking-step active"><h4 class="text-sm font-bold mb-3">1. اختر اليوم المناسب:</h4><div class="flex gap-2 overflow-x-auto pb-2 mb-6">${daysHTML}</div><button onclick="goToStep(2)" id="step1Next" disabled class="w-full py-3 rounded-xl text-white font-bold text-sm transition-all opacity-50 cursor-not-allowed" style="background: var(--accent)">التالي</button></div><div id="step2" class="booking-step"><h4 class="text-sm font-bold mb-3">2. أدخل بياناتك:</h4><div class="flex flex-col gap-3 mb-6"><input type="text" id="patientName" class="ctrl-input" placeholder="الاسم الكامل" required><input type="tel" id="patientPhone" class="ctrl-input" placeholder="09XXXXXXXX" required><textarea id="patientNotes" class="ctrl-input" rows="2" placeholder="ملاحظات (اختياري)"></textarea></div><div class="flex gap-2"><button onclick="goToStep(1)" class="w-1/3 py-3 rounded-xl border font-bold text-sm" style="border-color: var(--border)"><i class="fas fa-arrow-right ml-2"></i> رجوع</button><button onclick="confirmBooking()" class="w-2/3 py-3 rounded-xl text-white font-bold text-sm" style="background: var(--accent)">تأكيد</button></div></div></div>`; 
+
+    document.getElementById('modalContent').innerHTML = `<div class="p-6"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-lg"><i class="fas fa-calendar-plus ml-2" style="color: var(--accent)"></i> طلب موعد</h3><button onclick="closeModal()" class="text-2xl hover:text-gray-400 leading-none">&times;</button></div><div class="mb-4 p-3 rounded-xl flex items-center gap-3" style="background: var(--accent-light)"><i class="fas fa-hospital text-xl" style="color: var(--accent)"></i><div><div class="text-xs" style="color: var(--accent-dark)">سيتم طلب الموعد في:</div><div class="font-bold text-sm" style="color: var(--accent-dark)">${escapeHtml(item.name)}</div></div></div><div id="step1" class="booking-step active"><h4 class="text-sm font-bold mb-3">1. اختر اليوم المناسب:</h4><div class="flex gap-2 overflow-x-auto pb-2 mb-4">${daysHTML}</div><div id="slotsContainer" class="flex flex-wrap gap-2 mb-4"></div><button onclick="goToStep(2)" id="step1Next" disabled class="w-full py-3 rounded-xl text-white font-bold text-sm transition-all opacity-50 cursor-not-allowed" style="background: var(--accent)">التالي</button></div><div id="step2" class="booking-step"><h4 class="text-sm font-bold mb-3">2. أدخل بياناتك:</h4><div class="flex flex-col gap-3 mb-6"><input type="text" id="patientName" class="ctrl-input" placeholder="الاسم الكامل" required><input type="tel" id="patientPhone" class="ctrl-input" placeholder="09XXXXXXXX" required><textarea id="patientNotes" class="ctrl-input" rows="2" placeholder="ملاحظات (اختياري)"></textarea></div><div class="flex gap-2"><button onclick="goToStep(1)" class="w-1/3 py-3 rounded-xl border font-bold text-sm" style="border-color: var(--border)"><i class="fas fa-arrow-right ml-2"></i> رجوع</button><button onclick="confirmBooking()" class="w-2/3 py-3 rounded-xl text-white font-bold text-sm" style="background: var(--accent)">تأكيد</button></div></div></div>`; 
     document.getElementById('modalOverlay').classList.add('active'); lockScroll(); 
 }
 
-window.selectDay = (iso, btn) => { 
+window.selectDay = async (iso, btn) => { 
     tempBooking.day = new Date(iso); 
     tempBooking.daystr = tempBooking.day.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }); 
     document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active')); 
     btn.classList.add('active'); 
+    
+    const item = allData.find(d => d.id === tempBooking.itemid); 
+    const slotsContainer = document.getElementById('slotsContainer');
+    const step1Next = document.getElementById('step1Next');
+
+    // إذا كان النظام اليدوي هو النشط، نتركه يعمل كالسابق
+    if (item.active_system !== 'slots' || !item.working_hours) {
+        if(slotsContainer) slotsContainer.innerHTML = '';
+        step1Next.disabled = false; 
+        step1Next.classList.remove('opacity-50', 'cursor-not-allowed');
+        return;
+    }
+
+    // إذا كان النظام الدقيق نشطاً، نعرض الأوقات
+    slotsContainer.innerHTML = '<p class="text-xs text-gray-400 w-full text-center py-2"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الأوقات...</p>';
+    
+    const { data: booked } = await supabase.from('bookings')
+        .select('slot_time')
+        .eq('itemid', tempBooking.itemid)
+        .eq('daystr', tempBooking.daystr)
+        .neq('status', 'canceled');
+        
+    const bookedSlots = booked ? booked.map(b => b.slot_time) : [];
+
+    let slotsHtml = '';
+    let start = new Date(`2024-01-01T${item.working_hours.start}:00`);
+    let end = new Date(`2024-01-01T${item.working_hours.end}:00`);
+    
+    while(start < end) {
+        const timeStr = start.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        const isBooked = bookedSlots.includes(timeStr);
+        slotsHtml += `<button ${isBooked ? 'disabled' : `onclick="selectSlot('${timeStr}', this)"`} class="px-3 py-2 rounded-lg text-xs font-bold transition-all ${isBooked ? 'bg-gray-100 text-gray-400 line-through cursor-not-allowed' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}">${timeStr}</button>`;
+        start.setMinutes(start.getMinutes() + 20); // مدة كل موعد 20 دقيقة
+    }
+
+    slotsContainer.innerHTML = slotsHtml || '<p class="text-xs text-gray-400 w-full text-center py-2">لا توجد أوقات متاحة.</p>';
+    step1Next.disabled = true; 
+    step1Next.classList.add('opacity-50', 'cursor-not-allowed');
+}
+
+// دالة اختيار الوقت
+window.selectSlot = (time, btn) => {
+    tempBooking.slot_time = time;
+    document.querySelectorAll('#slotsContainer button').forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+    btn.classList.remove('bg-blue-50', 'text-blue-700');
+    btn.classList.add('bg-blue-600', 'text-white');
+    
     document.getElementById('step1Next').disabled = false; 
-    document.getElementById('step1Next').classList.remove('opacity-50', 'cursor-not-allowed'); 
+    document.getElementById('step1Next').classList.remove('opacity-50', 'cursor-not-allowed');
 }
 window.goToStep = (step) => { document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active')); document.getElementById(`step${step}`).classList.add('active'); }
 
@@ -1188,7 +1237,7 @@ window.confirmBooking = async () => {
     tempBooking.phone = phone; 
     tempBooking.notes = notes; 
     tempBooking.status = 'pending'; 
-    tempBooking.time = "بانتظار التحديد"; 
+    tempBooking.time = tempBooking.slot_time || "بانتظار التحديد";
     tempBooking.chat = []; 
 
     // إرفاق معرف إشعارات المريض (إن وجد)
@@ -1575,17 +1624,39 @@ window.renderDoctorDashboard = async (doc) => {
         <button onclick="openDoctorScanner('${doc.id}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2" style="background: #0D9488">
             <i class="fas fa-qrcode"></i> قراءة الملف الصحي للمريض
         </button>
+        <p class="text-xs text-center text-gray-500">يمكنك إنشاء روشتة طبية إلكترونية من داخل ملف المريض بعد مسح QR.</p>
+        </div>
         <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
             <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-toolbox" style="color: var(--doctor)"></i> أدوات الطبيب</h4>
             <button onclick="openAskDoctor('${doc.name}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 mb-2" style="background: #2563EB;">
                 <i class="fas fa-comments"></i> فتح قسم اسأل طبيب
             </button>
-            <p class="text-xs text-center text-gray-500">يمكنك إنشاء روشتة طبية إلكترونية من داخل ملف المريض بعد مسح QR.</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
-            <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-week" style="color: var(--doctor)"></i> أيام العمل</h4>
+        
+                <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+            <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-week" style="color: var(--doctor)"></i> أيام العمل ونظام الحجز</h4>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">${daysCheckboxes}</div>
-            <button onclick="saveDoctorSettings('${doc.id}')" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm" style="background: var(--doctor)">
+            
+            <!-- اختيار النظام النشط -->
+            <div class="mt-4 p-4 rounded-xl border" style="border-color: var(--border); background: var(--bg);">
+                <h4 class="text-sm font-bold mb-3">نظام الحجز النشط حالياً</h4>
+                <div class="flex gap-2">
+                    <button onclick="setActiveSystem('${doc.id}', 'manual')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${doc.active_system === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" ${doc.allowed_systems?.includes('manual') ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"'}>النظام اليدوي</button>
+                    <button onclick="setActiveSystem('${doc.id}', 'slots')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${doc.active_system === 'slots' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" ${doc.allowed_systems?.includes('slots') ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"'}>نظام المواعيد الدقيقة</button>
+                </div>
+                
+                ${doc.active_system === 'slots' ? `
+                <div class="mt-4 border-t pt-3" style="border-color: var(--border);">
+                    <p class="text-xs text-gray-500 mb-2">حدد أوقات دوامك لتقسيمها كفترات للمريض:</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block text-xs font-semibold mb-1 text-gray-600">بداية الدوام</label><input type="time" id="docStartTime" value="${doc.working_hours?.start || '16:00'}" class="ctrl-input text-sm"></div>
+                        <div><label class="block text-xs font-semibold mb-1 text-gray-600">نهاية الدوام</label><input type="time" id="docEndTime" value="${doc.working_hours?.end || '20:00'}" class="ctrl-input text-sm"></div>
+                    </div>
+                    <button onclick="saveWorkingHours('${doc.id}')" class="w-full py-2 mt-3 rounded-xl text-white font-semibold text-sm" style="background: var(--doctor)"><i class="fas fa-save ml-2"></i> حفظ أوقات العمل</button>
+                </div>
+                ` : '<p class="text-xs text-gray-400 mt-3 text-center">المريض سيطلب الموعد وستقوم أنت بكتابة الوقت يدوياً عند القبول.</p>'}
+            </div>
+
+            <button onclick="saveDoctorSettings('${doc.id}')" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm mt-4" style="background: var(--doctor)">
                 <i class="fas fa-save ml-2"></i> حفظ أيام العمل
             </button>
         </div>
@@ -1682,6 +1753,29 @@ window.updateBookingStatus = async (bookingId, newStatus) => {
 window.saveDoctorSettings = async (id) => { 
     const workingDays = Array.from(document.querySelectorAll('input[name="docWorkingDays"]:checked')).map(cb => cb.value); 
     try { await supabase.from('listings').update({ workingdays: workingDays }).eq('id', id); showToast('تم الحفظ!', 'success'); localStorage.setItem('force_listings_update', 'true'); } catch (e) { showToast('خطأ', 'error'); } 
+}
+// الطبيب يختار النظام النشط
+window.setActiveSystem = async (id, system) => {
+    try {
+        await supabase.from('listings').update({ active_system: system }).eq('id', id);
+        showToast('تم تفعيل النظام المختار', 'success');
+        localStorage.setItem('force_listings_update', 'true');
+        // إعادة تحميل اللوحة لتظهر الإعدادات الجديدة
+        const { data: updatedDoc } = await supabase.from('listings').select('*').eq('id', id).single();
+        if (updatedDoc) renderDoctorDashboard(updatedDoc);
+    } catch (e) { showToast('خطأ في التحديث', 'error'); }
+}
+
+// الطبيب يحفظ أوقات العمل
+window.saveWorkingHours = async (id) => {
+    const start = document.getElementById('docStartTime').value;
+    const end = document.getElementById('docEndTime').value;
+    if (!start || !end) { showToast('يرجى إدخال وقت البداية والنهاية'); return; }
+    try {
+        await supabase.from('listings').update({ working_hours: { start, end } }).eq('id', id);
+        showToast('تم حفظ أوقات العمل بنجاح!', 'success');
+        localStorage.setItem('force_listings_update', 'true');
+    } catch (e) { showToast('خطأ في الحفظ', 'error'); }
 }
 window.sendDocMessage = async (bookingId) => {
     const input = document.getElementById(`docChat_${bookingId}`); 
@@ -2386,9 +2480,27 @@ window.updateAdminFormFields = (type) => {
                 <button type="button" onclick="addAdminRow('phoneContainer', ['label', 'phone'])" class="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-sm font-semibold text-teal-600 border-teal-500 hover:bg-teal-50">+ إضافة رقم هاتف</button>
             </div>
         `;
+            
+          } else if (type === 'doctor') {
+        html = `
+        <input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة (نظام قديم)">
+        <input type="text" id="new_parent_id" class="ctrl-input text-sm" placeholder="ID المشفى التابع له (اختياري)">
+        <input type="text" id="new_extra" class="ctrl-input text-sm" placeholder="تفاصيل إضافية">
         
-    } else if (type === 'doctor') {
-        html = `<input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة"><input type="text" id="new_parent_id" class="ctrl-input text-sm" placeholder="ID المشفى التابع له (اختياري)"><input type="text" id="new_extra" class="ctrl-input text-sm" placeholder="تفاصيل إضافية">`;
+        <div class="col-span-1 sm:col-span-2 p-4 bg-gray-50 rounded-xl border border-gray-200 mt-2">
+            <h4 class="font-bold text-sm mb-3 text-gray-700">صلاحيات نظام الحجز (يحددها الأدمن)</h4>
+            <div class="flex flex-col gap-2 mb-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="allow_manual" class="w-5 h-5 accent-blue-600" checked>
+                    <span class="text-sm font-bold">السماح للطبيب باستخدام النظام اليدوي</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="allow_slots" class="w-5 h-5 accent-blue-600">
+                    <span class="text-sm font-bold">السماح للطبيب باستخدام نظام المواعيد الدقيقة</span>
+                </label>
+            </div>
+        </div>`;
+    }
     } else if (type === 'lab') {
         html = `<input type="text" id="new_extra" class="ctrl-input text-sm col-span-1 sm:col-span-2" placeholder="نوع التحاليل"><select id="new_home_sample" class="ctrl-input text-sm"><option value="لا">لا يوجد سحب منزلي</option><option value="نعم">يوجد سحب منزلي</option></select>`;
     } else if (type === 'pharmacy') {
@@ -2781,10 +2893,13 @@ window.editFacility = (id) => {
             }
         }
     }
-    else if (item.type === 'doctor') { 
+         else if (item.type === 'doctor') { 
         document.getElementById('new_consult_hours').value = item.consulthours || ''; 
         document.getElementById('new_extra').value = item.bookingnotes || ''; 
         if(document.getElementById('new_parent_id')) document.getElementById('new_parent_id').value = item.parent_id || '';
+        const allowed = item.allowed_systems || ['manual'];
+        document.getElementById('allow_manual').checked = allowed.includes('manual');
+        document.getElementById('allow_slots').checked = allowed.includes('slots');
     } 
         
         else if (item.type === 'pharmacy') { 
@@ -2899,12 +3014,17 @@ window.saveFacility = async (e) => {
         data.phone = facilityData.phones[0]?.phone || ''; 
         data.facility_details = facilityData;
     } 
-    else if (type === 'doctor') { 
+         else if (type === 'doctor') { 
         data.specialty = specialty; 
         data.clinic = address; 
         data.consulthours = document.getElementById('new_consult_hours')?.value || ''; 
         data.bookingnotes = document.getElementById('new_extra')?.value || ''; 
         data.parent_id = document.getElementById('new_parent_id')?.value || '';
+        const systems = [];
+        if (document.getElementById('allow_manual').checked) systems.push('manual');
+        if (document.getElementById('allow_slots').checked) systems.push('slots');
+        if (systems.length === 0) systems.push('manual'); // افتراضي
+        data.allowed_systems = systems;
     } 
     else if (type === 'pharmacy') { 
         data.address = address; 
