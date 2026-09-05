@@ -1592,82 +1592,93 @@ window.renderDoctorDashboard = async (doc) => {
         return;
     }
     
-        // === العداد التراكمي الذي لا يتنقص عند الحذف ===
+    // === العداد التراكمي الذي لا يتنقص عند الحذف ===
     const totalBookings = doc.total_bookings_count || 0;
 
-    const daysCheckboxes = daysOfWeek.map(day => `<label class="flex items-center gap-2"><input type="checkbox" name="docWorkingDays" value="${day}" class="day-checkbox" ${doc.workingdays?.includes(day) ? 'checked' : ''}><span class="text-sm">${day}</span></label>`).join(''); 
+    const daysCheckboxes = daysOfWeek.map(day => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"><input type="checkbox" name="docWorkingDays" value="${day}" class="w-4 h-4 accent-blue-600" ${doc.workingdays?.includes(day) ? 'checked' : ''}><span class="text-xs font-semibold">${day}</span></label>`).join(''); 
     
-    openCtrlPanel(`لوحة: ${doc.name}`, `<div class="flex flex-col gap-5">
-        <div class="bg-white p-5 rounded-xl border flex items-center gap-4" style="border-color: var(--border)">
-            <img src="${escapeHtml(doc.image)}" class="w-20 h-20 rounded-2xl object-cover">
-            <div><h3 class="font-bold text-lg">${escapeHtml(doc.name)}</h3><p class="text-sm" style="color: var(--doctor)">${escapeHtml(doc.specialty)}</p></div>
+    openCtrlPanel(`لوحة: ${doc.name}`, `
+    <div class="flex flex-col gap-5">
+        <!-- 1. بطاقة الملف الشخصي وحالة العمل -->
+        <div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col sm:flex-row items-center gap-4" style="border-color: var(--border)">
+            <img src="${escapeHtml(doc.image)}" class="w-24 h-24 rounded-2xl object-cover border-4 border-blue-50 shadow-sm">
+            <div class="flex-1 text-center sm:text-right w-full">
+                <h3 class="font-bold text-xl">${escapeHtml(doc.name)}</h3>
+                <p class="text-sm mb-3" style="color: var(--doctor)">${escapeHtml(doc.specialty)}</p>
+                <div class="flex justify-center sm:justify-start items-center gap-2">
+                    <span class="text-xs font-bold text-gray-600">حالة العيادة:</span>
+                    <div class="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                        <button onclick="setStatus('${doc.id}', true)" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all ${doc.isopen === true ? 'bg-green-500 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}">مفتوح</button>
+                        <button onclick="setStatus('${doc.id}', false)" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all ${doc.isopen === false ? 'bg-red-500 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}">مغلق</button>
+                        <button onclick="setStatus('${doc.id}', null)" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all ${doc.isopen == null ? 'bg-gray-700 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}">لا شيء</button>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- 2. الإحصائيات -->
         <div class="grid grid-cols-3 gap-3">
-            <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
-                <i class="fas fa-eye text-blue-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.view_count || 0}</div><div class="text-xs text-gray-500">زيارة الملف</div>
+            <div class="bg-white p-4 rounded-xl border text-center shadow-sm" style="border-color: var(--border);">
+                <i class="fas fa-eye text-blue-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.view_count || 0}</div><div class="text-[10px] text-gray-500">زيارة الملف</div>
             </div>
-            <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
-                <i class="fas fa-calendar-check text-green-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${totalBookings || 0}</div><div class="text-xs text-gray-500">إجمالي الحجوزات</div>
+            <div class="bg-white p-4 rounded-xl border text-center shadow-sm" style="border-color: var(--border);">
+                <i class="fas fa-calendar-check text-green-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${totalBookings || 0}</div><div class="text-[10px] text-gray-500">إجمالي الحجوزات</div>
             </div>
-            <div class="bg-white p-4 rounded-xl border text-center" style="border-color: var(--border);">
-                <i class="fas fa-phone-alt text-purple-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.phone_clicks || 0}</div><div class="text-xs text-gray-500">نقرات الهاتف</div>
-            </div>
-        </div>
-        <div class="bg-white p-3 rounded-xl border flex items-center justify-between gap-2 mb-3" style="border-color: var(--border);">
-            <span class="text-sm font-bold text-gray-700">حالة العمل:</span>
-            <div class="flex gap-1 bg-gray-50 p-1 rounded-lg">
-                <button onclick="setStatus('${doc.id}', true)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen === true ? 'bg-green-500 text-white shadow' : 'text-gray-500'}">مفتوح</button>
-                <button onclick="setStatus('${doc.id}', false)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen === false ? 'bg-red-500 text-white shadow' : 'text-gray-500'}">مغلق</button>
-                <button onclick="setStatus('${doc.id}', null)" class="px-4 py-1.5 rounded-md text-xs font-bold ${doc.isopen == null ? 'bg-gray-700 text-white shadow' : 'text-gray-500'}">لا شيء</button>
+            <div class="bg-white p-4 rounded-xl border text-center shadow-sm" style="border-color: var(--border);">
+                <i class="fas fa-phone-alt text-purple-500 text-xl mb-1"></i><div class="text-2xl font-black text-gray-800">${doc.phone_clicks || 0}</div><div class="text-[10px] text-gray-500">نقرات الهاتف</div>
             </div>
         </div>
-        <button onclick="openDoctorScanner('${doc.id}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2" style="background: #0D9488">
-            <i class="fas fa-qrcode"></i> قراءة الملف الصحي للمريض
-        </button>
-        <p class="text-xs text-center text-gray-500">يمكنك إنشاء روشتة طبية إلكترونية من داخل ملف المريض بعد مسح QR.</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
-            <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-toolbox" style="color: var(--doctor)"></i> أدوات الطبيب</h4>
-            <button onclick="openAskDoctor('${doc.name}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 mb-2" style="background: #2563EB;">
-                <i class="fas fa-comments"></i> فتح قسم اسأل طبيب
+
+        <!-- 3. أدوات سريعة -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onclick="openDoctorScanner('${doc.id}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all" style="background: #0D9488">
+                <i class="fas fa-qrcode"></i> قراءة ملف المريض (QR)
             </button>
-        
-                <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+            <button onclick="openAskDoctor('${doc.name}')" class="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all" style="background: #2563EB;">
+                <i class="fas fa-comments"></i> قسم اسأل طبيب
+            </button>
+        </div>
+
+        <!-- 4. إعدادات الحجز وأيام العمل (تم تنسيقها بالكامل) -->
+        <div class="bg-white p-5 rounded-2xl border shadow-sm" style="border-color: var(--border)">
             <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-week" style="color: var(--doctor)"></i> أيام العمل ونظام الحجز</h4>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">${daysCheckboxes}</div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">${daysCheckboxes}</div>
             
             <!-- اختيار النظام النشط -->
-            <div class="mt-4 p-4 rounded-xl border" style="border-color: var(--border); background: var(--bg);">
-                <h4 class="text-sm font-bold mb-3">نظام الحجز النشط حالياً</h4>
+            <div class="p-4 rounded-xl border mb-4" style="border-color: var(--border); background: #F9FAFB;">
+                <h4 class="text-sm font-bold mb-3 text-gray-700">نظام الحجز النشط حالياً</h4>
                 <div class="flex gap-2">
-                    <button onclick="setActiveSystem('${doc.id}', 'manual')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${doc.active_system === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" ${doc.allowed_systems?.includes('manual') ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"'}>النظام اليدوي</button>
-                    <button onclick="setActiveSystem('${doc.id}', 'slots')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${doc.active_system === 'slots' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" ${doc.allowed_systems?.includes('slots') ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"'}>نظام المواعيد الدقيقة</button>
+                    <button onclick="setActiveSystem('${doc.id}', 'manual')" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${doc.active_system === 'manual' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}" ${doc.allowed_systems?.includes('manual') ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"'}>النظام اليدوي</button>
+                    <button onclick="setActiveSystem('${doc.id}', 'slots')" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${doc.active_system === 'slots' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}" ${doc.allowed_systems?.includes('slots') ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"'}>المواعيد الدقيقة</button>
                 </div>
                 
                 ${doc.active_system === 'slots' ? `
                 <div class="mt-4 border-t pt-3" style="border-color: var(--border);">
-                    <p class="text-xs text-gray-500 mb-2">حدد أوقات دوامك لتقسيمها كفترات للمريض:</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-xs font-semibold mb-1 text-gray-600">بداية الدوام</label><input type="time" id="docStartTime" value="${doc.working_hours?.start || '16:00'}" class="ctrl-input text-sm"></div>
-                        <div><label class="block text-xs font-semibold mb-1 text-gray-600">نهاية الدوام</label><input type="time" id="docEndTime" value="${doc.working_hours?.end || '20:00'}" class="ctrl-input text-sm"></div>
+                    <p class="text-xs text-gray-500 mb-2 font-semibold">أوقات دوامك (للفترات الدقيقة):</p>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div class="bg-white p-2 rounded-lg border border-gray-200"><label class="block text-[10px] font-semibold mb-1 text-gray-500">بداية الدوام</label><input type="time" id="docStartTime" value="${doc.working_hours?.start || '16:00'}" class="ctrl-input text-sm border-0 p-0"></div>
+                        <div class="bg-white p-2 rounded-lg border border-gray-200"><label class="block text-[10px] font-semibold mb-1 text-gray-500">نهاية الدوام</label><input type="time" id="docEndTime" value="${doc.working_hours?.end || '20:00'}" class="ctrl-input text-sm border-0 p-0"></div>
                     </div>
-                    <button onclick="saveWorkingHours('${doc.id}')" class="w-full py-2 mt-3 rounded-xl text-white font-semibold text-sm" style="background: var(--doctor)"><i class="fas fa-save ml-2"></i> حفظ أوقات العمل</button>
+                    <button onclick="saveWorkingHours('${doc.id}')" class="w-full py-2 rounded-xl text-white font-semibold text-xs bg-blue-500 hover:bg-blue-600 transition-colors"><i class="fas fa-save ml-2"></i> حفظ أوقات العمل</button>
                 </div>
-                ` : '<p class="text-xs text-gray-400 mt-3 text-center">المريض سيطلب الموعد وستقوم أنت بكتابة الوقت يدوياً عند القبول.</p>'}
+                ` : '<p class="text-xs text-gray-400 mt-3 text-center bg-white p-2 rounded-lg border border-dashed border-gray-200">المريض سيطلب الموعد وستقوم أنت بكتابة الوقت يدوياً عند القبول.</p>'}
             </div>
 
-            <button onclick="saveDoctorSettings('${doc.id}')" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm mt-4" style="background: var(--doctor)">
+            <button onclick="saveDoctorSettings('${doc.id}')" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm bg-blue-600 hover:bg-blue-700 transition-colors">
                 <i class="fas fa-save ml-2"></i> حفظ أيام العمل
             </button>
         </div>
-        <div class="bg-white p-5 rounded-xl border" style="border-color: var(--border)">
+
+        <!-- 5. طلبات الحجز الواردة -->
+        <div class="bg-white p-5 rounded-2xl border shadow-sm" style="border-color: var(--border)">
             <h4 class="font-bold mb-4 text-sm flex items-center gap-2"><i class="fas fa-calendar-check" style="color: var(--doctor)"></i> طلبات الحجز الواردة</h4>
             <div id="docBookingsContainer" class="flex flex-col gap-3">
-                <p class="text-sm text-center py-4" style="color: var(--muted)">جاري تحميل الحجوزات...</p>
+                <p class="text-sm text-center py-4 text-gray-400">جاري تحميل الحجوزات...</p>
             </div>
         </div>
         
-        <button onclick="logoutHealthFile()" class="w-full py-3 rounded-xl border font-bold text-sm mt-4" style="border-color: #EF4444; color: #EF4444;">
+        <!-- 6. تسجيل الخروج -->
+        <button onclick="logoutHealthFile()" class="w-full py-3 rounded-xl border font-bold text-sm mt-2 hover:bg-red-50 transition-colors" style="border-color: #EF4444; color: #EF4444;">
             <i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج
         </button>
     </div>`, '#2563EB', true); 
@@ -2483,12 +2494,12 @@ window.updateAdminFormFields = (type) => {
             
           } else if (type === 'doctor') {
         html = `
-        <input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة (نظام قديم)">
+        <input type="text" id="new_consult_hours" class="ctrl-input text-sm" placeholder="أوقات المعاينة (النظام قديم)">
         <input type="text" id="new_parent_id" class="ctrl-input text-sm" placeholder="ID المشفى التابع له (اختياري)">
         <input type="text" id="new_extra" class="ctrl-input text-sm" placeholder="تفاصيل إضافية">
         
         <div class="col-span-1 sm:col-span-2 p-4 bg-gray-50 rounded-xl border border-gray-200 mt-2">
-            <h4 class="font-bold text-sm mb-3 text-gray-700">صلاحيات نظام الحجز (يحددها الأدمن)</h4>
+            <h4 class="font-bold text-sm mb-3 text-gray-700"> الصلاحيات النظام الحجز </h4>
             <div class="flex flex-col gap-2 mb-4">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="allow_manual" class="w-5 h-5 accent-blue-600" checked>
