@@ -5472,26 +5472,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-function showUpdateToast() {
-  const toast = document.getElementById('toast');
-  toast.innerHTML = `
-    <div class="flex flex-col items-center gap-3 w-full">
-      <div class="text-sm font-bold text-blue-800">🎉 يتوفر إصدار جديد من المنصة بميزات أسرع.</div>
-      <button id="updateBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all">
-        تحديث الآن
-      </button>
-    </div>`;
-  toast.style.backgroundColor = '#EFF6FF';
-  toast.classList.add('show');
-
-  document.getElementById('updateBtn').onclick = () => {
-    navigator.serviceWorker.getRegistration().then(reg => {
-      if (reg && reg.waiting) {
-        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-    });
-  };
-}
 // === نظام حماية الطلبات عند انقطاع الإنترنت ===
 window.addEventListener('offline', () => {
   showToast('⚠️ يبدو أنك فقدت اتصالك بالإنترنت. التصفح متاح، لكن الحجز والدردشة وأستغاثة معطلة حتى عودة الاتصال.', 'error');
