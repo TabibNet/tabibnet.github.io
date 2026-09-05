@@ -5407,4 +5407,74 @@ window.selectBlogCategory = (cat) => {
     const searchInput = document.getElementById('blogSearchInput');
     fetchArticles(searchInput ? searchInput.value : '');
 };
+// === نظام التحديث الذكي والأناق ===
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('OneSignalSDKWorker.js').then(reg => {
+      
+      // 1. فحص فوري عند فتح الموقع
+      reg.update();
+
+      // 2. فحص روتيني كل ساعة (3600000 مللي ثانية) بدلاً من دقيقة
+      setInterval(() => { reg.update(); }, 3600000);
+
+      // 3. (العبقرية) فحص فوري عندما يعود المستخدم للتبويب
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          reg.update();
+        }
+      });
+      
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateToast();
+          }
+        });
+      });
+    });
+  });
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
+
+function showUpdateToast() {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `
+    <div class="flex flex-col items-center gap-3 w-full">
+      <div class="text-sm font-bold text-blue-800">🎉 يتوفر إصدار جديد من المنصة بميزات أسرع.</div>
+      <button id="updateBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all">
+        تحديث الآن
+      </button>
+    </div>`;
+  toast.style.backgroundColor = '#EFF6FF';
+  toast.classList.add('show');
+
+  document.getElementById('updateBtn').onclick = () => {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg && reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  };
+}
+// === نظام حماية الطلبات عند انقطاع الإنترنت ===
+window.addEventListener('offline', () => {
+  showToast('⚠️ يبدو أنك فقدت اتصالك بالإنترنت. التصفح متاح، لكن الحجز والدردشة وأستغاثة معطلة حتى عودة الاتصال.', 'error');
+});
+
+// دالة مساعدة لفحص الإنترنت قبل أي عملية حساسة
+window.checkOnlineStatus = () => {
+  if (!navigator.onLine) {
+    showToast('لا يمكن إتمام هذه العملية. أنت غير متصل بالإنترنت حالياً.', 'error');
+    return false;
+  }
+  return true;
+};
 // نهاية ملف app.js
