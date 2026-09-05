@@ -1,8 +1,6 @@
-// 1. استدعاء مكتبة OneSignal برمجياً في أعلى الملف
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
-// 2. إعدادات الكاش والتخزين الخاص بموقعك (PWA)
-const CACHE_NAME = 'raheba-med-v66'; // تم رفع الرقم لإجبار التحديث
+const CACHE_NAME = 'lomedx-pro-v1'; // إصدار احترافي
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -12,15 +10,15 @@ const CORE_ASSETS = [
   './manifest.json'
 ];
 
+// 1. التثبيت: تخزين الواجهة الأساسية
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(CORE_ASSETS))
-      .catch((err) => console.log('Cache install error:', err))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
-  // تم إزالة self.skipWaiting(); من هنا لمنع التحديث المتكرر
+  self.skipWaiting(); // تجهيز النسخة الجديدة في الخلفية
 });
 
+// 2. التفعيل: مسح النسخ القديمة فوراً
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -36,57 +34,35 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// 3. استراتيجية الفصل الذكي (العبقرية هنا)
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  const req = event.request;
+  if (req.method !== 'GET') return;
 
-  const url = new URL(event.request.url);
+  const url = new URL(req.url);
 
-  if (
-    url.origin !== location.origin || 
-    url.pathname.includes('OneSignal') || 
-    url.hostname.includes('onesignal.com')
-  ) {
+  // أ) تجاهل تام لطلبات Supabase و OneSignal (لتبقى الدردشة والحجوزات حية ولا تتعلق)
+  if (url.hostname.includes('supabase.co') || url.hostname.includes('onesignal.com')) {
     return; 
   }
 
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(event.request).then((cached) => {
-            return cached || caches.match('./index.html');
-          });
-        })
-    );
-    return;
-  }
-
+  // ب) استراتيجية (الشبكة أو الكاش مع التحديث بالخلفية) للملفات الأساسية
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+    caches.match(req).then((cachedRes) => {
+      // أرجع الملف من الكاش فوراً (للمستخدم السريع)، ثم حدثه من السيرفر بالخلفية
+      const fetchPromise = fetch(req).then((networkRes) => {
+        if (networkRes && networkRes.status === 200) {
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, networkRes.clone()));
         }
-        return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+        return networkRes;
+      }).catch(() => cachedRes); // إذا انقطع النت، استخدم الكاش
+      
+      return cachedRes || fetchPromise;
+    })
   );
 });
 
+// 4. استقبال أمر التحديث من المستخدم
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
