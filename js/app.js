@@ -359,7 +359,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 async function fetchListings() {
     // حماية: جلب أعمدة محددة فقط لمنع تسريب كلمات المرور
-    const { data: freshData, error } = await supabase.from('listings').select('id, name, type, specialty, address, clinic, hours, consulthours, emergencyphone, departments, floors, services, tests, homesample, night, nightdetails, bookingnotes, rating, image, view_count, phone_clicks, phone, is_subscribed, isopen, workingdays, latlng, user_id, parent_id, capacity_info, facility_details');
+    const { data: freshData, error } = await supabase.from('listings').select('id, name, type, specialty, address, clinic, hours, consulthours, emergencyphone, departments, floors, services, tests, homesample, night, nightdetails, bookingnotes, rating, image, view_count, phone_clicks, phone, is_subscribed, isopen, workingdays, latlng, user_id, parent_id, capacity_info, facility_details, active_system, allowed_systems, working_hours');
     if (error) return;
     
     const forceUpdate = localStorage.getItem('force_listings_update') === 'true';
